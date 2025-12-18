@@ -81,48 +81,54 @@
         }
     </style>
 
-    <script type="importmap">
+    <!-- React 18 and Three.js dependencies via ESM -->
+   <script type="importmap">
     {
       "imports": {
         "react": "https://esm.sh/react@18.2.0",
+        "react/jsx-runtime": "https://esm.sh/react@18.2.0/jsx-runtime",
         "react-dom": "https://esm.sh/react-dom@18.2.0",
-        "three": "https://esm.sh/three@0.150.0",
-        "@react-three/fiber": "https://esm.sh/@react-three/fiber@8.13.0?external=three",
-        "@react-three/drei": "https://esm.sh/@react-three/drei@9.56.0?external=three"
+        "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
+        "three": "https://esm.sh/three@0.160.0",
+        "@react-three/fiber": "https://esm.sh/@react-three/fiber@8.15.16?external=react,react-dom,three",
+        "@react-three/drei": "https://esm.sh/@react-three/drei@9.99.0?external=react,react-dom,three,@react-three/fiber"
       }
     }
     </script>
+    <!-- Babel standalone for JSX processing -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 </head>
 <body>
     <div id="root"></div>
 
     <script type="text/babel" data-type="module">
         import React, { useState, useEffect, useRef, useMemo } from 'react';
-        import ReactDOM from 'react-dom';
+        import { createRoot } from 'react-dom/client';
         import * as THREE from 'three';
         import { Canvas, useFrame } from '@react-three/fiber';
-        import { Stars, Text, Float } from '@react-three/drei';
+        import { Stars } from '@react-three/drei';
 
-        // Configuração de cores e constantes
-        const PLAYER_SPEED = 0.15;
-        const OBSTACLE_SPEED = 0.25;
-        const SPAWN_INTERVAL = 40; // frames
+        // Jogo Constants
+        const OBSTACLE_SPEED = 0.35;
+        const SPAWN_INTERVAL = 30; // frames
+        const ROAD_WIDTH = 10;
+        const PLAYER_Z = 5;
 
-        function Player({ position }) {
+        function Player({ x }) {
             const mesh = useRef();
             
             useFrame(() => {
                 if (mesh.current) {
                     mesh.current.position.x = THREE.MathUtils.lerp(
                         mesh.current.position.x,
-                        position.x,
-                        0.1
+                        x,
+                        0.15
                     );
                 }
             });
 
             return (
-                <mesh ref={mesh} position={[0, 0.5, 0]}>
+                <mesh ref={mesh} position={[0, 0.5, PLAYER_Z]}>
                     <boxGeometry args={[1, 1, 1]} />
                     <meshStandardMaterial 
                         emissive="#00f2ff" 
@@ -134,20 +140,29 @@
             );
         }
 
-        function Obstacle({ position, onHit }) {
+        function Obstacle({ data, onHit, playerX, onCollide }) {
             const mesh = useRef();
             
             useFrame(() => {
                 if (mesh.current) {
                     mesh.current.position.z += OBSTACLE_SPEED;
-                    if (mesh.current.position.z > 5) {
-                        onHit(mesh.current.id);
+                    
+                    // Detecção de colisão baseada em posição Z e X
+                    const distZ = Math.abs(mesh.current.position.z - PLAYER_Z);
+                    const distX = Math.abs(mesh.current.position.x - playerX);
+                    
+                    if (distZ < 1 && distX < 1.2) {
+                        onCollide();
+                    }
+
+                    if (mesh.current.position.z > 10) {
+                        onHit(data.id);
                     }
                 }
             });
 
             return (
-                <mesh ref={mesh} position={position}>
+                <mesh ref={mesh} position={[data.x, 0.75, data.z]}>
                     <boxGeometry args={[1.5, 1.5, 1.5]} />
                     <meshStandardMaterial 
                         emissive="#ff0055" 
@@ -163,31 +178,30 @@
                 <group>
                     <gridHelper args={[100, 50, 0x444444, 0x222222]} position={[0, 0, 0]} />
                     <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.1, 0]}>
-                        <planeGeometry args={[10, 1000]} />
+                        <planeGeometry args={[ROAD_WIDTH, 1000]} />
                         <meshStandardMaterial color="#050505" />
                     </mesh>
                 </group>
             );
         }
 
-        function Game({ gameState, setGameState, onGameEnd, score, setScore }) {
-            const [playerPosition, setPlayerPosition] = useState({ x: 0 });
+        function Game({ gameState, setGameState, score, setScore }) {
+            const [playerX, setPlayerX] = useState(0);
             const [obstacles, setObstacles] = useState([]);
             const frameCount = useRef(0);
             const scoreRef = useRef(0);
 
-            // Controle de entrada
             useEffect(() => {
                 const handleKeyDown = (e) => {
                     if (gameState !== 'PLAYING') return;
-                    if (e.key === 'ArrowLeft' || e.key === 'a') setPlayerPosition(p => ({ x: Math.max(p.x - 2, -4) }));
-                    if (e.key === 'ArrowRight' || e.key === 'd') setPlayerPosition(p => ({ x: Math.min(p.x + 2, 4) }));
+                    if (e.key === 'ArrowLeft' || e.key === 'a') setPlayerX(x => Math.max(x - 2, -4));
+                    if (e.key === 'ArrowRight' || e.key === 'd') setPlayerX(x => Math.min(x + 2, 4));
                 };
 
                 const handleMouseMove = (e) => {
                     if (gameState !== 'PLAYING') return;
-                    const x = (e.clientX / window.innerWidth) * 10 - 5;
-                    setPlayerPosition({ x: Math.max(Math.min(x, 4), -4) });
+                    const normalizedX = (e.clientX / window.innerWidth) * ROAD_WIDTH - (ROAD_WIDTH / 2);
+                    setPlayerX(Math.max(Math.min(normalizedX, 4), -4));
                 };
 
                 window.addEventListener('keydown', handleKeyDown);
@@ -198,40 +212,36 @@
                 };
             }, [gameState]);
 
-            // Reset game state when starting
             useEffect(() => {
                 if (gameState === 'PLAYING') {
                     setScore(0);
                     scoreRef.current = 0;
                     setObstacles([]);
-                    setPlayerPosition({ x: 0 });
+                    setPlayerX(0);
                     frameCount.current = 0;
                 }
             }, [gameState]);
 
-            // Game Loop
             useFrame(() => {
                 if (gameState !== 'PLAYING') return;
 
                 frameCount.current++;
                 scoreRef.current += 1;
+                
                 if (frameCount.current % 10 === 0) {
                     setScore(Math.floor(scoreRef.current / 10));
                 }
 
-                // Spawn de obstáculos
                 if (frameCount.current % SPAWN_INTERVAL === 0) {
-                    const newX = (Math.random() - 0.5) * 8;
-                    setObstacles(prev => [...prev, { id: Date.now(), x: newX, z: -50 }]);
+                    const newX = (Math.random() - 0.5) * (ROAD_WIDTH - 2);
+                    setObstacles(prev => [...prev, { id: Date.now() + Math.random(), x: newX, z: -50 }]);
                 }
             });
 
             const triggerGameOver = () => {
-                const finalScoreValue = Math.floor(scoreRef.current / 10);
+                const finalScore = Math.floor(scoreRef.current / 10);
                 setGameState('GAME_OVER');
-                // INTEGRAÇÃO REQUERIDA: Disparo de evento para o pai
-                window.parent.postMessage({ type: 'GAME_OVER', score: finalScoreValue }, '*');
-                onGameEnd(finalScoreValue);
+                window.parent.postMessage({ type: 'GAME_OVER', score: finalScore }, '*');
             };
 
             const removeObstacle = (id) => {
@@ -246,23 +256,19 @@
                     
                     <Road />
                     
-                    <Player position={playerPosition} />
+                    <Player x={playerX} />
 
                     {obstacles.map(obs => (
                         <Obstacle 
                             key={obs.id} 
-                            position={[obs.x, 0.75, obs.z]} 
-                            onHit={(id) => {
-                                // Checa colisão quando o obstáculo passa pelo player (z=0)
-                                if (Math.abs(obs.x - playerPosition.x) < 1.3) {
-                                    triggerGameOver();
-                                }
-                                removeObstacle(id);
-                            }}
+                            data={obs}
+                            playerX={playerX}
+                            onHit={removeObstacle}
+                            onCollide={triggerGameOver}
                         />
                     ))}
 
-                    <fog attach="fog" args={['#050505', 10, 45]} />
+                    <fog attach="fog" args={['#050505', 5, 45]} />
                 </>
             );
         }
@@ -270,19 +276,13 @@
         function App() {
             const [gameState, setGameState] = useState('START');
             const [score, setScore] = useState(0);
-            const [finalScore, setFinalScore] = useState(0);
-
-            const handleGameEnd = (s) => {
-                setFinalScore(s);
-            };
 
             return (
                 <div style={{ width: '100%', height: '100%' }}>
-                    <Canvas camera={{ position: [0, 5, 10], fov: 60 }}>
+                    <Canvas camera={{ position: [0, 5, 15], fov: 60 }}>
                         <Game 
                             gameState={gameState} 
                             setGameState={setGameState} 
-                            onGameEnd={handleGameEnd}
                             score={score}
                             setScore={setScore}
                         />
@@ -292,7 +292,7 @@
                         {gameState === 'START' && (
                             <div className="menu-card">
                                 <h1>NEON RUNNER</h1>
-                                <p>Use A/D ou Mouse para desviar dos cubos vermelhos</p>
+                                <p>Use A/D ou Mouse para desviar dos obstáculos</p>
                                 <button onClick={() => setGameState('PLAYING')}>Iniciar Jogo</button>
                             </div>
                         )}
@@ -300,9 +300,11 @@
                         {gameState === 'GAME_OVER' && (
                             <div className="menu-card">
                                 <h1 style={{ color: '#ff0055' }}>FIM DE JOGO</h1>
-                                <p>Sua pontuação final:</p>
-                                <h2 style={{ fontSize: '40px', margin: '10px 0' }}>{finalScore}</h2>
-                                <button onClick={() => setGameState('PLAYING')}>Tentar Novamente</button>
+                                <p>Sua pontuação:</p>
+                                <h2 style={{ fontSize: '48px', margin: '10px 0', textShadow: '0 0 10px #ff0055' }}>
+                                    {score}
+                                </h2>
+                                <button onClick={() => setGameState('PLAYING')}>Jogar Novamente</button>
                             </div>
                         )}
 
@@ -316,10 +318,9 @@
             );
         }
 
-        const root = ReactDOM.createRoot(document.getElementById('root'));
+        const container = document.getElementById('root');
+        const root = createRoot(container);
         root.render(<App />);
     </script>
-    
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 </body>
 </html>
