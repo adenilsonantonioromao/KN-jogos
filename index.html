@@ -345,7 +345,10 @@
             }
         }
 
+// --- ESCUTAR MENSAGENS DO JOGO ---
         window.addEventListener('message', async function(event) {
+            
+            // CASO 1: Fim de Jogo (Salvar Pontos)
             if (event.data.type === 'GAME_OVER') {
                 const pontos = event.data.score;
                 mostrarNotificacao(`Fim! Pontos: ${pontos}`);
@@ -360,6 +363,11 @@
                     mostrarNotificacao(`🏆 NOVO RECORDE: ${pontos}!`);
                 }
             }
+
+            // CASO 2: Pedido de Reinício (Cobrar Ficha)
+            if (event.data.type === 'RESTART_REQUEST') {
+                reiniciarJogo(); // Chama aquela função de cobrar que já criamos
+            }
         });
 
         function mostrarNotificacao(msg) {
@@ -372,3 +380,4 @@
 </body>
 
 </html>
+
