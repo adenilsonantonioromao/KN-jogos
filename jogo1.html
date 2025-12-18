@@ -1,44 +1,94 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Maze Runner 3D - KN Jogos</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neon Runner 3D - Monolithic</title>
     <style>
-        body { margin: 0; overflow: hidden; background-color: #111; user-select: none; touch-action: none; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        #root { width: 100vw; height: 100vh; position: relative; }
-        
-        /* Controles Mobile */
-        .d-pad {
-            position: absolute; bottom: 30px; right: 30px;
-            display: grid; grid-template-areas: ". up ." "left . right" ". down .";
-            gap: 12px; z-index: 50;
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #050505;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: white;
         }
-        .d-btn {
-            width: 65px; height: 65px;
-            background: rgba(255,255,255,0.15); backdrop-filter: blur(8px);
-            border-radius: 15px; display: flex; align-items: center; justify-content: center;
-            color: white; font-size: 28px; border: 2px solid rgba(255,255,255,0.25);
-            pointer-events: auto; transition: all 0.1s ease;
+
+        #root {
+            width: 100vw;
+            height: 100vh;
         }
-        .d-btn:active { background: rgba(255,255,255,0.4); transform: scale(0.9); }
-        .btn-up { grid-area: up; } .btn-down { grid-area: down; }
-        .btn-left { grid-area: left; } .btn-right { grid-area: right; }
+
+        .ui-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .score-board {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 24px;
+            font-weight: bold;
+            text-shadow: 0 0 10px #00f2ff;
+        }
+
+        .menu-card {
+            background: rgba(0, 0, 0, 0.85);
+            padding: 40px;
+            border-radius: 15px;
+            border: 2px solid #ff0055;
+            text-align: center;
+            pointer-events: auto;
+            box-shadow: 0 0 30px rgba(255, 0, 85, 0.4);
+        }
+
+        button {
+            background: #ff0055;
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-top: 20px;
+        }
+
+        button:hover {
+            background: #ff3377;
+            transform: scale(1.05);
+            box-shadow: 0 0 15px #ff0055;
+        }
+
+        h1 {
+            margin: 0 0 20px 0;
+            font-size: 48px;
+            background: linear-gradient(45deg, #ff0055, #00f2ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
     </style>
 
-    <!-- IMPORTMAP CORRIGIDO (SEM REACT 19 PARA EVITAR CONFLITO) -->
     <script type="importmap">
     {
       "imports": {
         "react": "https://esm.sh/react@18.2.0",
-        "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
-        "three": "https://esm.sh/three@0.160.0",
-        "@react-three/fiber": "https://esm.sh/@react-three/fiber@8.15.14?external=react,react-dom,three",
-        "@react-three/drei": "https://esm.sh/@react-three/drei@9.99.0?external=react,react-dom,three,@react-three/fiber",
-        "@google/genai": "https://esm.sh/@google/genai@^1.33.0",
-        "lucide-react": "https://esm.sh/lucide-react@0.294.0"
+        "react-dom": "https://esm.sh/react-dom@18.2.0",
+        "three": "https://esm.sh/three@0.150.0",
+        "@react-three/fiber": "https://esm.sh/@react-three/fiber@8.13.0?external=three",
+        "@react-three/drei": "https://esm.sh/@react-three/drei@9.56.0?external=three"
       }
     }
     </script>
@@ -47,398 +97,221 @@
     <div id="root"></div>
 
     <script type="text/babel" data-type="module">
-        import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-        import ReactDOM from 'react-dom/client';
+        import React, { useState, useEffect, useRef, useMemo } from 'react';
+        import ReactDOM from 'react-dom';
         import * as THREE from 'three';
-        import { Canvas, useFrame, useThree } from '@react-three/fiber';
-        import { Text } from '@react-three/drei';
-        import { GoogleGenAI } from "@google/genai";
-        import { Heart, Disc, Play, RefreshCw, Star, Timer, Skull, ArrowUp, ArrowDown, ArrowLeft, ArrowRight } from 'lucide-react';
+        import { Canvas, useFrame } from '@react-three/fiber';
+        import { Stars, Text, Float } from '@react-three/drei';
 
-        // --- CONSTANTES ---
-        const CELL_SIZE = 2;
-        const POWER_UP_DURATION = 3.0;
-        const HIT_COOLDOWN = 1.5;
-        const INITIAL_LIVES = 3;
-        const BASE_SIZE = 9;
-        const MAX_LEVEL_BONUS = 500;
-        const BONUS_DECAY = 5;
-        const POINTS_PER_COIN = 50;
-        const BG_IMAGE_URL = "https://images.unsplash.com/photo-1513151233558-d860c5398176?q=80&w=2672&auto=format&fit=crop";
+        // Configuração de cores e constantes
+        const PLAYER_SPEED = 0.15;
+        const OBSTACLE_SPEED = 0.25;
+        const SPAWN_INTERVAL = 40; // frames
 
-        // --- TRATAMENTO SEGURO DA API KEY ---
-        // Verifica se existe no ambiente (Node) ou usa string vazia para evitar crash no navegador
-        const SAFE_API_KEY = (typeof process !== 'undefined' && process.env && process.env.API_KEY) ? process.env.API_KEY : '';
-        const ai = SAFE_API_KEY ? new GoogleGenAI({ apiKey: SAFE_API_KEY }) : null;
-
-        const GameState = { MENU: 'MENU', PLAYING: 'PLAYING', LEVEL_TRANSITION: 'LEVEL_TRANSITION', GAME_OVER: 'GAME_OVER' };
-
-        // --- GERADOR DE LABIRINTO ---
-        const generateMaze = (width, height) => {
-            const w = width % 2 === 0 ? width + 1 : width;
-            const h = height % 2 === 0 ? height + 1 : height;
-            const grid = Array(h).fill(null).map(() => Array(w).fill(1));
-            const directions = [{dx:0, dy:-2}, {dx:2, dy:0}, {dx:0, dy:2}, {dx:-2, dy:0}];
+        function Player({ position }) {
+            const mesh = useRef();
             
-            const carve = (cx, cy) => {
-                grid[cy][cx] = 0;
-                const dirs = directions.sort(() => Math.random() - 0.5);
-                for (const {dx, dy} of dirs) {
-                    const nx = cx + dx, ny = cy + dy;
-                    if (nx > 0 && nx < w - 1 && ny > 0 && ny < h - 1 && grid[ny][nx] === 1) {
-                        grid[cy + dy / 2][cx + dx / 2] = 0;
-                        carve(nx, ny);
-                    }
+            useFrame(() => {
+                if (mesh.current) {
+                    mesh.current.position.x = THREE.MathUtils.lerp(
+                        mesh.current.position.x,
+                        position.x,
+                        0.1
+                    );
                 }
-            };
-            carve(1, 1);
-            // Braiding (remove alguns becos sem saída)
-            for (let y = 1; y < h - 1; y += 2) {
-                for (let x = 1; x < w - 1; x += 2) {
-                    if (grid[y][x] !== 0) continue;
-                    if (Math.random() < 0.2 && x < w-2) grid[y][x+1] = 0;
-                }
-            }
-            grid[1][1] = 2; // Start
-            let ex = w - 2, ey = h - 2;
-            while(grid[ey][ex] === 1) ex--;
-            grid[ey][ex] = 3; // End
-            return { grid, width: w, height: h, start: { x: 1, z: 1 }, end: { x: ex, z: ey } };
-        };
+            });
 
-        const getEntityPositions = (maze, count) => {
-            const pos = []; let i = 0;
-            while(pos.length < count && i < 1000) {
-                const x = Math.floor(Math.random() * maze.width);
-                const z = Math.floor(Math.random() * maze.height);
-                if (maze.grid[z][x] === 0 && (Math.abs(x - maze.start.x) > 3 || Math.abs(z - maze.start.z) > 3)) {
-                    if (!pos.some(p => p.x === x && p.z === z)) pos.push({ x, z });
-                }
-                i++;
-            }
-            return pos;
-        };
-
-        // --- SERVIÇOS IA (COM FALLBACK SEGURO) ---
-        const generateLevelFlavor = async (level) => {
-            if (!ai) return { title: `Fase ${level}`, wisdom: "Vamos nessa!" };
-            try {
-                const response = await ai.models.generateContent({
-                    model: 'gemini-2.5-flash',
-                    contents: `Gere um título divertido e frase curta para Fase ${level} de jogo labirinto. JSON PT-BR.`,
-                    config: { responseMimeType: "application/json" }
-                });
-                return JSON.parse(response.text);
-            } catch (e) { return { title: `Fase ${level}`, wisdom: "Você consegue!" }; }
-        };
-
-        const generateGameOverMessage = async (score, level) => {
-            if (!ai) return "Foi quase! Tente de novo.";
-            try {
-                const response = await ai.models.generateContent({
-                    model: 'gemini-2.5-flash',
-                    contents: `Frase curta e engraçada de Game Over. Score: ${score}. PT-BR.`,
-                });
-                return response.text;
-            } catch (e) { return "Tente novamente!"; }
-        };
-
-        const generateGameTexture = async (level, type) => {
-            if (!ai) return null;
-            let prompt = type === 'wall' ? "simple pixel art wall texture block" : "simple pixel art floor texture checkerboard";
-            try {
-                const response = await ai.models.generateContent({
-                    model: 'gemini-2.5-flash-image',
-                    contents: { parts: [{ text: prompt }] },
-                    config: { imageConfig: { aspectRatio: "1:1" } },
-                });
-                for (const part of response.candidates?.[0]?.content?.parts || []) {
-                    if (part.inlineData) return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
-                }
-            } catch (e) { return null; }
-            return null;
-        };
-
-        // --- COMPONENTES 3D ---
-        const createPlaceholderTexture = (type, level) => {
-            const canvas = document.createElement('canvas'); canvas.width = 32; canvas.height = 32;
-            const ctx = canvas.getContext('2d');
-            ctx.fillStyle = type === 'wall' ? '#475569' : '#e2e8f0';
-            ctx.fillRect(0,0,32,32);
-            if(type === 'wall') { ctx.fillStyle = 'rgba(255,255,255,0.1)'; ctx.fillRect(0,0,32,2); }
-            else { ctx.fillStyle = '#cbd5e1'; ctx.fillRect(0,0,16,16); ctx.fillRect(16,16,16,16); }
-            const t = new THREE.CanvasTexture(canvas);
-            t.magFilter = THREE.NearestFilter;
-            return t;
-        };
-
-        const Walls = ({ maze, level }) => {
-            const [texture, setTexture] = useState(() => createPlaceholderTexture('wall', level));
-            useEffect(() => {
-                generateGameTexture(level, 'wall').then(url => {
-                    if (url) new THREE.TextureLoader().load(url, t => { t.magFilter = THREE.NearestFilter; setTexture(t); });
-                });
-            }, [level]);
-            
-            const wallGeom = useMemo(() => new THREE.BoxGeometry(CELL_SIZE, CELL_SIZE, CELL_SIZE), []);
-            const wallMat = useMemo(() => new THREE.MeshStandardMaterial({ map: texture }), [texture]);
-
-            // Otimização: InstancedMesh seria melhor, mas Group com array funciona para mapas pequenos
-            const parts = useMemo(() => {
-                const arr = [];
-                maze.grid.forEach((row, z) => row.forEach((cell, x) => {
-                    if (cell === 1) arr.push(<mesh key={`${x}-${z}`} position={[x*CELL_SIZE, 0, z*CELL_SIZE]} geometry={wallGeom} material={wallMat} />);
-                }));
-                return arr;
-            }, [maze, wallGeom, wallMat]);
-            
-            return <group>{parts}</group>;
-        };
-
-        const Floor = ({ width, height, level }) => {
-            const [texture, setTexture] = useState(() => createPlaceholderTexture('floor', level));
-            useEffect(() => {
-                generateGameTexture(level, 'floor').then(url => {
-                    if (url) new THREE.TextureLoader().load(url, t => { 
-                        t.magFilter = THREE.NearestFilter; t.wrapS = t.wrapT = THREE.RepeatWrapping; 
-                        t.repeat.set(width, height); setTexture(t); 
-                    });
-                });
-            }, [level]);
             return (
-                <mesh rotation={[-Math.PI/2, 0, 0]} position={[width/2 * CELL_SIZE - CELL_SIZE/2, -CELL_SIZE/2, height/2 * CELL_SIZE - CELL_SIZE/2]}>
-                    <planeGeometry args={[width * CELL_SIZE, height * CELL_SIZE]} />
-                    <meshStandardMaterial map={texture} />
+                <mesh ref={mesh} position={[0, 0.5, 0]}>
+                    <boxGeometry args={[1, 1, 1]} />
+                    <meshStandardMaterial 
+                        emissive="#00f2ff" 
+                        emissiveIntensity={2} 
+                        color="#00f2ff" 
+                    />
+                    <pointLight color="#00f2ff" intensity={1} distance={5} />
                 </mesh>
             );
-        };
+        }
 
-        const Player = ({ position, velocityRef, powerUpTime, hitTime }) => {
-            const ref = useRef();
-            useFrame((state) => {
-                if (ref.current && velocityRef.current.length() > 0.1) {
-                    ref.current.rotation.y = Math.atan2(velocityRef.current.x, velocityRef.current.z);
+        function Obstacle({ position, onHit }) {
+            const mesh = useRef();
+            
+            useFrame(() => {
+                if (mesh.current) {
+                    mesh.current.position.z += OBSTACLE_SPEED;
+                    if (mesh.current.position.z > 5) {
+                        onHit(mesh.current.id);
+                    }
                 }
             });
-            const color = hitTime > 0 ? (Math.floor(Date.now()/100)%2 ? "#ff0000":"#f6e05e") : (powerUpTime > 0 ? "#3b82f6" : "#f6e05e");
+
             return (
-                <group ref={ref} position={position}>
-                    <mesh castShadow><sphereGeometry args={[0.65]} /><meshStandardMaterial color={color} /></mesh>
-                    <mesh position={[0.25, 0.2, 0.4]}><sphereGeometry args={[0.12]} /><meshBasicMaterial color="black" /></mesh>
-                    <mesh position={[-0.25, 0.2, 0.4]}><sphereGeometry args={[0.12]} /><meshBasicMaterial color="black" /></mesh>
+                <mesh ref={mesh} position={position}>
+                    <boxGeometry args={[1.5, 1.5, 1.5]} />
+                    <meshStandardMaterial 
+                        emissive="#ff0055" 
+                        emissiveIntensity={1.5} 
+                        color="#ff0055" 
+                    />
+                </mesh>
+            );
+        }
+
+        function Road() {
+            return (
+                <group>
+                    <gridHelper args={[100, 50, 0x444444, 0x222222]} position={[0, 0, 0]} />
+                    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.1, 0]}>
+                        <planeGeometry args={[10, 1000]} />
+                        <meshStandardMaterial color="#050505" />
+                    </mesh>
                 </group>
             );
-        };
+        }
 
-        const GameController = ({ maze, onCoinCollect, onMonsterHit, onLevelComplete, monsterCount, monsterSpeed, paused, dpadRef }) => {
-            const { camera } = useThree();
-            const playerPos = useRef(new THREE.Vector3(maze.start.x * CELL_SIZE, 0, maze.start.z * CELL_SIZE));
-            const playerVel = useRef(new THREE.Vector3(0, 0, 0));
-            const keys = useRef({});
-            const coinsRef = useRef([]);
-            const monstersRef = useRef([]);
-            
-            // Estado para renderização (atualizado via useFrame)
-            // OBS: Atualizar state no useFrame é pesado, mas funcional para este tamanho de jogo
-            const [renderData, setRenderData] = useState({ monsters: [], coins: [], power: 0, hit: 0 });
-            const powerUpTimer = useRef(0);
-            const hitTimer = useRef(0);
+        function Game({ gameState, setGameState, onGameEnd, score, setScore }) {
+            const [playerPosition, setPlayerPosition] = useState({ x: 0 });
+            const [obstacles, setObstacles] = useState([]);
+            const frameCount = useRef(0);
+            const scoreRef = useRef(0);
 
+            // Controle de entrada
             useEffect(() => {
-                const kD = (e) => keys.current[e.key.toLowerCase()] = true;
-                const kU = (e) => keys.current[e.key.toLowerCase()] = false;
-                window.addEventListener('keydown', kD); window.addEventListener('keyup', kU);
-                
-                // Init Entities
-                const cp = getEntityPositions(maze, 10);
-                coinsRef.current = cp.map((p, i) => ({ id: i, x: p.x * CELL_SIZE, z: p.z * CELL_SIZE, active: true }));
-                const mp = getEntityPositions(maze, monsterCount);
-                monstersRef.current = mp.map((p, i) => ({ id: i, x: p.x * CELL_SIZE, z: p.z * CELL_SIZE, dx: Math.random()-0.5, dz: Math.random()-0.5, speed: monsterSpeed }));
-                playerPos.current.set(maze.start.x * CELL_SIZE, 0, maze.start.z * CELL_SIZE);
-                
-                return () => { window.removeEventListener('keydown', kD); window.removeEventListener('keyup', kU); };
-            }, [maze, monsterCount]);
-
-            useFrame((state, delta) => {
-                if (paused) return;
-                if (powerUpTimer.current > 0) powerUpTimer.current -= delta;
-                if (hitTimer.current > 0) hitTimer.current -= delta;
-
-                // Input Logic
-                const input = new THREE.Vector3(0, 0, 0);
-                if (keys.current['w'] || keys.current['arrowup'] || dpadRef.current.up) input.z -= 1;
-                if (keys.current['s'] || keys.current['arrowdown'] || dpadRef.current.down) input.z += 1;
-                if (keys.current['a'] || keys.current['arrowleft'] || dpadRef.current.left) input.x -= 1;
-                if (keys.current['d'] || keys.current['arrowright'] || dpadRef.current.right) input.x += 1;
-
-                if (input.lengthSq() > 0) input.normalize();
-                const speed = powerUpTimer.current > 0 ? 14 : 10;
-                playerVel.current.lerp(input.multiplyScalar(speed), 10 * delta);
-
-                // Movement & Collision
-                const nextX = playerPos.current.x + playerVel.current.x * delta;
-                const nextZ = playerPos.current.z + playerVel.current.z * delta;
-                const check = (x, z) => {
-                    const gx = Math.round(x/CELL_SIZE), gz = Math.round(z/CELL_SIZE);
-                    return gx<0 || gx>=maze.width || gz<0 || gz>=maze.height || maze.grid[gz][gx] === 1;
+                const handleKeyDown = (e) => {
+                    if (gameState !== 'PLAYING') return;
+                    if (e.key === 'ArrowLeft' || e.key === 'a') setPlayerPosition(p => ({ x: Math.max(p.x - 2, -4) }));
+                    if (e.key === 'ArrowRight' || e.key === 'd') setPlayerPosition(p => ({ x: Math.min(p.x + 2, 4) }));
                 };
-                if (!check(nextX, playerPos.current.z)) playerPos.current.x = nextX;
-                if (!check(playerPos.current.x, nextZ)) playerPos.current.z = nextZ;
 
-                // Camera Follow
-                camera.position.lerp(new THREE.Vector3(playerPos.current.x, 15, playerPos.current.z + 10), 0.1);
-                camera.lookAt(playerPos.current);
+                const handleMouseMove = (e) => {
+                    if (gameState !== 'PLAYING') return;
+                    const x = (e.clientX / window.innerWidth) * 10 - 5;
+                    setPlayerPosition({ x: Math.max(Math.min(x, 4), -4) });
+                };
 
-                // Win Condition
-                if (playerPos.current.distanceTo(new THREE.Vector3(maze.end.x*CELL_SIZE, 0, maze.end.z*CELL_SIZE)) < 1.2) onLevelComplete();
+                window.addEventListener('keydown', handleKeyDown);
+                window.addEventListener('mousemove', handleMouseMove);
+                return () => {
+                    window.removeEventListener('keydown', handleKeyDown);
+                    window.removeEventListener('mousemove', handleMouseMove);
+                };
+            }, [gameState]);
 
-                // Monsters Logic
-                monstersRef.current.forEach(m => {
-                    const nx = m.x + m.dx * m.speed * delta;
-                    const nz = m.z + m.dz * m.speed * delta;
-                    if (check(nx, nz)) { m.dx = Math.random()-0.5; m.dz = Math.random()-0.5; }
-                    else { m.x = nx; m.z = nz; }
-                    
-                    if (new THREE.Vector3(m.x, 0, m.z).distanceTo(playerPos.current) < 1.1) {
-                        if (powerUpTimer.current > 0) { m.x = -1000; } // Eat monster
-                        else if (hitTimer.current <= 0) { onMonsterHit(); hitTimer.current = HIT_COOLDOWN; }
-                    }
-                });
+            // Reset game state when starting
+            useEffect(() => {
+                if (gameState === 'PLAYING') {
+                    setScore(0);
+                    scoreRef.current = 0;
+                    setObstacles([]);
+                    setPlayerPosition({ x: 0 });
+                    frameCount.current = 0;
+                }
+            }, [gameState]);
 
-                // Coins Logic
-                let collected = false;
-                coinsRef.current.forEach(c => {
-                    if (c.active && new THREE.Vector3(c.x, 0, c.z).distanceTo(playerPos.current) < 1.0) {
-                        c.active = false; collected = true;
-                    }
-                });
-                if(collected) { onCoinCollect(); powerUpTimer.current = POWER_UP_DURATION; }
+            // Game Loop
+            useFrame(() => {
+                if (gameState !== 'PLAYING') return;
 
-                setRenderData({ monsters: [...monstersRef.current], coins: [...coinsRef.current], power: powerUpTimer.current, hit: hitTimer.current });
+                frameCount.current++;
+                scoreRef.current += 1;
+                if (frameCount.current % 10 === 0) {
+                    setScore(Math.floor(scoreRef.current / 10));
+                }
+
+                // Spawn de obstáculos
+                if (frameCount.current % SPAWN_INTERVAL === 0) {
+                    const newX = (Math.random() - 0.5) * 8;
+                    setObstacles(prev => [...prev, { id: Date.now(), x: newX, z: -50 }]);
+                }
             });
+
+            const triggerGameOver = () => {
+                const finalScoreValue = Math.floor(scoreRef.current / 10);
+                setGameState('GAME_OVER');
+                // INTEGRAÇÃO REQUERIDA: Disparo de evento para o pai
+                window.parent.postMessage({ type: 'GAME_OVER', score: finalScoreValue }, '*');
+                onGameEnd(finalScoreValue);
+            };
+
+            const removeObstacle = (id) => {
+                setObstacles(prev => prev.filter(o => o.id !== id));
+            };
 
             return (
                 <>
-                    <directionalLight position={[10, 20, 10]} intensity={1.5} castShadow />
-                    <ambientLight intensity={0.8} />
-                    <Player position={[playerPos.current.x, 0, playerPos.current.z]} velocityRef={playerVel} powerUpTime={renderData.power} hitTime={renderData.hit} />
-                    {renderData.monsters.map(m => (
-                        <group key={m.id} position={[m.x, 0, m.z]}>
-                            <mesh><coneGeometry args={[0.6, 1.2, 8]} /><meshStandardMaterial color="#f687b3" /></mesh>
-                        </group>
+                    <Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade speed={1} />
+                    <ambientLight intensity={0.5} />
+                    <pointLight position={[10, 10, 10]} intensity={1} />
+                    
+                    <Road />
+                    
+                    <Player position={playerPosition} />
+
+                    {obstacles.map(obs => (
+                        <Obstacle 
+                            key={obs.id} 
+                            position={[obs.x, 0.75, obs.z]} 
+                            onHit={(id) => {
+                                // Checa colisão quando o obstáculo passa pelo player (z=0)
+                                if (Math.abs(obs.x - playerPosition.x) < 1.3) {
+                                    triggerGameOver();
+                                }
+                                removeObstacle(id);
+                            }}
+                        />
                     ))}
-                    {renderData.coins.map(c => c.active && (
-                        <group key={c.id} position={[c.x, 0.5, c.z]}>
-                            <mesh rotation={[Math.PI/2, 0, 0]}><cylinderGeometry args={[0.4, 0.4, 0.1, 32]} /><meshStandardMaterial color="gold" /></mesh>
-                        </group>
-                    ))}
-                    <group position={[maze.end.x * CELL_SIZE, 0, maze.end.z * CELL_SIZE]}>
-                        <mesh><torusKnotGeometry args={[0.5, 0.2]} /><meshStandardMaterial color="#48bb78" /></mesh>
-                        <Text position={[0, 1.5, 0]} fontSize={0.5} color="#48bb78">FIM</Text>
-                    </group>
+
+                    <fog attach="fog" args={['#050505', 10, 45]} />
                 </>
             );
-        };
+        }
 
-        // --- MAIN APP ---
         function App() {
-            const [gameState, setGameState] = useState(GameState.MENU);
-            const [level, setLevel] = useState(1);
+            const [gameState, setGameState] = useState('START');
             const [score, setScore] = useState(0);
-            const [lives, setLives] = useState(INITIAL_LIVES);
-            const [maze, setMaze] = useState(null);
-            const [levelInfo, setLevelInfo] = useState({ title: "Mundo Colorido", wisdom: "Divirta-se!" });
-            const [gameOverMsg, setGameOverMsg] = useState("");
-            const [isLoading, setIsLoading] = useState(false);
-            const dpadRef = useRef({ up: false, down: false, left: false, right: false });
+            const [finalScore, setFinalScore] = useState(0);
 
-            const startLevel = async (lvl) => {
-                setIsLoading(true); setGameState(GameState.LEVEL_TRANSITION);
-                const size = BASE_SIZE + (lvl * 2);
-                setMaze(generateMaze(size, size));
-                const info = await generateLevelFlavor(lvl);
-                setLevelInfo(info); setIsLoading(false);
+            const handleGameEnd = (s) => {
+                setFinalScore(s);
             };
-
-            const onGameOver = async (finalScore) => {
-                setGameState(GameState.GAME_OVER);
-                const msg = await generateGameOverMessage(finalScore, level);
-                setGameOverMsg(msg);
-                window.parent.postMessage({ type: 'GAME_OVER', score: finalScore }, '*');
-            };
-
-            const handleDeath = () => { if (lives > 1) setLives(l => l - 1); else onGameOver(score); };
 
             return (
-                <div className="w-full h-full relative">
-                    {gameState === GameState.MENU && (
-                        <div className="absolute inset-0 flex items-center justify-center z-50 bg-black/80">
-                            <div className="bg-white/10 p-12 rounded-3xl backdrop-blur text-center border border-white/20">
-                                <h1 className="text-5xl font-black mb-4 text-white">MAZE 3D</h1>
-                                <button onClick={() => { setScore(0); setLives(INITIAL_LIVES); startLevel(1); }} className="bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 px-12 rounded-xl text-xl">JOGAR</button>
+                <div style={{ width: '100%', height: '100%' }}>
+                    <Canvas camera={{ position: [0, 5, 10], fov: 60 }}>
+                        <Game 
+                            gameState={gameState} 
+                            setGameState={setGameState} 
+                            onGameEnd={handleGameEnd}
+                            score={score}
+                            setScore={setScore}
+                        />
+                    </Canvas>
+
+                    <div className="ui-overlay">
+                        {gameState === 'START' && (
+                            <div className="menu-card">
+                                <h1>NEON RUNNER</h1>
+                                <p>Use A/D ou Mouse para desviar dos cubos vermelhos</p>
+                                <button onClick={() => setGameState('PLAYING')}>Iniciar Jogo</button>
                             </div>
-                        </div>
-                    )}
+                        )}
 
-                    {gameState === GameState.GAME_OVER && (
-                        <div className="absolute inset-0 flex items-center justify-center z-50 bg-black/90 text-white">
-                            <div className="text-center">
-                                <h2 className="text-5xl font-black mb-4 text-red-500">GAME OVER</h2>
-                                <p className="text-3xl mb-4">Score: {score}</p>
-                                <p className="italic text-gray-400 mb-8">{gameOverMsg}</p>
-                                <button onClick={() => setGameState(GameState.MENU)} className="bg-white text-black font-bold py-3 px-8 rounded">MENU</button>
+                        {gameState === 'GAME_OVER' && (
+                            <div className="menu-card">
+                                <h1 style={{ color: '#ff0055' }}>FIM DE JOGO</h1>
+                                <p>Sua pontuação final:</p>
+                                <h2 style={{ fontSize: '40px', margin: '10px 0' }}>{finalScore}</h2>
+                                <button onClick={() => setGameState('PLAYING')}>Tentar Novamente</button>
                             </div>
-                        </div>
-                    )}
+                        )}
 
-                    {(gameState === GameState.PLAYING || gameState === GameState.LEVEL_TRANSITION) && (
-                        <>
-                            <div className="absolute top-0 left-0 w-full p-4 flex justify-between z-10 pointer-events-none text-white">
-                                <div className="flex gap-4">
-                                    <div className="bg-black/50 px-4 py-2 rounded flex items-center gap-2"><Star size={20} className="text-yellow-400"/> <span className="font-bold">{score}</span></div>
-                                    <div className="bg-black/50 px-4 py-2 rounded flex items-center gap-2"><Heart size={20} className="text-red-500"/> <span className="font-bold">{lives}</span></div>
-                                </div>
-                                <div className="bg-black/50 px-4 py-2 rounded font-bold">Fase {level}</div>
+                        {gameState === 'PLAYING' && (
+                            <div className="score-board">
+                                SCORE: {score}
                             </div>
-
-                            {isLoading && (
-                                <div className="absolute inset-0 bg-black/80 flex items-center justify-center z-50 text-white text-center">
-                                    <div>
-                                        <RefreshCw size={50} className="mx-auto mb-4 animate-spin text-blue-400" />
-                                        <h2 className="text-3xl font-bold">{levelInfo.title}</h2>
-                                        <button onClick={() => setGameState(GameState.PLAYING)} className="mt-6 bg-blue-500 px-8 py-3 rounded font-bold">START</button>
-                                    </div>
-                                </div>
-                            )}
-
-                            {gameState === GameState.PLAYING && (
-                                <div className="d-pad">
-                                    <button className="d-btn btn-up" onTouchStart={(e)=>{e.preventDefault(); dpadRef.current.up=true}} onTouchEnd={(e)=>{e.preventDefault(); dpadRef.current.up=false}} onMouseDown={()=>dpadRef.current.up=true} onMouseUp={()=>dpadRef.current.up=false}><ArrowUp /></button>
-                                    <button className="d-btn btn-left" onTouchStart={(e)=>{e.preventDefault(); dpadRef.current.left=true}} onTouchEnd={(e)=>{e.preventDefault(); dpadRef.current.left=false}} onMouseDown={()=>dpadRef.current.left=true} onMouseUp={()=>dpadRef.current.left=false}><ArrowLeft /></button>
-                                    <button className="d-btn btn-right" onTouchStart={(e)=>{e.preventDefault(); dpadRef.current.right=true}} onTouchEnd={(e)=>{e.preventDefault(); dpadRef.current.right=false}} onMouseDown={()=>dpadRef.current.right=true} onMouseUp={()=>dpadRef.current.right=false}><ArrowRight /></button>
-                                    <button className="d-btn btn-down" onTouchStart={(e)=>{e.preventDefault(); dpadRef.current.down=true}} onTouchEnd={(e)=>{e.preventDefault(); dpadRef.current.down=false}} onMouseDown={()=>dpadRef.current.down=true} onMouseUp={()=>dpadRef.current.down=false}><ArrowDown /></button>
-                                </div>
-                            )}
-
-                            {maze && (
-                                <Canvas shadows camera={{ fov: 50 }}>
-                                    <color attach="background" args={['#111']} />
-                                    <Walls maze={maze} level={level} />
-                                    <Floor width={maze.width} height={maze.height} level={level} />
-                                    <GameController 
-                                        maze={maze} 
-                                        paused={gameState !== GameState.PLAYING}
-                                        monsterCount={Math.floor(level * 1.5) + 2}
-                                        monsterSpeed={3 + (level * 0.5)}
-                                        onCoinCollect={() => setScore(s => s + POINTS_PER_COIN)}
-                                        onMonsterHit={handleDeath}
-                                        onLevelComplete={() => { setScore(s => s + 1000); setLevel(l => l+1); startLevel(level+1); }}
-                                        dpadRef={dpadRef}
-                                    />
-                                </Canvas>
-                            )}
-                        </>
-                    )}
+                        )}
+                    </div>
                 </div>
             );
         }
@@ -446,5 +319,7 @@
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<App />);
     </script>
+    
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 </body>
 </html>
