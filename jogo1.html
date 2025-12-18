@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -11,63 +10,38 @@
         body { margin: 0; overflow: hidden; background-color: #111; user-select: none; touch-action: none; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         #root { width: 100vw; height: 100vh; position: relative; }
         
+        /* Controles Mobile */
         .d-pad {
-            position: absolute;
-            bottom: 30px;
-            right: 30px;
-            display: grid;
-            grid-template-areas: ". up ." "left . right" ". down .";
-            gap: 12px;
-            z-index: 50;
+            position: absolute; bottom: 30px; right: 30px;
+            display: grid; grid-template-areas: ". up ." "left . right" ". down .";
+            gap: 12px; z-index: 50;
         }
         .d-btn {
-            width: 65px;
-            height: 65px;
-            background: rgba(255,255,255,0.15);
-            backdrop-filter: blur(8px);
-            border-radius: 15px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 28px;
-            border: 2px solid rgba(255,255,255,0.25);
-            pointer-events: auto;
-            transition: all 0.1s ease;
+            width: 65px; height: 65px;
+            background: rgba(255,255,255,0.15); backdrop-filter: blur(8px);
+            border-radius: 15px; display: flex; align-items: center; justify-content: center;
+            color: white; font-size: 28px; border: 2px solid rgba(255,255,255,0.25);
+            pointer-events: auto; transition: all 0.1s ease;
         }
-        .d-btn:active {
-            background: rgba(255,255,255,0.4);
-            transform: scale(0.9);
-        }
-        .btn-up { grid-area: up; }
-        .btn-down { grid-area: down; }
-        .btn-left { grid-area: left; }
-        .btn-right { grid-area: right; }
-
-        /* Animation for HUD elements */
-        .hud-pulse { animation: pulse 2s infinite; }
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-            100% { transform: scale(1); }
-        }
+        .d-btn:active { background: rgba(255,255,255,0.4); transform: scale(0.9); }
+        .btn-up { grid-area: up; } .btn-down { grid-area: down; }
+        .btn-left { grid-area: left; } .btn-right { grid-area: right; }
     </style>
 
+    <!-- IMPORTMAP CORRIGIDO (SEM REACT 19 PARA EVITAR CONFLITO) -->
     <script type="importmap">
-{
-  "imports": {
-    "react": "https://esm.sh/react@18.2.0",
-    "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
-    "three": "https://esm.sh/three@0.160.0",
-    "@react-three/fiber": "https://esm.sh/@react-three/fiber@8.15.14?external=react,react-dom,three",
-    "@react-three/drei": "https://esm.sh/@react-three/drei@9.99.0?external=react,react-dom,three,@react-three/fiber",
-    "@google/genai": "https://esm.sh/@google/genai@^1.33.0",
-    "lucide-react": "https://esm.sh/lucide-react@0.294.0",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
-    "react/": "https://esm.sh/react@^19.2.3/"
-  }
-}
-</script>
+    {
+      "imports": {
+        "react": "https://esm.sh/react@18.2.0",
+        "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
+        "three": "https://esm.sh/three@0.160.0",
+        "@react-three/fiber": "https://esm.sh/@react-three/fiber@8.15.14?external=react,react-dom,three",
+        "@react-three/drei": "https://esm.sh/@react-three/drei@9.99.0?external=react,react-dom,three,@react-three/fiber",
+        "@google/genai": "https://esm.sh/@google/genai@^1.33.0",
+        "lucide-react": "https://esm.sh/lucide-react@0.294.0"
+      }
+    }
+    </script>
 </head>
 <body>
     <div id="root"></div>
@@ -77,11 +51,11 @@
         import ReactDOM from 'react-dom/client';
         import * as THREE from 'three';
         import { Canvas, useFrame, useThree } from '@react-three/fiber';
-        import { Text, Float } from '@react-three/drei';
+        import { Text } from '@react-three/drei';
         import { GoogleGenAI } from "@google/genai";
         import { Heart, Disc, Play, RefreshCw, Star, Timer, Skull, ArrowUp, ArrowDown, ArrowLeft, ArrowRight } from 'lucide-react';
 
-        // --- CONSTANTS & TYPES ---
+        // --- CONSTANTES ---
         const CELL_SIZE = 2;
         const POWER_UP_DURATION = 3.0;
         const HIT_COOLDOWN = 1.5;
@@ -92,31 +66,23 @@
         const POINTS_PER_COIN = 50;
         const BG_IMAGE_URL = "https://images.unsplash.com/photo-1513151233558-d860c5398176?q=80&w=2672&auto=format&fit=crop";
 
-        const GameState = {
-            MENU: 'MENU',
-            PLAYING: 'PLAYING',
-            LEVEL_TRANSITION: 'LEVEL_TRANSITION',
-            GAME_OVER: 'GAME_OVER'
-        };
+        // --- TRATAMENTO SEGURO DA API KEY ---
+        // Verifica se existe no ambiente (Node) ou usa string vazia para evitar crash no navegador
+        const SAFE_API_KEY = (typeof process !== 'undefined' && process.env && process.env.API_KEY) ? process.env.API_KEY : '';
+        const ai = SAFE_API_KEY ? new GoogleGenAI({ apiKey: SAFE_API_KEY }) : null;
 
-        // --- UTILS: MAZE GENERATOR ---
+        const GameState = { MENU: 'MENU', PLAYING: 'PLAYING', LEVEL_TRANSITION: 'LEVEL_TRANSITION', GAME_OVER: 'GAME_OVER' };
+
+        // --- GERADOR DE LABIRINTO ---
         const generateMaze = (width, height) => {
             const w = width % 2 === 0 ? width + 1 : width;
             const h = height % 2 === 0 ? height + 1 : height;
             const grid = Array(h).fill(null).map(() => Array(w).fill(1));
             const directions = [{dx:0, dy:-2}, {dx:2, dy:0}, {dx:0, dy:2}, {dx:-2, dy:0}];
             
-            const shuffle = (array) => {
-                for (let i = array.length - 1; i > 0; i--) {
-                    const j = Math.floor(Math.random() * (i + 1));
-                    [array[i], array[j]] = [array[j], array[i]];
-                }
-                return array;
-            };
-
             const carve = (cx, cy) => {
                 grid[cy][cx] = 0;
-                const dirs = shuffle([...directions]);
+                const dirs = directions.sort(() => Math.random() - 0.5);
                 for (const {dx, dy} of dirs) {
                     const nx = cx + dx, ny = cy + dy;
                     if (nx > 0 && nx < w - 1 && ny > 0 && ny < h - 1 && grid[ny][nx] === 1) {
@@ -126,58 +92,40 @@
                 }
             };
             carve(1, 1);
-
-            // Braiding
+            // Braiding (remove alguns becos sem saída)
             for (let y = 1; y < h - 1; y += 2) {
                 for (let x = 1; x < w - 1; x += 2) {
                     if (grid[y][x] !== 0) continue;
-                    const neighbors = [];
-                    if (grid[y - 1][x] === 1) neighbors.push({ x, y: y - 1 });
-                    if (grid[y + 1][x] === 1) neighbors.push({ x, y: y + 1 });
-                    if (grid[y][x + 1] === 1) neighbors.push({ x: x + 1, y });
-                    if (grid[y][x - 1] === 1) neighbors.push({ x: x - 1, y });
-                    if (neighbors.length === 3 && !(x === 1 && y === 1) && Math.random() < 0.4) {
-                        const valid = neighbors.filter(n => n.x > 0 && n.x < w - 1 && n.y > 0 && n.y < h - 1);
-                        if (valid.length > 0) {
-                            const wtr = valid[Math.floor(Math.random() * valid.length)];
-                            grid[wtr.y][wtr.x] = 0;
-                        }
-                    }
+                    if (Math.random() < 0.2 && x < w-2) grid[y][x+1] = 0;
                 }
             }
-
             grid[1][1] = 2; // Start
             let ex = w - 2, ey = h - 2;
             while(grid[ey][ex] === 1) ex--;
             grid[ey][ex] = 3; // End
-            grid[ey][ex-1] = 0; grid[ey-1][ex] = 0;
-
             return { grid, width: w, height: h, start: { x: 1, z: 1 }, end: { x: ex, z: ey } };
         };
 
-        const getEntityPositions = (maze, count, minDistFromStart = 3) => {
-            const pos = [];
-            let attempts = 0;
-            while(pos.length < count && attempts < 1000) {
+        const getEntityPositions = (maze, count) => {
+            const pos = []; let i = 0;
+            while(pos.length < count && i < 1000) {
                 const x = Math.floor(Math.random() * maze.width);
                 const z = Math.floor(Math.random() * maze.height);
-                if (maze.grid[z][x] === 0 && (Math.abs(x - maze.start.x) > minDistFromStart || Math.abs(z - maze.start.z) > minDistFromStart)) {
+                if (maze.grid[z][x] === 0 && (Math.abs(x - maze.start.x) > 3 || Math.abs(z - maze.start.z) > 3)) {
                     if (!pos.some(p => p.x === x && p.z === z)) pos.push({ x, z });
                 }
-                attempts++;
+                i++;
             }
             return pos;
         };
 
-        // --- SERVICES: GEMINI API ---
-        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-
+        // --- SERVIÇOS IA (COM FALLBACK SEGURO) ---
         const generateLevelFlavor = async (level) => {
-            if (!process.env.API_KEY) return { title: `Fase ${level}`, wisdom: "Vamos nessa!" };
+            if (!ai) return { title: `Fase ${level}`, wisdom: "Vamos nessa!" };
             try {
                 const response = await ai.models.generateContent({
-                    model: 'gemini-3-flash-preview',
-                    contents: `Gere um título divertido e energético (estilo jogo Arcade) e uma frase curta de encorajamento para a Fase ${level} de um jogo de labirinto divertido. Responda estritamente em JSON e EM PORTUGUÊS.`,
+                    model: 'gemini-2.5-flash',
+                    contents: `Gere um título divertido e frase curta para Fase ${level} de jogo labirinto. JSON PT-BR.`,
                     config: { responseMimeType: "application/json" }
                 });
                 return JSON.parse(response.text);
@@ -185,21 +133,19 @@
         };
 
         const generateGameOverMessage = async (score, level) => {
-            if (!process.env.API_KEY) return "Foi quase! Tente de novo.";
+            if (!ai) return "Foi quase! Tente de novo.";
             try {
                 const response = await ai.models.generateContent({
-                    model: 'gemini-3-flash-preview',
-                    contents: `O jogador perdeu na Fase ${level} com ${score} pontos. Escreva uma mensagem de Game Over engraçada e encorajadora (1 frase curta) em PORTUGUÊS.`,
+                    model: 'gemini-2.5-flash',
+                    contents: `Frase curta e engraçada de Game Over. Score: ${score}. PT-BR.`,
                 });
-                return response.text || "Ah não! Tente mais uma vez.";
-            } catch (e) { return "Ah não! Tente mais uma vez."; }
+                return response.text;
+            } catch (e) { return "Tente novamente!"; }
         };
 
         const generateGameTexture = async (level, type) => {
-            if (!process.env.API_KEY) return null;
-            let prompt = type === 'wall' 
-                ? `4x4 pixel art texture, very simple color block, minimalist toy wall, seamless, ultra low resolution.` 
-                : `4x4 pixel art style texture, seamless checkerboard floor, minimalist arcade style, very low resolution.`;
+            if (!ai) return null;
+            let prompt = type === 'wall' ? "simple pixel art wall texture block" : "simple pixel art floor texture checkerboard";
             try {
                 const response = await ai.models.generateContent({
                     model: 'gemini-2.5-flash-image',
@@ -213,49 +159,39 @@
             return null;
         };
 
-        // --- COMPONENTS: 3D SCENE ---
-
+        // --- COMPONENTES 3D ---
         const createPlaceholderTexture = (type, level) => {
-            const canvas = document.createElement('canvas');
-            canvas.width = 4; canvas.height = 4;
+            const canvas = document.createElement('canvas'); canvas.width = 32; canvas.height = 32;
             const ctx = canvas.getContext('2d');
-            if (!ctx) return null;
-            if (type === 'wall') {
-                const colors = ['#4299e1', '#ed64a6', '#48bb78', '#ecc94b', '#9f7aea'];
-                ctx.fillStyle = colors[(level - 1) % colors.length];
-                ctx.fillRect(0, 0, 4, 4);
-                ctx.fillStyle = 'rgba(255,255,255,0.4)'; ctx.fillRect(0, 0, 4, 1); ctx.fillRect(0, 0, 1, 4);
-            } else {
-                ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, 4, 4);
-                ctx.fillStyle = '#e2e8f0'; ctx.fillRect(0, 0, 2, 2); ctx.fillRect(2, 2, 2, 2);
-            }
-            const tex = new THREE.CanvasTexture(canvas);
-            tex.minFilter = tex.magFilter = THREE.NearestFilter;
-            tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-            return tex;
+            ctx.fillStyle = type === 'wall' ? '#475569' : '#e2e8f0';
+            ctx.fillRect(0,0,32,32);
+            if(type === 'wall') { ctx.fillStyle = 'rgba(255,255,255,0.1)'; ctx.fillRect(0,0,32,2); }
+            else { ctx.fillStyle = '#cbd5e1'; ctx.fillRect(0,0,16,16); ctx.fillRect(16,16,16,16); }
+            const t = new THREE.CanvasTexture(canvas);
+            t.magFilter = THREE.NearestFilter;
+            return t;
         };
 
         const Walls = ({ maze, level }) => {
             const [texture, setTexture] = useState(() => createPlaceholderTexture('wall', level));
             useEffect(() => {
                 generateGameTexture(level, 'wall').then(url => {
-                    if (url) new THREE.TextureLoader().load(url, t => {
-                        t.minFilter = t.magFilter = THREE.NearestFilter;
-                        t.wrapS = t.wrapT = THREE.RepeatWrapping;
-                        setTexture(t);
-                    });
+                    if (url) new THREE.TextureLoader().load(url, t => { t.magFilter = THREE.NearestFilter; setTexture(t); });
                 });
             }, [level]);
-            const material = useMemo(() => new THREE.MeshStandardMaterial({ map: texture, roughness: 0.2 }), [texture]);
+            
+            const wallGeom = useMemo(() => new THREE.BoxGeometry(CELL_SIZE, CELL_SIZE, CELL_SIZE), []);
+            const wallMat = useMemo(() => new THREE.MeshStandardMaterial({ map: texture }), [texture]);
+
+            // Otimização: InstancedMesh seria melhor, mas Group com array funciona para mapas pequenos
             const parts = useMemo(() => {
                 const arr = [];
                 maze.grid.forEach((row, z) => row.forEach((cell, x) => {
-                    if (cell === 1) {
-                        arr.push(<mesh key={`${x}-${z}`} position={[x*CELL_SIZE, 0, z*CELL_SIZE]} material={material}><boxGeometry args={[CELL_SIZE, CELL_SIZE, CELL_SIZE]} /></mesh>);
-                    }
+                    if (cell === 1) arr.push(<mesh key={`${x}-${z}`} position={[x*CELL_SIZE, 0, z*CELL_SIZE]} geometry={wallGeom} material={wallMat} />);
                 }));
                 return arr;
-            }, [maze, material]);
+            }, [maze, wallGeom, wallMat]);
+            
             return <group>{parts}</group>;
         };
 
@@ -263,14 +199,12 @@
             const [texture, setTexture] = useState(() => createPlaceholderTexture('floor', level));
             useEffect(() => {
                 generateGameTexture(level, 'floor').then(url => {
-                    if (url) new THREE.TextureLoader().load(url, t => {
-                        t.minFilter = t.magFilter = THREE.NearestFilter;
-                        t.wrapS = t.wrapT = THREE.RepeatWrapping;
-                        t.repeat.set(width, height);
-                        setTexture(t);
+                    if (url) new THREE.TextureLoader().load(url, t => { 
+                        t.magFilter = THREE.NearestFilter; t.wrapS = t.wrapT = THREE.RepeatWrapping; 
+                        t.repeat.set(width, height); setTexture(t); 
                     });
                 });
-            }, [level, width, height]);
+            }, [level]);
             return (
                 <mesh rotation={[-Math.PI/2, 0, 0]} position={[width/2 * CELL_SIZE - CELL_SIZE/2, -CELL_SIZE/2, height/2 * CELL_SIZE - CELL_SIZE/2]}>
                     <planeGeometry args={[width * CELL_SIZE, height * CELL_SIZE]} />
@@ -280,94 +214,68 @@
         };
 
         const Player = ({ position, velocityRef, powerUpTime, hitTime }) => {
-            const groupRef = useRef();
-            const mouthRef = useRef();
+            const ref = useRef();
             useFrame((state) => {
-                if (groupRef.current && velocityRef.current.length() > 0.1) {
-                    const angle = Math.atan2(velocityRef.current.x, velocityRef.current.z);
-                    groupRef.current.rotation.y = THREE.MathUtils.lerp(groupRef.current.rotation.y, angle, 0.2);
+                if (ref.current && velocityRef.current.length() > 0.1) {
+                    ref.current.rotation.y = Math.atan2(velocityRef.current.x, velocityRef.current.z);
                 }
-                if (mouthRef.current) mouthRef.current.scale.y = 0.5 + Math.sin(state.clock.elapsedTime * 15) * 0.4;
             });
+            const color = hitTime > 0 ? (Math.floor(Date.now()/100)%2 ? "#ff0000":"#f6e05e") : (powerUpTime > 0 ? "#3b82f6" : "#f6e05e");
             return (
-                <group ref={groupRef} position={position}>
-                    <mesh castShadow>
-                        <sphereGeometry args={[0.65, 32, 32]} />
-                        <meshStandardMaterial color={hitTime > 0 ? (Math.floor(Date.now()/100)%2 ? "#ff0000":"#f6e05e") : (powerUpTime > 0 ? "#3b82f6" : "#f6e05e")} />
-                    </mesh>
+                <group ref={ref} position={position}>
+                    <mesh castShadow><sphereGeometry args={[0.65]} /><meshStandardMaterial color={color} /></mesh>
                     <mesh position={[0.25, 0.2, 0.4]}><sphereGeometry args={[0.12]} /><meshBasicMaterial color="black" /></mesh>
                     <mesh position={[-0.25, 0.2, 0.4]}><sphereGeometry args={[0.12]} /><meshBasicMaterial color="black" /></mesh>
-                    <mesh ref={mouthRef} position={[0, -0.2, 0.5]}><sphereGeometry args={[0.15]} /><meshBasicMaterial color="black" /></mesh>
                 </group>
             );
         };
 
-        const GameController = ({ maze, onCoinCollect, onMonsterHit, onSawHit, onLevelComplete, monsterCount, monsterSpeed, sawCount, paused, dpadRef }) => {
-            const { camera, raycaster, mouse, size } = useThree();
+        const GameController = ({ maze, onCoinCollect, onMonsterHit, onLevelComplete, monsterCount, monsterSpeed, paused, dpadRef }) => {
+            const { camera } = useThree();
             const playerPos = useRef(new THREE.Vector3(maze.start.x * CELL_SIZE, 0, maze.start.z * CELL_SIZE));
             const playerVel = useRef(new THREE.Vector3(0, 0, 0));
             const keys = useRef({});
             const coinsRef = useRef([]);
             const monstersRef = useRef([]);
-            const sawsRef = useRef([]);
+            
+            // Estado para renderização (atualizado via useFrame)
+            // OBS: Atualizar state no useFrame é pesado, mas funcional para este tamanho de jogo
+            const [renderData, setRenderData] = useState({ monsters: [], coins: [], power: 0, hit: 0 });
             const powerUpTimer = useRef(0);
             const hitTimer = useRef(0);
-            const [renderData, setRenderData] = useState({ monsters: [], saws: [], coins: [], power: 0, hit: 0 });
 
             useEffect(() => {
-                const down = (e) => keys.current[e.key.toLowerCase()] = true;
-                const up = (e) => keys.current[e.key.toLowerCase()] = false;
-                window.addEventListener('keydown', down); window.addEventListener('keyup', up);
-                return () => { window.removeEventListener('keydown', down); window.removeEventListener('keyup', up); };
-            }, []);
-
-            useEffect(() => {
-                const coinPos = getEntityPositions(maze, 10);
-                coinsRef.current = coinPos.map((p, i) => ({ id: i, x: p.x * CELL_SIZE, z: p.z * CELL_SIZE, active: true }));
-                const monsterPos = getEntityPositions(maze, monsterCount, 5);
-                monstersRef.current = monsterPos.map((p, i) => ({ id: i, x: p.x * CELL_SIZE, z: p.z * CELL_SIZE, dx: Math.random()-0.5, dz: Math.random()-0.5, speed: monsterSpeed }));
-                const sawPos = getEntityPositions(maze, sawCount, 4);
-                sawsRef.current = sawPos.map((p, i) => ({ id: i, x: p.x * CELL_SIZE, z: p.z * CELL_SIZE, dx: Math.random()-0.5, dz: Math.random()-0.5, speed: monsterSpeed * 1.5 }));
+                const kD = (e) => keys.current[e.key.toLowerCase()] = true;
+                const kU = (e) => keys.current[e.key.toLowerCase()] = false;
+                window.addEventListener('keydown', kD); window.addEventListener('keyup', kU);
+                
+                // Init Entities
+                const cp = getEntityPositions(maze, 10);
+                coinsRef.current = cp.map((p, i) => ({ id: i, x: p.x * CELL_SIZE, z: p.z * CELL_SIZE, active: true }));
+                const mp = getEntityPositions(maze, monsterCount);
+                monstersRef.current = mp.map((p, i) => ({ id: i, x: p.x * CELL_SIZE, z: p.z * CELL_SIZE, dx: Math.random()-0.5, dz: Math.random()-0.5, speed: monsterSpeed }));
                 playerPos.current.set(maze.start.x * CELL_SIZE, 0, maze.start.z * CELL_SIZE);
-            }, [maze, monsterCount, monsterSpeed, sawCount]);
+                
+                return () => { window.removeEventListener('keydown', kD); window.removeEventListener('keyup', kU); };
+            }, [maze, monsterCount]);
 
             useFrame((state, delta) => {
                 if (paused) return;
                 if (powerUpTimer.current > 0) powerUpTimer.current -= delta;
                 if (hitTimer.current > 0) hitTimer.current -= delta;
 
-                const inputDir = new THREE.Vector3(0, 0, 0);
+                // Input Logic
+                const input = new THREE.Vector3(0, 0, 0);
+                if (keys.current['w'] || keys.current['arrowup'] || dpadRef.current.up) input.z -= 1;
+                if (keys.current['s'] || keys.current['arrowdown'] || dpadRef.current.down) input.z += 1;
+                if (keys.current['a'] || keys.current['arrowleft'] || dpadRef.current.left) input.x -= 1;
+                if (keys.current['d'] || keys.current['arrowright'] || dpadRef.current.right) input.x += 1;
 
-                // Keyboard Input
-                if (keys.current['w'] || keys.current['arrowup']) inputDir.z -= 1;
-                if (keys.current['s'] || keys.current['arrowdown']) inputDir.z += 1;
-                if (keys.current['a'] || keys.current['arrowleft']) inputDir.x -= 1;
-                if (keys.current['d'] || keys.current['arrowright']) inputDir.x += 1;
-
-                // D-Pad Input
-                if (dpadRef.current.up) inputDir.z -= 1;
-                if (dpadRef.current.down) inputDir.z += 1;
-                if (dpadRef.current.left) inputDir.x -= 1;
-                if (dpadRef.current.right) inputDir.x += 1;
-
-                // MOUSE FOLLOWING Logic (Always active if mouse is moving/clicked and no keyboard input)
-                if (inputDir.lengthSq() === 0) {
-                    raycaster.setFromCamera(mouse, camera);
-                    const floorPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
-                    const target = new THREE.Vector3();
-                    if (raycaster.ray.intersectPlane(floorPlane, target)) {
-                        const distToMouse = target.distanceTo(playerPos.current);
-                        if (distToMouse > 0.5) {
-                            inputDir.subVectors(target, playerPos.current).normalize();
-                        }
-                    }
-                }
-
-                if (inputDir.lengthSq() > 0) inputDir.normalize();
+                if (input.lengthSq() > 0) input.normalize();
                 const speed = powerUpTimer.current > 0 ? 14 : 10;
-                playerVel.current.lerp(inputDir.multiplyScalar(speed), 10 * delta);
-                
-                // Collision
+                playerVel.current.lerp(input.multiplyScalar(speed), 10 * delta);
+
+                // Movement & Collision
                 const nextX = playerPos.current.x + playerVel.current.x * delta;
                 const nextZ = playerPos.current.z + playerVel.current.z * delta;
                 const check = (x, z) => {
@@ -377,32 +285,36 @@
                 if (!check(nextX, playerPos.current.z)) playerPos.current.x = nextX;
                 if (!check(playerPos.current.x, nextZ)) playerPos.current.z = nextZ;
 
-                camera.position.lerp(new THREE.Vector3(playerPos.current.x, 8, playerPos.current.z + 6), 0.1);
+                // Camera Follow
+                camera.position.lerp(new THREE.Vector3(playerPos.current.x, 15, playerPos.current.z + 10), 0.1);
                 camera.lookAt(playerPos.current);
 
-                // Win check
+                // Win Condition
                 if (playerPos.current.distanceTo(new THREE.Vector3(maze.end.x*CELL_SIZE, 0, maze.end.z*CELL_SIZE)) < 1.2) onLevelComplete();
 
-                // Monsters
+                // Monsters Logic
                 monstersRef.current.forEach(m => {
-                    const nextMX = m.x + m.dx * m.speed * delta;
-                    const nextMZ = m.z + m.dz * m.speed * delta;
-                    if (check(nextMX, nextMZ)) { m.dx = Math.random()-0.5; m.dz = Math.random()-0.5; }
-                    else { m.x = nextMX; m.z = nextMZ; }
+                    const nx = m.x + m.dx * m.speed * delta;
+                    const nz = m.z + m.dz * m.speed * delta;
+                    if (check(nx, nz)) { m.dx = Math.random()-0.5; m.dz = Math.random()-0.5; }
+                    else { m.x = nx; m.z = nz; }
+                    
                     if (new THREE.Vector3(m.x, 0, m.z).distanceTo(playerPos.current) < 1.1) {
-                        if (powerUpTimer.current > 0) { m.x = -100; m.y = -100; } // "Eaten"
+                        if (powerUpTimer.current > 0) { m.x = -1000; } // Eat monster
                         else if (hitTimer.current <= 0) { onMonsterHit(); hitTimer.current = HIT_COOLDOWN; }
                     }
                 });
 
-                // Coins
+                // Coins Logic
+                let collected = false;
                 coinsRef.current.forEach(c => {
                     if (c.active && new THREE.Vector3(c.x, 0, c.z).distanceTo(playerPos.current) < 1.0) {
-                        c.active = false; onCoinCollect(); powerUpTimer.current = POWER_UP_DURATION;
+                        c.active = false; collected = true;
                     }
                 });
+                if(collected) { onCoinCollect(); powerUpTimer.current = POWER_UP_DURATION; }
 
-                setRenderData({ monsters: [...monstersRef.current], saws: [...sawsRef.current], coins: [...coinsRef.current], power: powerUpTimer.current, hit: hitTimer.current });
+                setRenderData({ monsters: [...monstersRef.current], coins: [...coinsRef.current], power: powerUpTimer.current, hit: hitTimer.current });
             });
 
             return (
@@ -416,12 +328,12 @@
                         </group>
                     ))}
                     {renderData.coins.map(c => c.active && (
-                        <group key={c.id} position={[c.x, Math.sin(Date.now()/200)*0.2, c.z]}>
-                            <mesh rotation={[Math.PI/2, 0, 0]}><cylinderGeometry args={[0.4, 0.4, 0.1, 32]} /><meshStandardMaterial color="gold" metalness={0.8} /></mesh>
+                        <group key={c.id} position={[c.x, 0.5, c.z]}>
+                            <mesh rotation={[Math.PI/2, 0, 0]}><cylinderGeometry args={[0.4, 0.4, 0.1, 32]} /><meshStandardMaterial color="gold" /></mesh>
                         </group>
                     ))}
                     <group position={[maze.end.x * CELL_SIZE, 0, maze.end.z * CELL_SIZE]}>
-                        <mesh><torusKnotGeometry args={[0.5, 0.2]} /><meshStandardMaterial color="#48bb78" emissive="#48bb78" /></mesh>
+                        <mesh><torusKnotGeometry args={[0.5, 0.2]} /><meshStandardMaterial color="#48bb78" /></mesh>
                         <Text position={[0, 1.5, 0]} fontSize={0.5} color="#48bb78">FIM</Text>
                     </group>
                 </>
@@ -429,134 +341,88 @@
         };
 
         // --- MAIN APP ---
-
         function App() {
             const [gameState, setGameState] = useState(GameState.MENU);
             const [level, setLevel] = useState(1);
             const [score, setScore] = useState(0);
             const [lives, setLives] = useState(INITIAL_LIVES);
             const [maze, setMaze] = useState(null);
-            const [timeBonus, setTimeBonus] = useState(MAX_LEVEL_BONUS);
             const [levelInfo, setLevelInfo] = useState({ title: "Mundo Colorido", wisdom: "Divirta-se!" });
             const [gameOverMsg, setGameOverMsg] = useState("");
             const [isLoading, setIsLoading] = useState(false);
             const dpadRef = useRef({ up: false, down: false, left: false, right: false });
 
-            useEffect(() => {
-                let interval;
-                if (gameState === GameState.PLAYING) {
-                    interval = setInterval(() => setTimeBonus(b => Math.max(0, b - BONUS_DECAY)), 1000);
-                }
-                return () => clearInterval(interval);
-            }, [gameState]);
-
             const startLevel = async (lvl) => {
-                setIsLoading(true);
-                setGameState(GameState.LEVEL_TRANSITION);
-                setTimeBonus(MAX_LEVEL_BONUS);
+                setIsLoading(true); setGameState(GameState.LEVEL_TRANSITION);
                 const size = BASE_SIZE + (lvl * 2);
                 setMaze(generateMaze(size, size));
                 const info = await generateLevelFlavor(lvl);
-                setLevelInfo(info);
-                setIsLoading(false);
+                setLevelInfo(info); setIsLoading(false);
             };
 
             const onGameOver = async (finalScore) => {
                 setGameState(GameState.GAME_OVER);
                 const msg = await generateGameOverMessage(finalScore, level);
                 setGameOverMsg(msg);
-                // INTEGRATION: Notify parent
                 window.parent.postMessage({ type: 'GAME_OVER', score: finalScore }, '*');
             };
 
-            const handleDeath = () => {
-                if (lives > 1) setLives(l => l - 1);
-                else onGameOver(score);
-            };
+            const handleDeath = () => { if (lives > 1) setLives(l => l - 1); else onGameOver(score); };
 
             return (
-                <div className="w-full h-full">
+                <div className="w-full h-full relative">
                     {gameState === GameState.MENU && (
-                        <div className="absolute inset-0 flex items-center justify-center z-50">
-                            <img src={BG_IMAGE_URL} className="absolute inset-0 w-full h-full object-cover opacity-50" />
-                            <div className="bg-white/90 p-12 rounded-3xl shadow-2xl text-center backdrop-blur border-4 border-blue-400 z-10">
-                                <Disc size={80} className="mx-auto mb-6 text-blue-500 animate-spin" />
-                                <h1 className="text-6xl font-black mb-4 text-blue-600">MAZE 3D</h1>
-                                <button onClick={() => { setScore(0); setLives(INITIAL_LIVES); startLevel(1); }} className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-4 px-12 rounded-2xl text-2xl transition transform hover:scale-110">INICIAR JOGO</button>
+                        <div className="absolute inset-0 flex items-center justify-center z-50 bg-black/80">
+                            <div className="bg-white/10 p-12 rounded-3xl backdrop-blur text-center border border-white/20">
+                                <h1 className="text-5xl font-black mb-4 text-white">MAZE 3D</h1>
+                                <button onClick={() => { setScore(0); setLives(INITIAL_LIVES); startLevel(1); }} className="bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 px-12 rounded-xl text-xl">JOGAR</button>
                             </div>
                         </div>
                     )}
 
                     {gameState === GameState.GAME_OVER && (
-                        <div className="absolute inset-0 flex items-center justify-center z-50 bg-black/80">
-                            <div className="bg-gray-800 p-12 rounded-3xl shadow-2xl text-center border-4 border-red-500 text-white max-w-sm">
-                                <Skull size={80} className="mx-auto mb-6 text-red-500" />
-                                <h2 className="text-5xl font-black mb-4">GAME OVER</h2>
-                                <p className="text-3xl mb-4 font-bold text-yellow-400">Score: {score}</p>
+                        <div className="absolute inset-0 flex items-center justify-center z-50 bg-black/90 text-white">
+                            <div className="text-center">
+                                <h2 className="text-5xl font-black mb-4 text-red-500">GAME OVER</h2>
+                                <p className="text-3xl mb-4">Score: {score}</p>
                                 <p className="italic text-gray-400 mb-8">{gameOverMsg}</p>
-                                <p className="text-sm text-gray-500 uppercase tracking-widest">Controle pela KN Jogos</p>
+                                <button onClick={() => setGameState(GameState.MENU)} className="bg-white text-black font-bold py-3 px-8 rounded">MENU</button>
                             </div>
                         </div>
                     )}
 
                     {(gameState === GameState.PLAYING || gameState === GameState.LEVEL_TRANSITION) && (
                         <>
-                            <div className="absolute top-0 left-0 w-full p-6 flex justify-between items-start z-10 pointer-events-none">
-                                <div className="space-y-3">
-                                    <div className="bg-white/90 backdrop-blur px-5 py-3 rounded-2xl shadow-lg border-2 border-yellow-400 flex items-center gap-3">
-                                        <Star fill="gold" color="gold" size={24} />
-                                        <span className="text-3xl font-black">{score}</span>
-                                    </div>
-                                    <div className="bg-white/90 backdrop-blur px-5 py-3 rounded-2xl shadow-lg border-2 border-red-400 flex items-center gap-3">
-                                        <Heart fill="red" color="red" size={24} />
-                                        <span className="text-3xl font-black">{lives}</span>
-                                    </div>
+                            <div className="absolute top-0 left-0 w-full p-4 flex justify-between z-10 pointer-events-none text-white">
+                                <div className="flex gap-4">
+                                    <div className="bg-black/50 px-4 py-2 rounded flex items-center gap-2"><Star size={20} className="text-yellow-400"/> <span className="font-bold">{score}</span></div>
+                                    <div className="bg-black/50 px-4 py-2 rounded flex items-center gap-2"><Heart size={20} className="text-red-500"/> <span className="font-bold">{lives}</span></div>
                                 </div>
-                                <div className="bg-white/90 backdrop-blur px-5 py-3 rounded-2xl shadow-lg border-2 border-blue-400 text-center">
-                                    <p className="text-xs font-bold text-gray-400">Fase {level}</p>
-                                    <div className="flex items-center gap-2">
-                                        <Timer className="text-blue-500" />
-                                        <span className="text-3xl font-black">{timeBonus}</span>
-                                    </div>
-                                </div>
+                                <div className="bg-black/50 px-4 py-2 rounded font-bold">Fase {level}</div>
                             </div>
 
                             {isLoading && (
-                                <div className="absolute inset-0 bg-black/70 flex flex-center items-center justify-center z-50 text-white text-center p-6 backdrop-blur">
+                                <div className="absolute inset-0 bg-black/80 flex items-center justify-center z-50 text-white text-center">
                                     <div>
-                                        <RefreshCw size={60} className="mx-auto mb-6 animate-spin text-blue-400" />
-                                        <h2 className="text-5xl font-black mb-4">{levelInfo.title}</h2>
-                                        <p className="text-2xl italic text-yellow-300">"{levelInfo.wisdom}"</p>
-                                        <button onClick={() => setGameState(GameState.PLAYING)} className="mt-10 bg-blue-500 hover:bg-blue-600 px-10 py-4 rounded-full font-bold text-xl shadow-lg">COMEÇAR</button>
+                                        <RefreshCw size={50} className="mx-auto mb-4 animate-spin text-blue-400" />
+                                        <h2 className="text-3xl font-bold">{levelInfo.title}</h2>
+                                        <button onClick={() => setGameState(GameState.PLAYING)} className="mt-6 bg-blue-500 px-8 py-3 rounded font-bold">START</button>
                                     </div>
                                 </div>
                             )}
 
                             {gameState === GameState.PLAYING && (
                                 <div className="d-pad">
-                                    <button className="d-btn btn-up" 
-                                        onTouchStart={() => dpadRef.current.up = true} onTouchEnd={() => dpadRef.current.up = false}
-                                        onMouseDown={() => dpadRef.current.up = true} onMouseUp={() => dpadRef.current.up = false}
-                                    ><ArrowUp /></button>
-                                    <button className="d-btn btn-left" 
-                                        onTouchStart={() => dpadRef.current.left = true} onTouchEnd={() => dpadRef.current.left = false}
-                                        onMouseDown={() => dpadRef.current.left = true} onMouseUp={() => dpadRef.current.left = false}
-                                    ><ArrowLeft /></button>
-                                    <button className="d-btn btn-right" 
-                                        onTouchStart={() => dpadRef.current.right = true} onTouchEnd={() => dpadRef.current.right = false}
-                                        onMouseDown={() => dpadRef.current.right = true} onMouseUp={() => dpadRef.current.right = false}
-                                    ><ArrowRight /></button>
-                                    <button className="d-btn btn-down" 
-                                        onTouchStart={() => dpadRef.current.down = true} onTouchEnd={() => dpadRef.current.down = false}
-                                        onMouseDown={() => dpadRef.current.down = true} onMouseUp={() => dpadRef.current.down = false}
-                                    ><ArrowDown /></button>
+                                    <button className="d-btn btn-up" onTouchStart={(e)=>{e.preventDefault(); dpadRef.current.up=true}} onTouchEnd={(e)=>{e.preventDefault(); dpadRef.current.up=false}} onMouseDown={()=>dpadRef.current.up=true} onMouseUp={()=>dpadRef.current.up=false}><ArrowUp /></button>
+                                    <button className="d-btn btn-left" onTouchStart={(e)=>{e.preventDefault(); dpadRef.current.left=true}} onTouchEnd={(e)=>{e.preventDefault(); dpadRef.current.left=false}} onMouseDown={()=>dpadRef.current.left=true} onMouseUp={()=>dpadRef.current.left=false}><ArrowLeft /></button>
+                                    <button className="d-btn btn-right" onTouchStart={(e)=>{e.preventDefault(); dpadRef.current.right=true}} onTouchEnd={(e)=>{e.preventDefault(); dpadRef.current.right=false}} onMouseDown={()=>dpadRef.current.right=true} onMouseUp={()=>dpadRef.current.right=false}><ArrowRight /></button>
+                                    <button className="d-btn btn-down" onTouchStart={(e)=>{e.preventDefault(); dpadRef.current.down=true}} onTouchEnd={(e)=>{e.preventDefault(); dpadRef.current.down=false}} onMouseDown={()=>dpadRef.current.down=true} onMouseUp={()=>dpadRef.current.down=false}><ArrowDown /></button>
                                 </div>
                             )}
 
                             {maze && (
                                 <Canvas shadows camera={{ fov: 50 }}>
-                                    <color attach="background" args={['#000']} />
-                                    <fog attach="fog" args={['#000', 5, 25]} />
+                                    <color attach="background" args={['#111']} />
                                     <Walls maze={maze} level={level} />
                                     <Floor width={maze.width} height={maze.height} level={level} />
                                     <GameController 
@@ -564,11 +430,9 @@
                                         paused={gameState !== GameState.PLAYING}
                                         monsterCount={Math.floor(level * 1.5) + 2}
                                         monsterSpeed={3 + (level * 0.5)}
-                                        sawCount={Math.floor(level/2) + 1}
                                         onCoinCollect={() => setScore(s => s + POINTS_PER_COIN)}
                                         onMonsterHit={handleDeath}
-                                        onSawHit={handleDeath}
-                                        onLevelComplete={() => { setScore(s => s + timeBonus + 1000); setLevel(l => l+1); startLevel(level+1); }}
+                                        onLevelComplete={() => { setScore(s => s + 1000); setLevel(l => l+1); startLevel(level+1); }}
                                         dpadRef={dpadRef}
                                     />
                                 </Canvas>
