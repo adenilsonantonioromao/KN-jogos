@@ -277,6 +277,11 @@
             const [gameState, setGameState] = useState('START');
             const [score, setScore] = useState(0);
 
+            const handleRestartRequest = () => {
+                // Solicita permissão ao site pai enviando o postMessage
+                window.parent.postMessage({ type: 'RESTART_REQUEST' }, '*');
+            };
+
             return (
                 <div style={{ width: '100%', height: '100%' }}>
                     <Canvas camera={{ position: [0, 5, 15], fov: 60 }}>
@@ -304,7 +309,7 @@
                                 <h2 style={{ fontSize: '48px', margin: '10px 0', textShadow: '0 0 10px #ff0055' }}>
                                     {score}
                                 </h2>
-                                <button onClick={() => setGameState('PLAYING')}>Jogar Novamente</button>
+                                <button onClick={handleRestartRequest}>JOGAR NOVAMENTE (-1 🪙)</button>
                             </div>
                         )}
 
