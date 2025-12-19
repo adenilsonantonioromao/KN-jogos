@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
@@ -10,7 +9,7 @@
             margin: 0;
             padding: 0;
             overflow: hidden;
-            background-color: #050b1a;
+            background-color: #08132b; /* Azul levemente mais claro para contraste */
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             color: white;
             user-select: none;
@@ -96,14 +95,14 @@
         }
 
         .menu-card {
-            background: rgba(10, 20, 40, 0.9);
+            background: rgba(10, 25, 50, 0.95);
             padding: 35px;
             border-radius: 25px;
             border: 3px solid #00f2ff;
             text-align: center;
             pointer-events: auto;
-            box-shadow: 0 0 60px rgba(0, 242, 255, 0.3);
-            backdrop-filter: blur(15px);
+            box-shadow: 0 0 60px rgba(0, 242, 255, 0.4);
+            backdrop-filter: blur(20px);
             max-width: 340px;
         }
 
@@ -154,7 +153,6 @@
             letter-spacing: 1px;
         }
 
-        /* Lateral esquerda vertical */
         .skills-container {
             position: absolute;
             top: 55%;
@@ -263,13 +261,14 @@
         import { createRoot } from 'react-dom/client';
         import * as THREE from 'three';
         import { Canvas, useFrame } from '@react-three/fiber';
-        import { Stars, PerspectiveCamera } from '@react-three/drei';
+        import { Stars, PerspectiveCamera, Billboard, Text } from '@react-three/drei';
 
         // --- Configurações ---
         const ASTEROID_SPEED = 0.55;
         const BULLET_SPEED = 2.2;
         const ORE_SPEED = 0.38;
         const SPAWN_INTERVAL = 24;
+        const FLAME_METEOR_CHANCE = 0.08; // Chance de um flame meteor aparecer
         const FIRE_RATE_NORMAL = 1000; 
         const FIRE_RATE_RAPID = 180; 
         const PLAYER_Z = 5; 
@@ -282,7 +281,7 @@
         const ENERGY_REFILL_RATE_S2 = 1 / 30; 
         const ENERGY_REFILL_RATE_S3 = 0.1;
         const ENERGY_DRAIN_RATE = 0.28;
-        const COLLECTION_DISTANCE = 3.0;
+        const COLLECTION_DISTANCE = 6.0; 
         const COMBO_WINDOW = 4000; 
 
         // --- Referência Espacial ---
@@ -300,7 +299,7 @@
                     <gridHelper args={[240, 48, "#00f2ff", "#002233"]} rotation={[0, 0, 0]} ref={meshRef} />
                     <mesh position={[0, 0, -80]} rotation={[-Math.PI / 2, 0, 0]}>
                         <planeGeometry args={[200, 40]} />
-                        <meshBasicMaterial color="#001122" transparent opacity={0.5} />
+                        <meshBasicMaterial color="#0a1d47" transparent opacity={0.6} />
                     </mesh>
                 </group>
             );
@@ -314,7 +313,7 @@
             return (
                 <mesh ref={tunnelRef} rotation={[Math.PI / 2, 0, 0]}>
                     <cylinderGeometry args={[TUNNEL_RADIUS, TUNNEL_RADIUS, 200, 20, 1, true]} />
-                    <meshStandardMaterial color="#00f2ff" wireframe transparent opacity={0.04} side={THREE.DoubleSide} emissive="#00f2ff" emissiveIntensity={0.3} />
+                    <meshStandardMaterial color="#00f2ff" wireframe transparent opacity={0.06} side={THREE.DoubleSide} emissive="#00f2ff" emissiveIntensity={0.5} />
                 </mesh>
             );
         }
@@ -323,8 +322,8 @@
             return (
                 <mesh position={[x, GRID_Y + 0.1, PLAYER_Z]} rotation={[-Math.PI / 2, 0, 0]}>
                     <ringGeometry args={[0.8, 1, 32]} />
-                    <meshBasicMaterial color="#00f2ff" transparent opacity={0.3} />
-                    <pointLight color="#00f2ff" intensity={4} distance={8} />
+                    <meshBasicMaterial color="#00f2ff" transparent opacity={0.4} />
+                    <pointLight color="#00f2ff" intensity={5} distance={10} />
                 </mesh>
             );
         }
@@ -413,20 +412,20 @@
                     group.current.visible = visible;
                 }
             });
-            const whiteMat = <meshStandardMaterial color="#ffffff" emissive="#ffffff" emissiveIntensity={3} metalness={1} roughness={0} />;
-            const cyanMat = <meshStandardMaterial color="#00ffff" emissive="#00ffff" emissiveIntensity={15} />;
+            const whiteMat = <meshStandardMaterial color="#ffffff" emissive="#ffffff" emissiveIntensity={4} metalness={1} roughness={0.1} />;
+            const cyanMat = <meshStandardMaterial color="#00ffff" emissive="#00ffff" emissiveIntensity={18} />;
             const darkMat = <meshStandardMaterial color="#000000" metalness={1} roughness={0} />;
             return (
                 <group ref={group} position={[0, 0, PLAYER_Z]}>
-                    <pointLight color="#00ffff" intensity={25} distance={12} />
-                    {shieldActive && <mesh><sphereGeometry args={[2.5, 32, 32]} /><meshBasicMaterial color="#00f2ff" transparent opacity={0.15} wireframe /></mesh>}
+                    <pointLight color="#00ffff" intensity={30} distance={15} />
+                    {shieldActive && <mesh><sphereGeometry args={[2.5, 32, 32]} /><meshBasicMaterial color="#00f2ff" transparent opacity={0.2} wireframe /></mesh>}
                     {droneActive && (
                         <group position={[2.5, 1, 0]}>
                             <mesh rotation={[0, Date.now()*0.005, 0]}>
                                 <boxGeometry args={[0.4, 0.4, 0.4]} />
-                                <meshStandardMaterial color="#00ffff" emissive="#00ffff" emissiveIntensity={5} />
+                                <meshStandardMaterial color="#00ffff" emissive="#00ffff" emissiveIntensity={8} />
                             </mesh>
-                            <pointLight color="#00ffff" intensity={8} distance={6} />
+                            <pointLight color="#00ffff" intensity={12} distance={8} />
                         </group>
                     )}
                     <group>
@@ -451,20 +450,51 @@
         const Asteroid = React.memo(({ data }) => {
             const rot = useMemo(() => [Math.random()*0.02, Math.random()*0.02, Math.random()*0.02], []);
             const meshRef = useRef();
+            const groupRef = useRef();
+            
             useFrame(() => {
                 if (meshRef.current) {
-                    meshRef.current.rotation.x += rot[0]; meshRef.current.rotation.y += rot[1]; meshRef.current.rotation.z += rot[2];
+                    meshRef.current.rotation.x += rot[0]; 
+                    meshRef.current.rotation.y += rot[1]; 
+                    meshRef.current.rotation.z += rot[2];
                 }
             });
+
+            const isFlame = data.type === 'flame';
+            const healthPercent = isFlame ? data.health / 5 : 1;
+
             return (
-                <group position={[data.x, data.y, data.z]}>
+                <group position={[data.x, data.y, data.z]} ref={groupRef}>
+                    {isFlame && (
+                        <>
+                            <pointLight color="#ff3300" intensity={20} distance={10} />
+                            {/* Barra de Vida */}
+                            <Billboard position={[0, data.size + 1.2, 0]}>
+                                <mesh position={[-0.5, 0, 0]}>
+                                    <planeGeometry args={[1, 0.15]} />
+                                    <meshBasicMaterial color="#330000" />
+                                </mesh>
+                                <mesh position={[-0.5 + (healthPercent / 2), 0, 0.01]}>
+                                    <planeGeometry args={[healthPercent, 0.15]} />
+                                    <meshBasicMaterial color="#ff0000" />
+                                </mesh>
+                            </Billboard>
+                        </>
+                    )}
                     <mesh ref={meshRef}>
                         <dodecahedronGeometry args={[data.size, 0]} />
-                        <meshStandardMaterial color="#888888" emissive="#111111" emissiveIntensity={0.2} roughness={0.7} metalness={0.2} flatShading={true} />
+                        <meshStandardMaterial 
+                            color={isFlame ? "#ff2200" : "#888888"} 
+                            emissive={isFlame ? "#ff4400" : "#111111"} 
+                            emissiveIntensity={isFlame ? 5 : 0.4} 
+                            roughness={0.6} 
+                            metalness={0.3} 
+                            flatShading={true} 
+                        />
                     </mesh>
                     <mesh position={[0, GRID_Y - data.y + 0.05, 0]} rotation={[-Math.PI / 2, 0, 0]}>
                         <circleGeometry args={[data.size * 0.85, 16]} />
-                        <meshBasicMaterial color="#ff0055" transparent opacity={0.15} />
+                        <meshBasicMaterial color={isFlame ? "#ff0000" : "#ff0055"} transparent opacity={0.25} />
                     </mesh>
                 </group>
             );
@@ -482,7 +512,7 @@
             return (
                 <mesh position={[data.x, data.y, data.z]}>
                     <octahedronGeometry args={[0.5, 0]} />
-                    <meshStandardMaterial color={colors[data.type]} emissive={colors[data.type]} emissiveIntensity={5} />
+                    <meshStandardMaterial color={colors[data.type]} emissive={colors[data.type]} emissiveIntensity={8} />
                 </mesh>
             );
         });
@@ -519,18 +549,13 @@
                 const handleKeyDown = (e) => { keys.current[e.key.toLowerCase()] = true; };
                 const handleKeyUp = (e) => { keys.current[e.key.toLowerCase()] = false; };
                 
-                // Touch Controls para Movimento
                 const handleTouchMove = (e) => {
                     if (stateRef.current.gameState !== 'PLAYING') return;
                     e.preventDefault();
                     const touch = e.touches[0];
                     const xNorm = (touch.clientX / window.innerWidth) * 2 - 1;
                     const yNorm = (touch.clientY / window.innerHeight) * 2 - 1;
-                    
-                    // OFFSET: Desloca a nave para cima do dedo do usuário
-                    // verticalOffset de ~2.5 unidades no mundo 3D empurra a nave para cima da visão do dedo
-            const verticalOffset = 10;
-
+                    const verticalOffset = 8;
                     setPlayerPos({
                         x: Math.max(-BOUNDARY_X, Math.min(BOUNDARY_X, xNorm * BOUNDARY_X * 1.2)),
                         y: Math.max(-BOUNDARY_Y, Math.min(BOUNDARY_Y, (-yNorm * BOUNDARY_Y * 1.5) + verticalOffset))
@@ -610,7 +635,16 @@
                 }
 
                 if (frameCount.current % SPAWN_INTERVAL === 0) {
-                    setAsteroids(prev => [...prev, { id: Math.random(), x: (Math.random() - 0.5) * 25, y: (Math.random() - 0.5) * 15, z: -75, size: 1.2 + Math.random() * 1.8 }]);
+                    const isFlame = Math.random() < FLAME_METEOR_CHANCE;
+                    setAsteroids(prev => [...prev, { 
+                        id: Math.random(), 
+                        x: (Math.random() - 0.5) * 25, 
+                        y: (Math.random() - 0.5) * 15, 
+                        z: -75, 
+                        size: isFlame ? 2.5 : (1.2 + Math.random() * 1.8),
+                        type: isFlame ? 'flame' : 'normal',
+                        health: isFlame ? 5 : 1
+                    }]);
                 }
 
                 setAsteroids(prev => prev.map(a => ({ ...a, z: a.z + ASTEROID_SPEED })).filter(a => a.z < 20));
@@ -630,24 +664,40 @@
                     stateRef.current.asteroids.forEach(asteroid => {
                         const dist = Math.sqrt(Math.pow(bullet.x - asteroid.x, 2) + Math.pow(bullet.y - asteroid.y, 2) + Math.pow(bullet.z - asteroid.z, 2));
                         if (dist < asteroid.size + 0.65) {
-                            setExplosions(prev => [...prev, { id: Math.random(), x: asteroid.x, y: asteroid.y, z: asteroid.z }]);
-                            setAsteroids(prev => prev.filter(a => a.id !== asteroid.id));
+                            const newHealth = asteroid.health - 1;
                             setBullets(prev => prev.filter(b => b.id !== bullet.id));
-                            lastHitTime.current = nowMs;
-                            setCombo(prev => {
-                                const newCount = prev.count + 1;
-                                let newMult = 1;
-                                if (newCount >= 60) newMult = 5; else if (newCount >= 40) newMult = 4; else if (newCount >= 20) newMult = 3; else if (newCount >= 10) newMult = 2;
-                                return { count: newCount, multiplier: newMult, lastTime: nowMs };
-                            });
-                            const rand = Math.random();
-                            let type = rand < 0.6 ? "red" : rand < 0.9 ? "yellow" : "purple";
-                            const drops = [];
-                            const mult = stateRef.current.combo.multiplier;
-                            for(let i=0; i<mult; i++) {
-                                drops.push({ id: Math.random(), x: asteroid.x + (i*0.25), y: asteroid.y, z: asteroid.z, type });
+                            
+                            if (newHealth <= 0) {
+                                setExplosions(prev => [...prev, { id: Math.random(), x: asteroid.x, y: asteroid.y, z: asteroid.z }]);
+                                setAsteroids(prev => prev.filter(a => a.id !== asteroid.id));
+                                lastHitTime.current = nowMs;
+                                setCombo(prev => {
+                                    const newCount = prev.count + 1;
+                                    let newMult = 1;
+                                    if (newCount >= 60) newMult = 5; else if (newCount >= 40) newMult = 4; else if (newCount >= 20) newMult = 3; else if (newCount >= 10) newMult = 2;
+                                    return { count: newCount, multiplier: newMult, lastTime: nowMs };
+                                });
+                                
+                                const drops = [];
+                                const mult = stateRef.current.combo.multiplier;
+                                const isFlame = asteroid.type === 'flame';
+                                const type = isFlame ? "purple" : (Math.random() < 0.6 ? "red" : (Math.random() < 0.9 ? "yellow" : "purple"));
+                                
+                                for(let i=0; i<mult; i++) {
+                                    const xOffset = (i - (mult-1)/2) * 1.5; 
+                                    const yOffset = (Math.random() - 0.5) * 2; 
+                                    drops.push({ 
+                                        id: Math.random(), 
+                                        x: asteroid.x + xOffset, 
+                                        y: asteroid.y + yOffset, 
+                                        z: asteroid.z, 
+                                        type 
+                                    });
+                                }
+                                setOres(prev => [...prev, ...drops]);
+                            } else {
+                                setAsteroids(prev => prev.map(a => a.id === asteroid.id ? { ...a, health: newHealth } : a));
                             }
-                            setOres(prev => [...prev, ...drops]);
                         }
                     });
                 });
@@ -689,20 +739,20 @@
 
             return (
                 <>
-                    <Stars radius={120} depth={60} count={6000} factor={7} saturation={1} fade speed={1.8} />
-                    <ambientLight intensity={0.9} /> 
-                    <pointLight position={[0, 0, 20]} intensity={12} color="#ffffff" distance={120} />
+                    <Stars radius={150} depth={70} count={7000} factor={8} saturation={1} fade speed={2} />
+                    <ambientLight intensity={1.1} /> 
+                    <pointLight position={[0, 0, 20]} intensity={15} color="#ffffff" distance={150} />
                     <NavigationGrid />
                     <SpaceTunnel />
                     <ShipProjection x={playerPos.x} y={playerPos.y} />
                     <EngineTrail shipX={playerPos.x} shipY={playerPos.y} shipVisible={gameState === 'PLAYING'} />
                     <Spaceship x={playerPos.x} y={playerPos.y} visible={gameState === 'PLAYING'} shieldActive={skills.s2Active} droneActive={skills.s3Active} />
-                    {gameState === 'EXPLODING' && playerExplosion && <ExplosionEffect data={playerExplosion} color="#00ffff" size={0.65} count={45} duration={1.6} />}
+                    {gameState === 'EXPLODING' && playerExplosion && <ExplosionEffect data={playerExplosion} color="#00ffff" size={0.7} count={50} duration={1.8} />}
                     {asteroids.map(a => <Asteroid key={a.id} data={a} />)}
                     {bullets.map(b => <Bullet key={b.id} data={b} />)}
                     {ores.map(o => <Ore key={o.id} data={o} />)}
                     {explosions.map(e => <ExplosionEffect key={e.id} data={e} onComplete={removeExplosion} />)}
-                    <fog attach="fog" args={['#050b1a', 12, 130]} />
+                    <fog attach="fog" args={['#08132b', 15, 150]} />
                 </>
             );
         }
@@ -747,7 +797,7 @@
             };
 
             return (
-                <div id="game-container" style={{ width: '100%', height: '100%', background: '#050b1a' }}>
+                <div id="game-container" style={{ width: '100%', height: '100%', background: '#08132b' }}>
                     <Canvas dpr={window.devicePixelRatio > 1 ? 1.5 : 1}>
                         <PerspectiveCamera makeDefault position={[0, 15, 30]} rotation={[-0.45, 0, 0]} fov={45} />
                         <GameCore 
@@ -821,4 +871,3 @@
     </script>
 </body>
 </html>
-
