@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel do Dono - KN Jogos</title>
+    <style>
+        body { font-family: sans-serif; background: #eee; padding: 20px; max-width: 600px; margin: 0 auto; }
+        .card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        input, textarea { width: 100%; padding: 10px; margin: 5px 0 15px 0; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; }
+        button { background: #FF5722; color: white; border: none; padding: 15px; width: 100%; font-weight: bold; cursor: pointer; border-radius: 5px; }
+        button:hover { background: #E64A19; }
+        h2 { margin-top: 0; color: #333; }
+        .success { color: green; font-weight: bold; display: none; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <h2>👑 Cadastrar Novo Jogo</h2>
+        
+        <label>ID do Jogo (Único, sem espaços, ex: neonrunner)</label>
+        <input type="text" id="idJogo" placeholder="ex: neonrunner">
+
+        <label>Nome Visível</label>
+        <input type="text" id="nome" placeholder="ex: Neon Runner 3D">
+
+        <label>Descrição Curta</label>
+        <textarea id="desc" rows="2" placeholder="ex: Corra e desvie dos obstáculos..."></textarea>
+
+        <label>Nome do Arquivo (que está na pasta /jogos)</label>
+        <input type="text" id="arquivo" placeholder="ex: neon.html">
+
+        <label>Nome da Imagem (que está na pasta /capas)</label>
+        <input type="text" id="img" placeholder="ex: neon.jpg">
+
+        <button onclick="salvarJogo()">SALVAR NO SITE</button>
+        <p id="msg" class="success">✅ Jogo cadastrado com sucesso!</p>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBIR7CqYYvMZVQxtO67JCQoJ3OLT1cvAx8",
+            authDomain: "kn-jogos.firebaseapp.com",
+            projectId: "kn-jogos",
+            storageBucket: "kn-jogos.firebasestorage.app",
+            messagingSenderId: "273132829744",
+            appId: "1:273132829744:web:a03e85b80ffabfa24101f5",
+            measurementId: "G-CX4Z8R1S6F"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        window.salvarJogo = async function() {
+            const id = document.getElementById('idJogo').value.toLowerCase().trim();
+            const nome = document.getElementById('nome').value;
+            const desc = document.getElementById('desc').value;
+            const arquivo = document.getElementById('arquivo').value;
+            const img = document.getElementById('img').value;
+
+            if(!id || !nome || !arquivo) {
+                alert("Preencha os campos obrigatórios!");
+                return;
+            }
+
+            try {
+                // Salva na coleção "listaJogos"
+                await setDoc(doc(db, "listaJogos", id), {
+                    id: id,
+                    nome: nome,
+                    desc: desc,
+                    arquivo: arquivo,
+                    img: img,
+                    dataAdd: new Date()
+                });
+                
+                // Zera estatísticas iniciais
+                await setDoc(doc(db, "config", "gameStats"), { [id]: 0 }, { merge: true });
+
+                document.getElementById('msg').style.display = 'block';
+                setTimeout(() => document.getElementById('msg').style.display = 'none', 3000);
+                
+                // Limpar campos
+                document.getElementById('idJogo').value = "";
+                document.getElementById('nome').value = "";
+                document.getElementById('desc').value = "";
+            } catch (e) {
+                alert("Erro: " + e.message);
+            }
+        }
+    </script>
+</body>
+</html>
