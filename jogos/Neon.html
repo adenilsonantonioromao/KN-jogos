@@ -598,7 +598,7 @@
                     const touch = e.touches[0];
                     const xNorm = (touch.clientX / window.innerWidth) * 2 - 1;
                     const yNorm = (touch.clientY / window.innerHeight) * 2 - 1;
-                    const verticalOffset = 10;
+                    const verticalOffset = 5;
                     setPlayerPos({
                         x: Math.max(-BOUNDARY_X, Math.min(BOUNDARY_X, xNorm * BOUNDARY_X * 1.2)),
                         y: Math.max(-BOUNDARY_Y, Math.min(BOUNDARY_Y, (-yNorm * BOUNDARY_Y * 1.5) + verticalOffset))
