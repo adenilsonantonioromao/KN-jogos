@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
@@ -525,9 +526,14 @@
                     const touch = e.touches[0];
                     const xNorm = (touch.clientX / window.innerWidth) * 2 - 1;
                     const yNorm = (touch.clientY / window.innerHeight) * 2 - 1;
+                    
+                    // OFFSET: Desloca a nave para cima do dedo do usuário
+                    // verticalOffset de ~2.5 unidades no mundo 3D empurra a nave para cima da visão do dedo
+                    const verticalOffset = 2.5;
+
                     setPlayerPos({
                         x: Math.max(-BOUNDARY_X, Math.min(BOUNDARY_X, xNorm * BOUNDARY_X * 1.2)),
-                        y: Math.max(-BOUNDARY_Y, Math.min(BOUNDARY_Y, -yNorm * BOUNDARY_Y * 1.5))
+                        y: Math.max(-BOUNDARY_Y, Math.min(BOUNDARY_Y, (-yNorm * BOUNDARY_Y * 1.5) + verticalOffset))
                     });
                 };
 
@@ -815,3 +821,4 @@
     </script>
 </body>
 </html>
+
