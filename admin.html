@@ -3,24 +3,41 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Painel do Dono - KN Jogos</title>
+    <title>Painel Admin - KN Jogos</title>
     <style>
-        body { font-family: sans-serif; background: #eee; padding: 20px; max-width: 600px; margin: 0 auto; }
-        .card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        input, textarea { width: 100%; padding: 10px; margin: 5px 0 15px 0; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; }
-        button { background: #FF5722; color: white; border: none; padding: 15px; width: 100%; font-weight: bold; cursor: pointer; border-radius: 5px; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f4f4f9; padding: 20px; max-width: 600px; margin: 0 auto; color: #333; }
+        .card { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        h2 { margin-top: 0; color: #FF5722; text-align: center; }
+        
+        label { font-weight: bold; font-size: 0.9rem; display: block; margin-top: 15px; }
+        input, textarea { width: 100%; padding: 12px; margin-top: 5px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 1rem; }
+        input:focus, textarea:focus { border-color: #FF5722; outline: none; }
+        
+        .row { display: flex; gap: 10px; align-items: flex-end; }
+        
+        button { background: #FF5722; color: white; border: none; padding: 15px; width: 100%; font-weight: bold; cursor: pointer; border-radius: 8px; font-size: 1.1rem; margin-top: 20px; transition: 0.2s; }
         button:hover { background: #E64A19; }
-        h2 { margin-top: 0; color: #333; }
-        .success { color: green; font-weight: bold; display: none; margin-top: 10px; }
+        
+        .btn-search { background: #2196F3; width: auto; padding: 12px 20px; margin-top: 0; margin-bottom: 2px;}
+        .btn-search:hover { background: #1976D2; }
+
+        .success { background: #d4edda; color: #155724; padding: 15px; border-radius: 8px; display: none; margin-top: 20px; text-align: center; font-weight: bold; }
+        .hint { font-size: 0.8rem; color: #666; margin-top: 2px; }
     </style>
 </head>
 <body>
 
     <div class="card">
-        <h2>👑 Cadastrar Novo Jogo</h2>
+        <h2>👑 Gerenciar Jogos</h2>
         
-        <label>ID do Jogo (Único, sem espaços, ex: neonrunner)</label>
-        <input type="text" id="idJogo" placeholder="ex: neonrunner">
+        <label>ID do Jogo (Para buscar ou criar)</label>
+        <div class="row">
+            <input type="text" id="idJogo" placeholder="ex: neonrunner">
+            <button class="btn-search" onclick="buscarJogo()">🔍 BUSCAR</button>
+        </div>
+        <div class="hint">Digite o ID e clique em buscar para editar um existente.</div>
+
+        <hr style="margin: 20px 0; border: 0; border-top: 1px solid #eee;">
 
         <label>Nome Visível</label>
         <input type="text" id="nome" placeholder="ex: Neon Runner 3D">
@@ -28,19 +45,20 @@
         <label>Descrição Curta</label>
         <textarea id="desc" rows="2" placeholder="ex: Corra e desvie dos obstáculos..."></textarea>
 
-        <label>Nome do Arquivo (que está na pasta /jogos)</label>
+        <label>Nome do Arquivo HTML (na pasta /jogos)</label>
         <input type="text" id="arquivo" placeholder="ex: neon.html">
 
-        <label>Nome da Imagem (que está na pasta /capas)</label>
+        <label>Nome da Imagem (na pasta /capas)</label>
         <input type="text" id="img" placeholder="ex: neon.jpg">
 
-        <button onclick="salvarJogo()">SALVAR NO SITE</button>
-        <p id="msg" class="success">✅ Jogo cadastrado com sucesso!</p>
+        <button onclick="salvarJogo()">💾 SALVAR / ATUALIZAR</button>
+        
+        <div id="msg" class="success">✅ Jogo salvo com sucesso!</div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyBIR7CqYYvMZVQxtO67JCQoJ3OLT1cvAx8",
@@ -55,43 +73,25 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        window.salvarJogo = async function() {
+        // FUNÇÃO: BUSCAR DADOS PARA EDITAR
+        window.buscarJogo = async function() {
             const id = document.getElementById('idJogo').value.toLowerCase().trim();
-            const nome = document.getElementById('nome').value;
-            const desc = document.getElementById('desc').value;
-            const arquivo = document.getElementById('arquivo').value;
-            const img = document.getElementById('img').value;
-
-            if(!id || !nome || !arquivo) {
-                alert("Preencha os campos obrigatórios!");
-                return;
-            }
+            if(!id) { alert("Digite um ID para buscar!"); return; }
 
             try {
-                // Salva na coleção "listaJogos"
-                await setDoc(doc(db, "listaJogos", id), {
-                    id: id,
-                    nome: nome,
-                    desc: desc,
-                    arquivo: arquivo,
-                    img: img,
-                    dataAdd: new Date()
-                });
-                
-                // Zera estatísticas iniciais
-                await setDoc(doc(db, "config", "gameStats"), { [id]: 0 }, { merge: true });
+                const docRef = doc(db, "listaJogos", id);
+                const docSnap = await getDoc(docRef);
 
-                document.getElementById('msg').style.display = 'block';
-                setTimeout(() => document.getElementById('msg').style.display = 'none', 3000);
-                
-                // Limpar campos
-                document.getElementById('idJogo').value = "";
-                document.getElementById('nome').value = "";
-                document.getElementById('desc').value = "";
-            } catch (e) {
-                alert("Erro: " + e.message);
-            }
-        }
-    </script>
-</body>
-</html>
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    document.getElementById('nome').value = data.nome;
+                    document.getElementById('desc').value = data.desc;
+                    document.getElementById('arquivo').value = data.arquivo;
+                    document.getElementById('img').value = data.img;
+                    alert(`Jogo "${data.nome}" encontrado! Pode editar agora.`);
+                } else {
+                    alert("⚠️ Jogo não encontrado. Você pode preencher os dados para criar um novo com este ID.");
+                    // Limpa campos para não confundir
+                    document.getElementById('nome').value = "";
+                    document.getElementById('desc').value = "";
+                    document.getElementById('arquivo').value = "";
