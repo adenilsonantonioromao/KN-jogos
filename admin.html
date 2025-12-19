@@ -95,3 +95,48 @@
                     document.getElementById('nome').value = "";
                     document.getElementById('desc').value = "";
                     document.getElementById('arquivo').value = "";
+                    document.getElementById('img').value = "";
+                }
+            } catch(e) {
+                alert("Erro ao buscar: " + e.message);
+            }
+        }
+
+        // FUNÇÃO: SALVAR OU ATUALIZAR
+        window.salvarJogo = async function() {
+            const id = document.getElementById('idJogo').value.toLowerCase().trim();
+            const nome = document.getElementById('nome').value;
+            const desc = document.getElementById('desc').value;
+            const arquivo = document.getElementById('arquivo').value;
+            const img = document.getElementById('img').value;
+
+            if(!id || !nome || !arquivo) {
+                alert("Preencha os campos obrigatórios!");
+                return;
+            }
+
+            try {
+                // O setDoc com {merge: true} atualiza se existir, ou cria se não existir
+                await setDoc(doc(db, "listaJogos", id), {
+                    id: id,
+                    nome: nome,
+                    desc: desc,
+                    arquivo: arquivo,
+                    img: img,
+                    dataUpdate: new Date()
+                }, { merge: true });
+                
+                // Se for novo, inicializa stats (sem apagar stats antigos se já existirem)
+                await setDoc(doc(db, "config", "gameStats"), { [id]: 0 }, { merge: true });
+
+                document.getElementById('msg').innerText = "✅ Jogo Salvo/Atualizado com Sucesso!";
+                document.getElementById('msg').style.display = 'block';
+                setTimeout(() => document.getElementById('msg').style.display = 'none', 3000);
+                
+            } catch (e) {
+                alert("Erro: " + e.message);
+            }
+        }
+    </script>
+</body>
+</html>
