@@ -2,16 +2,18 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Neon Runner 3D - Monolithic</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Neon Miner - Crystal Surge</title>
     <style>
         body {
             margin: 0;
             padding: 0;
             overflow: hidden;
-            background-color: #050505;
+            background-color: #050b1a;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             color: white;
+            user-select: none;
+            touch-action: none; 
         }
 
         #root {
@@ -37,52 +39,209 @@
             position: absolute;
             top: 20px;
             right: 20px;
-            font-size: 24px;
+            font-size: 32px;
             font-weight: bold;
-            text-shadow: 0 0 10px #00f2ff;
+            text-align: right;
+            text-shadow: 0 0 15px #00f2ff, 0 0 5px #fff;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .combo-container {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            pointer-events: none;
+            transition: all 0.3s ease;
+        }
+
+        .multiplier-text {
+            font-size: 24px;
+            font-weight: 900;
+            text-transform: uppercase;
+            color: #fff;
+            text-shadow: 0 0 10px #00f2ff, 0 0 20px #00f2ff;
+            margin-bottom: 5px;
+            animation: pulse 1s infinite alternate;
+        }
+
+        .combo-count {
+            font-size: 18px;
+            color: #b0fbff;
+            font-weight: bold;
+        }
+
+        .combo-timer-bar {
+            width: 150px;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            margin-top: 5px;
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .combo-timer-fill {
+            height: 100%;
+            background: #00f2ff;
+            box-shadow: 0 0 10px #00f2ff;
+            transition: width 0.05s linear;
+        }
+
+        @keyframes pulse {
+            from { transform: scale(1); opacity: 0.8; }
+            to { transform: scale(1.1); opacity: 1; }
         }
 
         .menu-card {
-            background: rgba(0, 0, 0, 0.85);
-            padding: 40px;
-            border-radius: 15px;
-            border: 2px solid #ff0055;
+            background: rgba(10, 20, 40, 0.9);
+            padding: 35px;
+            border-radius: 25px;
+            border: 3px solid #00f2ff;
             text-align: center;
             pointer-events: auto;
-            box-shadow: 0 0 30px rgba(255, 0, 85, 0.4);
+            box-shadow: 0 0 60px rgba(0, 242, 255, 0.3);
+            backdrop-filter: blur(15px);
+            max-width: 340px;
         }
 
         button {
-            background: #ff0055;
+            background: linear-gradient(45deg, #00f2ff, #0066ff);
             color: white;
             border: none;
-            padding: 15px 40px;
+            padding: 18px 45px;
             font-size: 20px;
-            border-radius: 5px;
+            font-weight: bold;
+            border-radius: 50px;
             cursor: pointer;
-            transition: all 0.3s;
+            transition: all 0.2s;
             text-transform: uppercase;
             letter-spacing: 2px;
-            margin-top: 20px;
+            margin-top: 25px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
         }
 
         button:hover {
-            background: #ff3377;
             transform: scale(1.05);
-            box-shadow: 0 0 15px #ff0055;
+            box-shadow: 0 0 25px #00f2ff;
         }
 
         h1 {
-            margin: 0 0 20px 0;
-            font-size: 48px;
-            background: linear-gradient(45deg, #ff0055, #00f2ff);
+            margin: 0 0 10px 0;
+            font-size: 42px;
+            letter-spacing: 2px;
+            background: linear-gradient(45deg, #00f2ff, #ffffff);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
+            text-transform: uppercase;
+            font-weight: 900;
+        }
+
+        .info-text {
+            font-size: 15px;
+            opacity: 0.95;
+            line-height: 1.6;
+            color: #b0fbff;
+        }
+
+        .controls-hint {
+            margin-top: 20px;
+            font-size: 11px;
+            color: #558899;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .skills-container {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 20px;
+            pointer-events: auto;
+        }
+
+        .skill-button {
+            width: 80px;
+            height: 100px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-end;
+            background: rgba(10, 20, 40, 0.7);
+            border: 2px solid rgba(0, 242, 255, 0.3);
+            border-radius: 12px;
+            overflow: hidden;
+            position: relative;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .skill-button.active {
+            border-color: #00f2ff;
+            box-shadow: 0 0 15px rgba(0, 242, 255, 0.5);
+            transform: scale(1.05);
+        }
+
+        .skill-button.locked {
+            border-color: #ff0055;
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+
+        .skill-button.locked .skill-energy {
+            background: linear-gradient(to top, #ff0055, #880022);
+        }
+
+        .skill-energy {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: linear-gradient(to top, #00f2ff, #0066ff);
+            transition: height 0.1s linear;
+            z-index: 1;
+        }
+
+        .skill-icon {
+            position: relative;
+            z-index: 2;
+            width: 32px;
+            height: 32px;
+            margin-bottom: 5px;
+            fill: white;
+            filter: drop-shadow(0 0 5px rgba(0,0,0,0.5));
+        }
+
+        .skill-label {
+            position: relative;
+            z-index: 2;
+            font-size: 9px;
+            font-weight: 900;
+            margin-bottom: 8px;
+            color: white;
+            text-shadow: 0 1px 3px black;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .skill-key {
+            position: absolute;
+            top: 5px;
+            left: 5px;
+            font-size: 11px;
+            color: rgba(255,255,255,0.8);
+            font-weight: 900;
+            z-index: 2;
+            background: rgba(0,0,0,0.3);
+            padding: 2px 5px;
+            border-radius: 4px;
         }
     </style>
 
-    <!-- React 18 and Three.js dependencies via ESM -->
-   <script type="importmap">
+    <script type="importmap">
     {
       "imports": {
         "react": "https://esm.sh/react@18.2.0",
@@ -95,7 +254,6 @@
       }
     }
     </script>
-    <!-- Babel standalone for JSX processing -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 </head>
 <body>
@@ -106,225 +264,593 @@
         import { createRoot } from 'react-dom/client';
         import * as THREE from 'three';
         import { Canvas, useFrame } from '@react-three/fiber';
-        import { Stars } from '@react-three/drei';
+        import { Stars, PerspectiveCamera } from '@react-three/drei';
 
-        // Jogo Constants
-        const OBSTACLE_SPEED = 0.35;
-        const SPAWN_INTERVAL = 30; // frames
-        const ROAD_WIDTH = 10;
-        const PLAYER_Z = 5;
+        // --- Configurações ---
+        const ASTEROID_SPEED = 0.5;
+        const BULLET_SPEED = 2.0;
+        const ORE_SPEED = 0.35;
+        const SPAWN_INTERVAL = 25;
+        const FIRE_RATE_NORMAL = 1000; 
+        const FIRE_RATE_RAPID = 200; 
+        const PLAYER_Z = 5; 
+        const BOUNDARY_X = 10;
+        const BOUNDARY_Y = 6;
+        const GRID_Y = -8; // Altura do chão de grade
+        const TUNNEL_RADIUS = 30;
+        const KEYBOARD_SPEED = 0.4;
+        const ENERGY_REFILL_RATE_S1 = 0.1;
+        const ENERGY_REFILL_RATE_S2 = 1 / 30; 
+        const ENERGY_REFILL_RATE_S3 = 0.1;
+        const ENERGY_DRAIN_RATE = 0.25;
+        const COLLECTION_DISTANCE = 2.8;
+        const COMBO_WINDOW = 4000; // Aumentado de 3000 para 4000 (4 segundos)
 
-        function Player({ x }) {
-            const mesh = useRef();
+        // --- Componentes de Referência Espacial ---
+
+        function NavigationGrid() {
+            const meshRef = useRef();
             
-            useFrame(() => {
-                if (mesh.current) {
-                    mesh.current.position.x = THREE.MathUtils.lerp(
-                        mesh.current.position.x,
-                        x,
-                        0.15
-                    );
+            useFrame((state, delta) => {
+                if (meshRef.current) {
+                    // Efeito de scrolling infinito
+                    meshRef.current.position.z += 0.5;
+                    if (meshRef.current.position.z > 20) meshRef.current.position.z = 0;
                 }
             });
 
             return (
-                <mesh ref={mesh} position={[0, 0.5, PLAYER_Z]}>
-                    <boxGeometry args={[1, 1, 1]} />
-                    <meshStandardMaterial 
-                        emissive="#00f2ff" 
-                        emissiveIntensity={2} 
-                        color="#00f2ff" 
-                    />
-                    <pointLight color="#00f2ff" intensity={1} distance={5} />
-                </mesh>
-            );
-        }
-
-        function Obstacle({ data, onHit, playerX, onCollide }) {
-            const mesh = useRef();
-            
-            useFrame(() => {
-                if (mesh.current) {
-                    mesh.current.position.z += OBSTACLE_SPEED;
-                    
-                    // Detecção de colisão baseada em posição Z e X
-                    const distZ = Math.abs(mesh.current.position.z - PLAYER_Z);
-                    const distX = Math.abs(mesh.current.position.x - playerX);
-                    
-                    if (distZ < 1 && distX < 1.2) {
-                        onCollide();
-                    }
-
-                    if (mesh.current.position.z > 10) {
-                        onHit(data.id);
-                    }
-                }
-            });
-
-            return (
-                <mesh ref={mesh} position={[data.x, 0.75, data.z]}>
-                    <boxGeometry args={[1.5, 1.5, 1.5]} />
-                    <meshStandardMaterial 
-                        emissive="#ff0055" 
-                        emissiveIntensity={1.5} 
-                        color="#ff0055" 
-                    />
-                </mesh>
-            );
-        }
-
-        function Road() {
-            return (
-                <group>
-                    <gridHelper args={[100, 50, 0x444444, 0x222222]} position={[0, 0, 0]} />
-                    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.1, 0]}>
-                        <planeGeometry args={[ROAD_WIDTH, 1000]} />
-                        <meshStandardMaterial color="#050505" />
+                <group position={[0, GRID_Y, 0]}>
+                    <gridHelper args={[200, 40, "#00f2ff", "#002233"]} rotation={[0, 0, 0]} ref={meshRef} />
+                    {/* Brilho no horizonte */}
+                    <mesh position={[0, 0, -80]} rotation={[-Math.PI / 2, 0, 0]}>
+                        <planeGeometry args={[200, 40]} />
+                        <meshBasicMaterial color="#001122" transparent opacity={0.5} />
                     </mesh>
                 </group>
             );
         }
 
-        function Game({ gameState, setGameState, score, setScore }) {
-            const [playerX, setPlayerX] = useState(0);
-            const [obstacles, setObstacles] = useState([]);
-            const frameCount = useRef(0);
-            const scoreRef = useRef(0);
-
-            useEffect(() => {
-                const handleKeyDown = (e) => {
-                    if (gameState !== 'PLAYING') return;
-                    if (e.key === 'ArrowLeft' || e.key === 'a') setPlayerX(x => Math.max(x - 2, -4));
-                    if (e.key === 'ArrowRight' || e.key === 'd') setPlayerX(x => Math.min(x + 2, 4));
-                };
-
-                const handleMouseMove = (e) => {
-                    if (gameState !== 'PLAYING') return;
-                    const normalizedX = (e.clientX / window.innerWidth) * ROAD_WIDTH - (ROAD_WIDTH / 2);
-                    setPlayerX(Math.max(Math.min(normalizedX, 4), -4));
-                };
-
-                window.addEventListener('keydown', handleKeyDown);
-                window.addEventListener('mousemove', handleMouseMove);
-                return () => {
-                    window.removeEventListener('keydown', handleKeyDown);
-                    window.removeEventListener('mousemove', handleMouseMove);
-                };
-            }, [gameState]);
-
-            useEffect(() => {
-                if (gameState === 'PLAYING') {
-                    setScore(0);
-                    scoreRef.current = 0;
-                    setObstacles([]);
-                    setPlayerX(0);
-                    frameCount.current = 0;
-                }
-            }, [gameState]);
-
+        function SpaceTunnel() {
+            const tunnelRef = useRef();
             useFrame(() => {
-                if (gameState !== 'PLAYING') return;
-
-                frameCount.current++;
-                scoreRef.current += 1;
-                
-                if (frameCount.current % 10 === 0) {
-                    setScore(Math.floor(scoreRef.current / 10));
-                }
-
-                if (frameCount.current % SPAWN_INTERVAL === 0) {
-                    const newX = (Math.random() - 0.5) * (ROAD_WIDTH - 2);
-                    setObstacles(prev => [...prev, { id: Date.now() + Math.random(), x: newX, z: -50 }]);
+                if (tunnelRef.current) {
+                    tunnelRef.current.rotation.z += 0.001;
                 }
             });
 
-            const triggerGameOver = () => {
-                const finalScore = Math.floor(scoreRef.current / 10);
-                setGameState('GAME_OVER');
-                window.parent.postMessage({ type: 'GAME_OVER', score: finalScore }, '*');
-            };
+            return (
+                <mesh ref={tunnelRef} rotation={[Math.PI / 2, 0, 0]}>
+                    <cylinderGeometry args={[TUNNEL_RADIUS, TUNNEL_RADIUS, 200, 16, 1, true]} />
+                    <meshStandardMaterial 
+                        color="#00f2ff" 
+                        wireframe 
+                        transparent 
+                        opacity={0.05} 
+                        side={THREE.DoubleSide}
+                        emissive="#00f2ff"
+                        emissiveIntensity={0.5}
+                    />
+                </mesh>
+            );
+        }
 
-            const removeObstacle = (id) => {
-                setObstacles(prev => prev.filter(o => o.id !== id));
-            };
+        function ShipProjection({ x, y }) {
+            return (
+                <mesh position={[x, GRID_Y + 0.1, PLAYER_Z]} rotation={[-Math.PI / 2, 0, 0]}>
+                    <ringGeometry args={[0.8, 1, 32]} />
+                    <meshBasicMaterial color="#00f2ff" transparent opacity={0.4} />
+                    <pointLight color="#00f2ff" intensity={5} distance={10} />
+                </mesh>
+            );
+        }
+
+        // --- Componentes de Efeito ---
+
+        function ExplosionEffect({ data, onComplete, color = "#ff00ff", size = 0.3, count = 15, duration = 0.8 }) {
+            const group = useRef();
+            const [life] = useState({ t: 0 });
+            const particles = useMemo(() => Array.from({ length: count }).map(() => ({
+                pos: [0, 0, 0],
+                vel: [(Math.random() - 0.5) * 1.5, (Math.random() - 0.5) * 1.5, (Math.random() - 0.5) * 1.5],
+                scale: 1
+            })), [count]);
+
+            useFrame((_, delta) => {
+                life.t += delta;
+                if (life.t > duration) {
+                    if(onComplete) onComplete(data.id);
+                    return;
+                }
+                if (group.current) {
+                    particles.forEach((p, i) => {
+                        const mesh = group.current.children[i];
+                        if (mesh) {
+                            p.pos[0] += p.vel[0];
+                            p.pos[1] += p.vel[1];
+                            p.pos[2] += p.vel[2];
+                            p.scale = Math.max(0, (1 - life.t * (1/duration) * 1.1));
+                            mesh.position.set(...p.pos);
+                            mesh.scale.setScalar(p.scale);
+                        }
+                    });
+                }
+            });
+
+            return (
+                <group ref={group} position={[data.x, data.y, data.z]}>
+                    {particles.map((_, i) => (
+                        <mesh key={i}>
+                            <boxGeometry args={[size, size, size]} />
+                            <meshBasicMaterial color={color} transparent opacity={0.9} />
+                        </mesh>
+                    ))}
+                </group>
+            );
+        }
+
+        function EngineTrail({ shipX, shipY, shipVisible }) {
+            const points = useRef([]);
+            const maxPoints = 50; 
+            const group = useRef();
+
+            useFrame(() => {
+                if (!shipVisible) {
+                    points.current = [];
+                    return;
+                }
+
+                points.current.unshift({ x: shipX, y: shipY, z: PLAYER_Z + 1.2, life: 1.0 });
+                if (points.current.length > maxPoints) points.current.pop();
+
+                points.current.forEach((p, i) => {
+                    p.life -= 0.02;
+                    p.z += 0.4; 
+                    const mesh = group.current.children[i];
+                    if (mesh) {
+                        mesh.position.set(p.x + (Math.random()-0.5)*0.08, p.y + (Math.random()-0.5)*0.08, p.z);
+                        mesh.scale.setScalar(p.life * 1.1); 
+                        mesh.material.opacity = p.life * 0.4; 
+                    }
+                });
+            });
+
+            return (
+                <group ref={group}>
+                    {Array.from({ length: maxPoints }).map((_, i) => (
+                        <mesh key={i}>
+                            <boxGeometry args={[0.08, 0.08, 0.08]} />
+                            <meshBasicMaterial color="#ff6600" transparent opacity={0} />
+                        </mesh>
+                    ))}
+                </group>
+            );
+        }
+
+        function Spaceship({ x, y, visible = true, shieldActive = false, droneActive = false }) {
+            const group = useRef();
+            
+            useFrame(() => {
+                if (group.current) {
+                    group.current.position.x = THREE.MathUtils.lerp(group.current.position.x, x, 0.2);
+                    group.current.position.y = THREE.MathUtils.lerp(group.current.position.y, y, 0.2);
+                    group.current.rotation.z = (group.current.position.x - x) * 0.8;
+                    group.current.rotation.x = (y - group.current.position.y) * 0.5;
+                    group.current.rotation.y = Math.PI;
+                    group.current.visible = visible;
+                }
+            });
+
+            const whiteMat = <meshStandardMaterial color="#ffffff" emissive="#ffffff" emissiveIntensity={3} metalness={1} roughness={0} />;
+            const cyanMat = <meshStandardMaterial color="#00ffff" emissive="#00ffff" emissiveIntensity={15} />;
+            const darkMat = <meshStandardMaterial color="#000000" metalness={1} roughness={0} />;
+
+            return (
+                <group ref={group} position={[0, 0, PLAYER_Z]}>
+                    <pointLight color="#00ffff" intensity={30} distance={12} />
+                    
+                    {shieldActive && (
+                        <mesh>
+                            <sphereGeometry args={[2.5, 32, 32]} />
+                            <meshBasicMaterial color="#00f2ff" transparent opacity={0.15} wireframe />
+                        </mesh>
+                    )}
+
+                    {droneActive && (
+                        <group position={[2.5, 1, 0]}>
+                            <mesh rotation={[0, Date.now()*0.005, 0]}>
+                                <boxGeometry args={[0.4, 0.4, 0.4]} />
+                                <meshStandardMaterial color="#00ffff" emissive="#00ffff" emissiveIntensity={5} />
+                            </mesh>
+                            <pointLight color="#00ffff" intensity={10} distance={5} />
+                        </group>
+                    )}
+                    
+                    <group>
+                        <mesh position={[0, 0, 0]}>
+                            <boxGeometry args={[0.4, 0.4, 1.8]} />
+                            {whiteMat}
+                        </mesh>
+                        <mesh position={[0, 0, 0.8]}>
+                            <boxGeometry args={[0.3, 0.3, 0.6]} />
+                            {whiteMat}
+                        </mesh>
+                        <mesh position={[0, 0.22, 0.4]}>
+                            <boxGeometry args={[0.32, 0.32, 0.45]} />
+                            {cyanMat}
+                        </mesh>
+                    </group>
+
+                    <group>
+                        <mesh position={[-0.8, -0.05, -0.1]}>
+                            <boxGeometry args={[1.2, 0.15, 0.7]} />
+                            {darkMat}
+                        </mesh>
+                        <mesh position={[-1.4, 0.1, -0.2]}>
+                            <boxGeometry args={[0.15, 0.5, 0.3]} />
+                            {cyanMat}
+                        </mesh>
+                        
+                        <mesh position={[0.8, -0.05, -0.1]}>
+                            <boxGeometry args={[1.2, 0.15, 0.7]} />
+                            {darkMat}
+                        </mesh>
+                        <mesh position={[1.4, 0.1, -0.2]}>
+                            <boxGeometry args={[0.15, 0.5, 0.3]} />
+                            {cyanMat}
+                        </mesh>
+                    </group>
+
+                    <group position={[0, 0, -0.9]}>
+                        <mesh position={[-0.18, 0, 0]}>
+                            <boxGeometry args={[0.22, 0.22, 0.4]} />
+                            {cyanMat}
+                        </mesh>
+                        <mesh position={[0.18, 0, 0]}>
+                            <boxGeometry args={[0.22, 0.22, 0.4]} />
+                            {cyanMat}
+                        </mesh>
+                    </group>
+                </group>
+            );
+        }
+
+        const Asteroid = React.memo(({ data }) => {
+            const rot = useMemo(() => [Math.random()*0.02, Math.random()*0.02, Math.random()*0.02], []);
+            const meshRef = useRef();
+
+            useFrame(() => {
+                if (meshRef.current) {
+                    meshRef.current.rotation.x += rot[0];
+                    meshRef.current.rotation.y += rot[1];
+                    meshRef.current.rotation.z += rot[2];
+                }
+            });
+
+            return (
+                <group position={[data.x, data.y, data.z]}>
+                    <mesh ref={meshRef}>
+                        <dodecahedronGeometry args={[data.size, 0]} />
+                        <meshStandardMaterial 
+                            color="#888888" 
+                            emissive="#111111" 
+                            emissiveIntensity={0.2} 
+                            roughness={0.7}
+                            metalness={0.2}
+                            flatShading={true} 
+                        />
+                    </mesh>
+                    {/* Projeção do Asteroide na grade para ajudar mira */}
+                    <mesh position={[0, GRID_Y - data.y + 0.05, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+                        <circleGeometry args={[data.size * 0.8, 16]} />
+                        <meshBasicMaterial color="#ff0055" transparent opacity={0.15} />
+                    </mesh>
+                </group>
+            );
+        });
+
+        const Bullet = React.memo(({ data }) => (
+            <mesh position={[data.x, data.y, data.z]} rotation={[Math.PI/2, 0, 0]}>
+                <cylinderGeometry args={[0.1, 0.1, 1.8, 4]} />
+                <meshBasicMaterial color="#00ffff" />
+            </mesh>
+        ));
+
+        const Ore = React.memo(({ data }) => {
+            const colors = { red: "#ff0000", yellow: "#ffff00", purple: "#aa00ff" };
+            return (
+                <mesh position={[data.x, data.y, data.z]}>
+                    <octahedronGeometry args={[0.5, 0]} />
+                    <meshStandardMaterial color={colors[data.type]} emissive={colors[data.type]} emissiveIntensity={5} />
+                </mesh>
+            );
+        });
+
+        function GameCore({ gameState, setGameState, score, setScore, skills, setSkills, combo, setCombo }) {
+            const [playerPos, setPlayerPos] = useState({ x: 0, y: 0 });
+            const [asteroids, setAsteroids] = useState([]);
+            const [bullets, setBullets] = useState([]);
+            const [ores, setOres] = useState([]);
+            const [explosions, setExplosions] = useState([]);
+            const [playerExplosion, setPlayerExplosion] = useState(null);
+            
+            const keys = useRef({});
+            const frameCount = useRef(0);
+            const lastFireTime = useRef(0);
+            const lastHitTime = useRef(0);
+            const stateRef = useRef({ playerPos, asteroids, bullets, ores, gameState, skills, combo });
+
+            useEffect(() => {
+                stateRef.current = { playerPos, asteroids, bullets, ores, gameState, skills, combo };
+            }, [playerPos, asteroids, bullets, ores, gameState, skills, combo]);
+
+            useEffect(() => {
+                if (gameState === 'EXPLODING') {
+                    const timer = setTimeout(() => setGameState('GAME_OVER'), 1500);
+                    return () => clearTimeout(timer);
+                }
+            }, [gameState]);
+
+            useEffect(() => {
+                const handleKeyDown = (e) => { keys.current[e.key.toLowerCase()] = true; };
+                const handleKeyUp = (e) => { keys.current[e.key.toLowerCase()] = false; };
+                window.addEventListener('keydown', handleKeyDown);
+                window.addEventListener('keyup', handleKeyUp);
+                return () => {
+                    window.removeEventListener('keydown', handleKeyDown);
+                    window.removeEventListener('keyup', handleKeyUp);
+                };
+            }, []);
+
+            useFrame((state, delta) => {
+                if (gameState !== 'PLAYING') return;
+
+                const nowMs = state.clock.elapsedTime * 1000;
+
+                if (combo.count > 0 && nowMs - lastHitTime.current > COMBO_WINDOW) {
+                    setCombo({ count: 0, multiplier: 1, lastTime: 0 });
+                }
+
+                setSkills(prev => {
+                    const next = { ...prev };
+                    const s1Down = (keys.current['1'] || prev.s1Touch) && !prev.s1Locked;
+                    if (s1Down && prev.s1Energy > 0) {
+                        next.s1Active = true;
+                        next.s1Energy = Math.max(0, prev.s1Energy - ENERGY_DRAIN_RATE * delta);
+                        if (next.s1Energy === 0) { next.s1Active = false; next.s1Locked = true; }
+                    } else {
+                        next.s1Active = false;
+                        next.s1Energy = Math.min(1, prev.s1Energy + ENERGY_REFILL_RATE_S1 * delta);
+                        if (next.s1Energy >= 1) next.s1Locked = false;
+                    }
+                    const s2Down = (keys.current['2'] || prev.s2Touch) && !prev.s2Locked;
+                    if (s2Down && prev.s2Energy > 0) {
+                        next.s2Active = true;
+                        next.s2Energy = Math.max(0, prev.s2Energy - ENERGY_DRAIN_RATE * delta);
+                        if (next.s2Energy === 0) { next.s2Active = false; next.s2Locked = true; }
+                    } else {
+                        next.s2Active = false;
+                        next.s2Energy = Math.min(1, prev.s2Energy + ENERGY_REFILL_RATE_S2 * delta);
+                        if (next.s2Energy >= 1) next.s2Locked = false;
+                    }
+                    const s3Down = (keys.current['3'] || prev.s3Touch) && !prev.s3Locked;
+                    if (s3Down && !prev.s3Active && prev.s3Energy > 0.1) { next.s3Active = true; }
+                    if (next.s3Active) {
+                        next.s3Energy = Math.max(0, prev.s3Energy - ENERGY_DRAIN_RATE * delta);
+                        if (next.s3Energy === 0) { next.s3Active = false; next.s3Locked = true; }
+                    } else {
+                        next.s3Energy = Math.min(1, prev.s3Energy + ENERGY_REFILL_RATE_S3 * delta);
+                        if (next.s3Energy >= 1) next.s3Locked = false;
+                    }
+                    return next;
+                });
+
+                let { x, y } = stateRef.current.playerPos;
+                if (keys.current['arrowleft'] || keys.current['a']) x -= KEYBOARD_SPEED;
+                if (keys.current['arrowright'] || keys.current['d']) x += KEYBOARD_SPEED;
+                if (keys.current['arrowup'] || keys.current['w']) y += KEYBOARD_SPEED;
+                if (keys.current['arrowdown'] || keys.current['s']) y -= KEYBOARD_SPEED;
+                if (x !== stateRef.current.playerPos.x || y !== stateRef.current.playerPos.y) {
+                    setPlayerPos({ x: Math.max(-BOUNDARY_X, Math.min(BOUNDARY_X, x)), y: Math.max(-BOUNDARY_Y, Math.min(BOUNDARY_Y, y)) });
+                }
+
+                frameCount.current++;
+
+                const currentFireRate = skills.s1Active ? FIRE_RATE_RAPID : FIRE_RATE_NORMAL;
+                if (nowMs - lastFireTime.current > currentFireRate) {
+                    const { x: px, y: py } = stateRef.current.playerPos;
+                    setBullets(prev => [...prev, { id: Math.random(), x: px, y: py, z: PLAYER_Z - 1 }]);
+                    lastFireTime.current = nowMs;
+                }
+
+                if (frameCount.current % SPAWN_INTERVAL === 0) {
+                    setAsteroids(prev => [...prev, { id: Math.random(), x: (Math.random() - 0.5) * 25, y: (Math.random() - 0.5) * 15, z: -75, size: 1.2 + Math.random() * 1.8 }]);
+                }
+
+                setAsteroids(prev => prev.map(a => ({ ...a, z: a.z + ASTEROID_SPEED })).filter(a => a.z < 20));
+                setBullets(prev => prev.map(b => ({ ...b, z: b.z - BULLET_SPEED })).filter(b => b.z > -85));
+                
+                const currentPX = stateRef.current.playerPos.x;
+                const currentPY = stateRef.current.playerPos.y;
+                setOres(prev => prev.map(o => {
+                    if (skills.s3Active) {
+                        const distToPlayer = Math.sqrt(Math.pow(currentPX - o.x, 2) + Math.pow(currentPY - o.y, 2) + Math.pow(PLAYER_Z - o.z, 2));
+                        if (distToPlayer < 20) return { ...o, x: THREE.MathUtils.lerp(o.x, currentPX, 0.1), y: THREE.MathUtils.lerp(o.y, currentPY, 0.1), z: THREE.MathUtils.lerp(o.z, PLAYER_Z, 0.1) };
+                    }
+                    return { ...o, z: o.z + ORE_SPEED };
+                }).filter(o => o.z < 20));
+
+                stateRef.current.bullets.forEach(bullet => {
+                    stateRef.current.asteroids.forEach(asteroid => {
+                        const dist = Math.sqrt(Math.pow(bullet.x - asteroid.x, 2) + Math.pow(bullet.y - asteroid.y, 2) + Math.pow(bullet.z - asteroid.z, 2));
+                        if (dist < asteroid.size + 0.6) {
+                            setExplosions(prev => [...prev, { id: Math.random(), x: asteroid.x, y: asteroid.y, z: asteroid.z }]);
+                            setAsteroids(prev => prev.filter(a => a.id !== asteroid.id));
+                            setBullets(prev => prev.filter(b => b.id !== bullet.id));
+                            lastHitTime.current = nowMs;
+                            setCombo(prev => {
+                                const newCount = prev.count + 1;
+                                let newMult = 1;
+                                if (newCount >= 60) newMult = 5;
+                                else if (newCount >= 40) newMult = 4;
+                                else if (newCount >= 20) newMult = 3;
+                                else if (newCount >= 10) newMult = 2;
+                                return { count: newCount, multiplier: newMult, lastTime: nowMs };
+                            });
+                            const rand = Math.random();
+                            let type = rand < 0.6 ? "red" : rand < 0.9 ? "yellow" : "purple";
+                            const drops = [];
+                            const mult = stateRef.current.combo.multiplier;
+                            for(let i=0; i<mult; i++) {
+                                drops.push({ id: Math.random(), x: asteroid.x + (i*0.2), y: asteroid.y, z: asteroid.z, type });
+                            }
+                            setOres(prev => [...prev, ...drops]);
+                        }
+                    });
+                });
+
+                stateRef.current.asteroids.forEach(asteroid => {
+                    const dist = Math.sqrt(Math.pow(currentPX - asteroid.x, 2) + Math.pow(currentPY - asteroid.y, 2) + Math.pow(PLAYER_Z - asteroid.z, 2));
+                    if (dist < asteroid.size + 1.2) {
+                        if (!skills.s2Active) { setPlayerExplosion({ x: currentPX, y: currentPY, z: PLAYER_Z }); setGameState('EXPLODING'); }
+                        else { setExplosions(prev => [...prev, { id: Math.random(), x: asteroid.x, y: asteroid.y, z: asteroid.z }]); setAsteroids(prev => prev.filter(a => a.id !== asteroid.id)); }
+                    }
+                });
+
+                stateRef.current.ores.forEach(ore => {
+                    const dist = Math.sqrt(Math.pow(currentPX - ore.x, 2) + Math.pow(currentPY - ore.y, 2) + Math.pow(PLAYER_Z - ore.z, 2));
+                    if (dist < COLLECTION_DISTANCE) {
+                        const vals = { red: 5, yellow: 20, purple: 50 };
+                        setScore(s => s + vals[ore.type]);
+                        setOres(prev => prev.filter(o => o.id !== ore.id));
+                    }
+                });
+            });
+
+            const removeExplosion = (id) => setExplosions(prev => prev.filter(e => e.id !== id));
+
+            useEffect(() => {
+                if (gameState === 'PLAYING') {
+                    setScore(0); setAsteroids([]); setBullets([]); setOres([]); setExplosions([]); setPlayerExplosion(null); setPlayerPos({ x: 0, y: 0 });
+                    setSkills({ s1Active: false, s1Energy: 1, s1Locked: false, s1Touch: false, s2Active: false, s2Energy: 1, s2Locked: false, s3Touch: false, s3Active: false, s3Energy: 1, s3Locked: false });
+                    setCombo({ count: 0, multiplier: 1, lastTime: 0 });
+                    keys.current = {};
+                }
+            }, [gameState]);
 
             return (
                 <>
-                    <Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade speed={1} />
-                    <ambientLight intensity={0.5} />
-                    <pointLight position={[10, 10, 10]} intensity={1} />
+                    <Stars radius={100} depth={50} count={5000} factor={6} saturation={1} fade speed={1.5} />
+                    <ambientLight intensity={0.8} /> 
+                    <pointLight position={[0, 0, 20]} intensity={10} color="#ffffff" distance={100} />
                     
-                    <Road />
+                    {/* Elementos de Referência Espacial */}
+                    <NavigationGrid />
+                    <SpaceTunnel />
+                    <ShipProjection x={playerPos.x} y={playerPos.y} />
+
+                    <EngineTrail shipX={playerPos.x} shipY={playerPos.y} shipVisible={gameState === 'PLAYING'} />
+                    <Spaceship x={playerPos.x} y={playerPos.y} visible={gameState === 'PLAYING'} shieldActive={skills.s2Active} droneActive={skills.s3Active} />
                     
-                    <Player x={playerX} />
-
-                    {obstacles.map(obs => (
-                        <Obstacle 
-                            key={obs.id} 
-                            data={obs}
-                            playerX={playerX}
-                            onHit={removeObstacle}
-                            onCollide={triggerGameOver}
-                        />
-                    ))}
-
-                    <fog attach="fog" args={['#050505', 5, 45]} />
+                    {gameState === 'EXPLODING' && playerExplosion && <ExplosionEffect data={playerExplosion} color="#00ffff" size={0.6} count={40} duration={1.5} />}
+                    {asteroids.map(a => <Asteroid key={a.id} data={a} />)}
+                    {bullets.map(b => <Bullet key={b.id} data={b} />)}
+                    {ores.map(o => <Ore key={o.id} data={o} />)}
+                    {explosions.map(e => <ExplosionEffect key={e.id} data={e} onComplete={removeExplosion} />)}
+                    <fog attach="fog" args={['#050b1a', 10, 120]} />
                 </>
             );
         }
 
+        const ThunderIcon = () => (<svg className="skill-icon" viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>);
+        const ShieldIcon = () => (<svg className="skill-icon" viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/></svg>);
+        const DroneIcon = () => (<svg className="skill-icon" viewBox="0 0 24 24"><path d="M22 14c0 1.1-.9 2-2 2h-1l-1.3 2.6c-.2.4-.6.7-1.1.7H7.4c-.5 0-.9-.3-1.1-.7L5 16H4c-1.1 0-2-.9-2-2v-4c0-1.1.9-2 2-2h1l1.3-2.6c.2-.4.6-.7 1.1-.7h9.2c.5 0 .9.3 1.1.7L19 8h1c1.1 0 2 .9 2 2v4zM12 11.5c-1.4 0-2.5 1.1-2.5 2.5s1.1 2.5 2.5 2.5 2.5-1.1 2.5-2.5-1.1-2.5-2.5-2.5z"/></svg>);
+
         function App() {
             const [gameState, setGameState] = useState('START');
             const [score, setScore] = useState(0);
+            const [combo, setCombo] = useState({ count: 0, multiplier: 1, lastTime: 0 });
+            const [skills, setSkills] = useState({
+                s1Active: false, s1Energy: 1, s1Locked: false, s1Touch: false,
+                s2Active: false, s2Energy: 1, s2Locked: false, s2Touch: false,
+                s3Active: false, s3Energy: 1, s3Locked: false, s3Touch: false,
+            });
 
-            const handleRestartRequest = () => {
-                // Solicita permissão ao site pai enviando o postMessage
-                window.parent.postMessage({ type: 'RESTART_REQUEST' }, '*');
-            };
+            const [timerPercent, setTimerPercent] = useState(0);
+            useEffect(() => {
+                if (combo.count > 0) {
+                    const interval = setInterval(() => {
+                        const now = performance.now();
+                        const elapsed = now - combo.lastTime;
+                        const remaining = Math.max(0, COMBO_WINDOW - elapsed);
+                        setTimerPercent((remaining / COMBO_WINDOW) * 100);
+                    }, 50);
+                    return () => clearInterval(interval);
+                } else {
+                    setTimerPercent(0);
+                }
+            }, [combo.count, combo.lastTime]);
+
+            const handleSkillTouch = (id, state) => { if (skills[`s${id}Locked`]) return; setSkills(prev => ({ ...prev, [`s${id}Touch`]: state })); };
 
             return (
-                <div style={{ width: '100%', height: '100%' }}>
-                    <Canvas camera={{ position: [0, 5, 15], fov: 60 }}>
-                        <Game 
-                            gameState={gameState} 
-                            setGameState={setGameState} 
-                            score={score}
-                            setScore={setScore}
+                <div style={{ width: '100%', height: '100%', background: '#050b1a' }}>
+                    <Canvas dpr={window.devicePixelRatio > 1 ? 1.5 : 1}>
+                        <PerspectiveCamera 
+                            makeDefault 
+                            position={[0, 14, 28]} 
+                            rotation={[-0.45, 0, 0]} 
+                            fov={45} 
+                        />
+                        <GameCore 
+                            gameState={gameState} setGameState={setGameState} score={score} setScore={setScore}
+                            skills={skills} setSkills={setSkills} combo={combo} setCombo={setCombo}
                         />
                     </Canvas>
-
                     <div className="ui-overlay">
                         {gameState === 'START' && (
                             <div className="menu-card">
-                                <h1>NEON RUNNER</h1>
-                                <p>Use A/D ou Mouse para desviar dos obstáculos</p>
-                                <button onClick={() => setGameState('PLAYING')}>Iniciar Jogo</button>
+                                <h1>NEON MINER</h1>
+                                <p className="info-text">Use as grades neon para se orientar no espaço profundo. Mire na projeção vermelha dos asteroides!</p>
+                                <button onClick={() => setGameState('PLAYING')}>Iniciar Missão</button>
+                                <div className="controls-hint">Teclas WASD, SETAS e 1, 2, 3</div>
                             </div>
                         )}
-
                         {gameState === 'GAME_OVER' && (
                             <div className="menu-card">
-                                <h1 style={{ color: '#ff0055' }}>FIM DE JOGO</h1>
-                                <p>Sua pontuação:</p>
-                                <h2 style={{ fontSize: '48px', margin: '10px 0', textShadow: '0 0 10px #ff0055' }}>
-                                    {score}
-                                </h2>
-                                <button onClick={handleRestartRequest}>JOGAR NOVAMENTE (-1 🪙)</button>
+                                <h1 style={{ color: '#ff0055', textShadow: '0 0 20px #ff0055' }}>SISTEMA FALHOU</h1>
+                                <p>Energia Coletada:</p>
+                                <h2 style={{ fontSize: '56px', margin: '15px 0', color: '#00ffff', textShadow: '0 0 30px rgba(0,255,255,0.7)' }}>{score}</h2>
+                                <button onClick={() => setGameState('PLAYING')}>Reiniciar Nave</button>
                             </div>
                         )}
-
                         {gameState === 'PLAYING' && (
-                            <div className="score-board">
-                                SCORE: {score}
-                            </div>
+                            <>
+                                <div className="score-board">{score}</div>
+                                {combo.count > 0 && (
+                                    <div className="combo-container">
+                                        {combo.multiplier > 1 && (
+                                            <div className="multiplier-text">Minério x{combo.multiplier}</div>
+                                        )}
+                                        <div className="combo-count">COMBO {combo.count}</div>
+                                        <div className="combo-timer-bar">
+                                            <div className="combo-timer-fill" style={{ width: `${timerPercent}%` }}></div>
+                                        </div>
+                                    </div>
+                                )}
+                                <div className="skills-container">
+                                    <div className={`skill-button ${skills.s1Active ? 'active' : ''} ${skills.s1Locked ? 'locked' : ''}`} onPointerDown={() => handleSkillTouch(1, true)} onPointerUp={() => handleSkillTouch(1, false)} onPointerLeave={() => handleSkillTouch(1, false)}><div className="skill-key">1</div><div className="skill-energy" style={{ height: `${skills.s1Energy * 100}%` }}></div><ThunderIcon /><div className="skill-label">RAIO</div></div>
+                                    <div className={`skill-button ${skills.s2Active ? 'active' : ''} ${skills.s2Locked ? 'locked' : ''}`} onPointerDown={() => handleSkillTouch(2, true)} onPointerUp={() => handleSkillTouch(2, false)} onPointerLeave={() => handleSkillTouch(2, false)}><div className="skill-key">2</div><div className="skill-energy" style={{ height: `${skills.s2Energy * 100}%` }}></div><ShieldIcon /><div className="skill-label">ESCUDO</div></div>
+                                    <div className={`skill-button ${skills.s3Active ? 'active' : ''} ${skills.s3Locked ? 'locked' : ''}`} onPointerDown={() => handleSkillTouch(3, true)} onPointerUp={() => handleSkillTouch(3, false)}><div className="skill-key">3</div><div className="skill-energy" style={{ height: `${skills.s3Energy * 100}%` }}></div><DroneIcon /><div className="skill-label">DRONE</div></div>
+                                </div>
+                            </>
                         )}
+                        {gameState === 'EXPLODING' && <div className="score-board">{score}</div>}
                     </div>
                 </div>
             );
         }
-
-        const container = document.getElementById('root');
-        const root = createRoot(container);
+        const root = createRoot(document.getElementById('root'));
         root.render(<App />);
     </script>
 </body>
