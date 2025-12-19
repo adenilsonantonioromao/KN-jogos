@@ -33,33 +33,14 @@
         .play-btn:active { transform: translateY(4px); box-shadow: none; }
 
         /* --- JANELA DE JOGO --- */
-        #game-modal {
-            display: none; 
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-            background: rgba(0, 0, 0, 0.95);
-            backdrop-filter: blur(5px);
-            z-index: 3000;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .game-window {
-            width: 95%; max-width: 900px;
-            height: 65vh;
-            background: #000;
-            border: 2px solid var(--green);
-            border-radius: 12px;
-            box-shadow: 0 0 30px rgba(76, 175, 80, 0.3);
-            overflow: hidden;
-            position: relative;
-        }
-
+        #game-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.95); backdrop-filter: blur(5px); z-index: 3000; flex-direction: column; justify-content: center; align-items: center; }
+        .game-window { width: 95%; max-width: 900px; height: 65vh; background: #000; border: 2px solid var(--green); border-radius: 12px; box-shadow: 0 0 30px rgba(76, 175, 80, 0.3); overflow: hidden; position: relative; }
         iframe { border: none; width: 100%; height: 100%; display: block; background: #000; }
-
-        .game-controls { margin-top: 20px; display: flex; gap: 15px; }
-        .btn-control { border: none; padding: 12px 25px; border-radius: 30px; font-weight: bold; cursor: pointer; color: white; font-size: 1rem; display: flex; align-items: center; gap: 8px; }
+        .game-controls { margin-top: 20px; display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+        .btn-control { border: none; padding: 10px 20px; border-radius: 30px; font-weight: bold; cursor: pointer; color: white; font-size: 0.9rem; display: flex; align-items: center; gap: 6px; transition: transform 0.1s; }
+        .btn-control:active { transform: scale(0.95); }
         .btn-close { background: #D32F2F; }
+        .btn-restart { background: var(--secondary); color: #3E2723; }
         .btn-fullscreen { background: #2196F3; }
 
         /* --- RANKING --- */
@@ -81,15 +62,12 @@
         .nav-btn span { font-size: 1.4rem; margin-bottom: 2px; }
 
         .notification { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: #333; color: white; padding: 10px 20px; border-radius: 30px; z-index: 4000; display: none; font-weight: bold; width: 80%; max-width: 300px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
-        
         @media (max-width: 600px) { .game-window { height: 75vh; } }
     </style>
 </head>
 <body>
 
     <div id="notificacao" class="notification"></div>
-
-    <!-- TELA LOGIN -->
     <div id="login-screen">
         <div class="login-box">
             <h1>KN Jogos 🎮</h1>
@@ -98,31 +76,29 @@
         </div>
     </div>
 
-    <!-- JANELA DE JOGO -->
     <div id="game-modal">
         <div class="game-window">
             <iframe id="game-frame" src="" allowfullscreen></iframe>
         </div>
         <div class="game-controls">
             <button class="btn-control btn-close" onclick="fecharJogo()">❌ Sair</button>
+            <button class="btn-control btn-restart" onclick="reiniciarJogo()">🔄 Reiniciar (-1 🪙)</button>
             <button class="btn-control btn-fullscreen" onclick="ativarTelaCheia()">⛶ Tela Cheia</button>
         </div>
     </div>
 
-    <!-- APP PRINCIPAL -->
     <div id="app-container" style="display:none; max-width: 600px; margin: 0 auto;">
         <header>
             <div class="user-info">
                 <img id="user-photo" src="" alt="Foto">
-                <div>
-                    <div id="user-name" style="font-weight:bold; font-size:0.9rem;">...</div>
-                </div>
+                <div><div id="user-name" style="font-weight:bold; font-size:0.9rem;">...</div></div>
             </div>
             <div class="chips-display">🪙 <span id="user-fichas">0</span></div>
         </header>
 
         <div id="tab-novos" class="tab-content active">
             <h2>Novos Jogos 🔥</h2>
+            <div id="loading-games">Carregando jogos...</div>
             <div id="lista-novos"></div>
         </div>
         <div id="tab-populares" class="tab-content"><h2>Mais Jogados 🏆</h2><div id="lista-populares"></div></div>
@@ -130,10 +106,9 @@
         <div id="tab-rank" class="tab-content">
             <h2>Ranking Global 🌍</h2>
             <button class="btn-control btn-fullscreen" style="margin: 0 auto 15px auto; font-size: 0.8rem; background: var(--primary);" onclick="rolarAteMim()">📍 Onde eu estou?</button>
-            <div id="loading-rank">Carregando classificação...</div>
+            <div id="loading-rank">Carregando...</div>
             <ul id="lista-rank" class="rank-list"></ul>
         </div>
-
         <nav class="bottom-nav">
             <button class="nav-btn active" onclick="mudarAba('novos', this)"><span>🔥</span>Novos</button>
             <button class="nav-btn" onclick="mudarAba('populares', this)"><span>⭐</span>Top</button>
@@ -145,20 +120,9 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc, setDoc, updateDoc, increment, collection, query, orderBy, limit, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, getDocs, setDoc, updateDoc, increment, collection, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-        // CONFIG DOS JOGOS
-        const JOGOS_CONFIG = [
-            { 
-                id: 'neonrunner', 
-                nome: 'Neon Runner 3D', 
-                desc: 'Desvie dos obstáculos em alta velocidade!', 
-                arquivo: 'jogo1.html', 
-                img: 'maze3d.jpg' 
-            },
-        ];
-
-        // FIREBASE
+        // CONFIGURAÇÃO FIREBASE
         const firebaseConfig = {
             apiKey: "AIzaSyBIR7CqYYvMZVQxtO67JCQoJ3OLT1cvAx8",
             authDomain: "kn-jogos.firebaseapp.com",
@@ -177,6 +141,7 @@
         let currentUser = null;
         let globalStats = {}; 
         let userStats = {}; 
+        let JOGOS_CONFIG = []; // Agora vem do Banco
 
         document.getElementById('btn-login').addEventListener('click', () => {
             signInWithPopup(auth, provider).catch(alert);
@@ -188,10 +153,25 @@
                 document.getElementById('login-screen').style.display = 'none';
                 document.getElementById('app-container').style.display = 'block';
                 await carregarUsuario(user);
+                await carregarListaDeJogos(); // NOVO: Carrega jogos do banco
                 await carregarStatsGlobais();
                 renderizarTodosJogos();
             }
         });
+
+        async function carregarListaDeJogos() {
+            try {
+                const querySnapshot = await getDocs(collection(db, "listaJogos"));
+                JOGOS_CONFIG = [];
+                querySnapshot.forEach((doc) => {
+                    JOGOS_CONFIG.push(doc.data());
+                });
+                document.getElementById('loading-games').style.display = 'none';
+            } catch (e) {
+                console.error("Erro ao carregar jogos:", e);
+                document.getElementById('loading-games').innerText = "Erro ao carregar jogos.";
+            }
+        }
 
         async function carregarUsuario(user) {
             const userRef = doc(db, "users", user.uid);
@@ -213,17 +193,20 @@
         }
 
         function criarCardHTML(jogo, playsGlobal, playsUser) {
-            const bgStyle = jogo.img ? `url('${jogo.img}')` : 'none; background-color: #222';
+            // Nota: Agora as imagens e arquivos são buscados nas pastas
+            const caminhoImg = `capas/${jogo.img}`;
+            const caminhoArquivo = `jogos/${jogo.arquivo}`;
+            
             return `
             <div class="game-card">
-                <div class="game-thumb" style="background-image: ${bgStyle};"></div>
+                <div class="game-thumb" style="background-image: url('${caminhoImg}');"></div>
                 <div class="game-info">
                     <div>
                         <h3 style="margin:0; font-size:1.1rem;">${jogo.nome}</h3>
                         <p style="margin:5px 0; font-size:0.8rem; color:#666;">${jogo.desc}</p>
                         <div class="play-stats"><span>🌍 ${playsGlobal || 0} plays</span><span>👤 ${playsUser || 0}</span></div>
                     </div>
-                    <button class="play-btn" onclick="iniciarJogo('${jogo.arquivo}', '${jogo.id}')">JOGAR</button>
+                    <button class="play-btn" onclick="iniciarJogo('${caminhoArquivo}', '${jogo.id}')">JOGAR</button>
                 </div>
             </div>`;
         }
@@ -231,10 +214,13 @@
         function renderizarTodosJogos() {
             const divNovos = document.getElementById('lista-novos');
             divNovos.innerHTML = JOGOS_CONFIG.map(j => criarCardHTML(j, globalStats[j.id], userStats[j.id])).join('');
+            
+            // Populares e Favoritos
             const populares = [...JOGOS_CONFIG].sort((a,b) => (globalStats[b.id] || 0) - (globalStats[a.id] || 0));
             document.getElementById('lista-populares').innerHTML = populares.map(j => criarCardHTML(j, globalStats[j.id], userStats[j.id])).join('');
+            
             const favoritos = [...JOGOS_CONFIG].filter(j => (userStats[j.id] || 0) > 0).sort((a,b) => (userStats[b.id] || 0) - (userStats[a.id] || 0));
-            document.getElementById('lista-favoritos').innerHTML = favoritos.length ? favoritos.map(j => criarCardHTML(j, globalStats[j.id], userStats[j.id])).join('') : "<p style='color:#666'>Você ainda não jogou nada.</p>";
+            document.getElementById('lista-favoritos').innerHTML = favoritos.length ? favoritos.map(j => criarCardHTML(j, globalStats[j.id], userStats[j.id])).join('') : "<p style='color:#666'>Ainda não jogou nada.</p>";
         }
 
         window.mudarAba = async function(abaID, btn) {
@@ -290,6 +276,22 @@
             iframe.src = urlArquivo; 
         }
 
+        window.reiniciarJogo = async function() {
+            if(!currentUser) return;
+            if(!confirm("⚠️ JOGAR NOVAMENTE: Custo 1 Ficha 🪙\n\nConfirmar?")) return;
+            const userRef = doc(db, "users", currentUser.uid);
+            const snap = await getDoc(userRef);
+            if (snap.data().fichas < 1) { mostrarNotificacao("🚫 Sem fichas! :("); return; }
+            const updates = { fichas: increment(-1) };
+            updates[`jogosJogados.${window.jogoAtualID}`] = increment(1);
+            await updateDoc(userRef, updates);
+            setDoc(doc(db, "config", "gameStats"), { [window.jogoAtualID]: increment(1) }, { merge: true });
+            document.getElementById('user-fichas').innerText = snap.data().fichas - 1;
+            const iframe = document.getElementById('game-frame');
+            iframe.src = iframe.src;
+            mostrarNotificacao("🔄 Recarregando...");
+        }
+
         window.fecharJogo = function() {
             document.getElementById('game-modal').style.display = 'none';
             document.getElementById('game-frame').src = "";
@@ -302,35 +304,6 @@
             else if (iframe.webkitRequestFullscreen) iframe.webkitRequestFullscreen();
         }
 
-        window.reiniciarJogo = async function() {
-            if(!currentUser) return;
-            // Confirmação
-            if(!confirm("⚠️ JOGAR NOVAMENTE: Custo 1 Ficha 🪙\n\nConfirmar?")) return;
-
-            const userRef = doc(db, "users", currentUser.uid);
-            const snap = await getDoc(userRef);
-            
-            if (snap.data().fichas < 1) {
-                mostrarNotificacao("🚫 Sem fichas! :(");
-                return;
-            }
-
-            // Cobra e Atualiza Stats
-            const updates = { fichas: increment(-1) };
-            updates[`jogosJogados.${window.jogoAtualID}`] = increment(1);
-            await updateDoc(userRef, updates);
-            setDoc(doc(db, "config", "gameStats"), { [window.jogoAtualID]: increment(1) }, { merge: true });
-
-            // Atualiza Visual
-            document.getElementById('user-fichas').innerText = snap.data().fichas - 1;
-            
-            // Recarrega o Iframe
-            const iframe = document.getElementById('game-frame');
-            iframe.src = iframe.src;
-            mostrarNotificacao("🔄 Recarregando...");
-        }
-
-        // --- OUVINTE MÁGICO DO BOTÃO ---
         window.addEventListener('message', async function(event) {
             if (event.data.type === 'GAME_OVER') {
                 const pontos = event.data.score;
@@ -344,11 +317,7 @@
                     mostrarNotificacao(`🏆 NOVO RECORDE: ${pontos}!`);
                 }
             }
-            
-            // AQUI ESTÁ O SEGREDO QUE FAZ O BOTÃO DO JOGO FUNCIONAR
-            if (event.data.type === 'RESTART_REQUEST') {
-                reiniciarJogo();
-            }
+            if (event.data.type === 'RESTART_REQUEST') reiniciarJogo();
         });
 
         function mostrarNotificacao(msg) {
