@@ -3,116 +3,102 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Painel Admin - Lista Completa</title>
+    <title>Painel Admin - KN Jogos</title>
     <style>
         body { font-family: 'Segoe UI', sans-serif; background: #f4f4f9; padding: 20px; max-width: 800px; margin: 0 auto; color: #333; }
         
-        /* ÁREA DE EDIÇÃO (TOPO) */
+        /* TELA DE BLOQUEIO (LOGIN) */
+        #lock-screen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(135deg, #111, #333); z-index: 999;
+            display: flex; flex-direction: column; justify-content: center; align-items: center; color: white;
+        }
+        .login-box { background: rgba(255,255,255,0.1); padding: 40px; border-radius: 20px; text-align: center; border: 1px solid rgba(255,255,255,0.2); }
+        .login-btn { background: #FF5722; color: white; padding: 15px 30px; font-size: 1.2rem; border: none; border-radius: 50px; cursor: pointer; font-weight: bold; margin-top: 20px; transition: 0.3s; box-shadow: 0 4px 15px rgba(255, 87, 34, 0.4); }
+        .login-btn:hover { transform: scale(1.05); background: #E64A19; }
+        
+        /* CONTEÚDO (ESCONDIDO ATÉ LOGAR) */
+        #admin-content { display: none; }
+
+        /* EDITOR */
         .editor-card { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border-left: 5px solid #FF5722; }
         h2 { margin-top: 0; color: #FF5722; }
-        
         label { font-weight: bold; font-size: 0.85rem; display: block; margin-top: 15px; color: #555; text-transform: uppercase; }
         input, textarea { width: 100%; padding: 12px; margin-top: 5px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 1rem; background: #fafafa; }
-        input:focus, textarea:focus { border-color: #FF5722; background: #fff; outline: none; }
         
-        /* ID com destaque */
-        #idJogo { font-family: monospace; font-weight: bold; letter-spacing: 1px; color: #D81B60; }
-
         /* BOTÕES */
         .btn-row { display: flex; gap: 10px; margin-top: 20px; }
         button { flex: 1; padding: 15px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 1rem; transition: 0.2s; }
-        
-        .btn-save { background: #FF5722; color: white; }
-        .btn-save:hover { background: #E64A19; }
-        
+        .btn-save { background: #2196F3; color: white; }
         .btn-clear { background: #9E9E9E; color: white; }
-        .btn-clear:hover { background: #757575; }
 
-        /* LISTA DE JOGOS (EMBAIXO) */
+        /* LISTA */
         .list-container { margin-top: 40px; }
-        .list-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-        
-        .game-item { 
-            background: white; 
-            padding: 15px; 
-            border-radius: 10px; 
-            margin-bottom: 10px; 
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05); 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            cursor: pointer; 
-            border: 1px solid transparent;
-            transition: all 0.2s;
-        }
-        
-        .game-item:hover { transform: translateY(-2px); border-color: #FF5722; box-shadow: 0 5px 15px rgba(255, 87, 34, 0.2); }
-        
-        .game-info h3 { margin: 0; font-size: 1.1rem; color: #333; }
-        .game-id { font-family: monospace; color: #D81B60; background: #FCE4EC; padding: 2px 6px; border-radius: 4px; font-size: 0.9rem; }
-        .game-file { color: #888; font-size: 0.85rem; margin-left: 10px; }
-        
-        .action-icon { font-size: 1.5rem; color: #ccc; }
-        .game-item:hover .action-icon { color: #FF5722; }
-
-        .status-msg { text-align: center; padding: 10px; font-weight: bold; display: none; margin-bottom: 10px; border-radius: 5px; }
-        .status-success { background: #d4edda; color: #155724; }
-        .status-loading { color: #666; font-style: italic; }
-
+        .game-item { background: white; padding: 15px; border-radius: 10px; margin-bottom: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; cursor: pointer; border: 1px solid transparent; }
+        .game-item:hover { border-color: #2196F3; transform: translateX(5px); }
+        .game-id { font-family: monospace; color: #D81B60; background: #FCE4EC; padding: 2px 6px; border-radius: 4px; }
     </style>
 </head>
 <body>
 
-    <!-- MENSAGEM DE STATUS -->
-    <div id="status" class="status-msg"></div>
-
-    <!-- ÁREA DE EDIÇÃO -->
-    <div class="editor-card" id="topo">
-        <h2>✏️ Editar / Cadastrar Jogo</h2>
-        <p style="font-size:0.9rem; color:#666; margin-top:-10px;">Preencha para criar um novo ou selecione abaixo para editar.</p>
-        
-        <label>ID do Jogo (Identificador Único)</label>
-        <input type="text" id="idJogo" placeholder="ex: neonrunner">
-
-        <label>Nome Visível no Site</label>
-        <input type="text" id="nome" placeholder="ex: Neon Runner 3D">
-
-        <label>Descrição</label>
-        <input type="text" id="desc" placeholder="ex: Desvie dos obstáculos...">
-
-        <div style="display:flex; gap:10px;">
-            <div style="flex:1;">
-                <label>Arquivo HTML (/jogos)</label>
-                <input type="text" id="arquivo" placeholder="ex: neon.html">
-            </div>
-            <div style="flex:1;">
-                <label>Imagem da Capa (/capas)</label>
-                <input type="text" id="img" placeholder="ex: neon.jpg">
-            </div>
-        </div>
-
-        <div class="btn-row">
-            <button class="btn-clear" onclick="limparFormulario()">🧹 Limpar / Novo</button>
-            <button class="btn-save" onclick="salvarJogo()">💾 SALVAR JOGO</button>
+    <!-- 1. TELA DE BLOQUEIO (LOGIN) -->
+    <div id="lock-screen">
+        <div class="login-box">
+            <h1 style="margin:0">🔒 Área Restrita</h1>
+            <p style="color:#ccc;">Apenas o Dono (Adenilson) pode acessar.</p>
+            <button class="login-btn" id="btn-login">🔑 ENTRAR COM GOOGLE</button>
+            <p id="error-msg" style="color:#ff5252; font-weight:bold; margin-top:15px; display:none;"></p>
         </div>
     </div>
 
-    <!-- LISTA DE JOGOS -->
-    <div class="list-container">
-        <div class="list-header">
-            <h3>📂 Lista de Jogos Cadastrados</h3>
-            <button onclick="carregarLista()" style="width: auto; padding: 5px 15px; font-size: 0.8rem; background: #2196F3; color: white;">🔄 Atualizar Lista</button>
+    <!-- 2. CONTEÚDO DO ADMIN -->
+    <div id="admin-content">
+        <div id="status" style="text-align:center; padding:10px; margin-bottom:10px; font-weight:bold; display:none;"></div>
+
+        <div class="editor-card" id="topo">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <h2>✏️ Painel de Controle</h2>
+                <button onclick="sair()" style="width:auto; background:#333; font-size:0.8rem; padding:5px 15px; margin:0;">Sair</button>
+            </div>
+            
+            <label>ID do Jogo (Único)</label>
+            <input type="text" id="idJogo" placeholder="ex: neonrunner">
+
+            <label>Nome Visível</label>
+            <input type="text" id="nome" placeholder="ex: Neon Runner 3D">
+
+            <label>Descrição</label>
+            <input type="text" id="desc" placeholder="ex: Desvie dos obstáculos...">
+
+            <div style="display:flex; gap:10px;">
+                <div style="flex:1;">
+                    <label>Arquivo (/jogos)</label>
+                    <input type="text" id="arquivo" placeholder="ex: neon.html">
+                </div>
+                <div style="flex:1;">
+                    <label>Imagem (/capas)</label>
+                    <input type="text" id="img" placeholder="ex: neon.jpg">
+                </div>
+            </div>
+
+            <div class="btn-row">
+                <button class="btn-clear" onclick="limparFormulario()">🧹 Novo</button>
+                <button class="btn-save" onclick="salvarJogo()">💾 SALVAR NO SITE</button>
+            </div>
         </div>
-        
-        <div id="lista-jogos">
-            <div class="status-loading">Carregando jogos do banco de dados...</div>
+
+        <div class="list-container">
+            <h3>📂 Jogos no Banco de Dados</h3>
+            <div id="lista-jogos">Carregando...</div>
         </div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
+        // --- CONFIGURAÇÃO (SEU PROJETO) ---
         const firebaseConfig = {
             apiKey: "AIzaSyBIR7CqYYvMZVQxtO67JCQoJ3OLT1cvAx8",
             authDomain: "kn-jogos.firebaseapp.com",
@@ -124,24 +110,54 @@
         };
 
         const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
         const db = getFirestore(app);
+        const provider = new GoogleAuthProvider();
 
-        // Carrega a lista assim que abrir
-        window.onload = carregarLista;
-        window.carregarLista = carregarLista; // Torna global para o botão
+        // --- E-MAIL PERMITIDO ---
+        const ADMIN_EMAIL = "adenilsonantonioromao@gmail.com";
 
-        // --- 1. CARREGAR LISTA ---
-        async function carregarLista() {
+        // --- LOGIN COM PROTEÇÃO ---
+        document.getElementById('btn-login').addEventListener('click', () => {
+            signInWithPopup(auth, provider).catch(e => alert("Erro: " + e.message));
+        });
+
+        onAuthStateChanged(auth, (user) => {
+            const errorMsg = document.getElementById('error-msg');
+            
+            if (user) {
+                // VERIFICA SE É O DONO
+                if (user.email === ADMIN_EMAIL) {
+                    // SUCESSO: Libera o painel
+                    document.getElementById('lock-screen').style.display = 'none';
+                    document.getElementById('admin-content').style.display = 'block';
+                    carregarLista();
+                } else {
+                    // FALHA: E-mail errado
+                    errorMsg.style.display = 'block';
+                    errorMsg.innerText = `⛔ ACESSO NEGADO! O e-mail ${user.email} não tem permissão.`;
+                    signOut(auth); // Desloga o intruso imediatamente
+                }
+            }
+        });
+
+        window.sair = function() {
+            signOut(auth).then(() => {
+                location.reload();
+            });
+        }
+
+        // --- SISTEMA DE CADASTRO (IGUAL ANTES) ---
+        window.carregarLista = async function() {
             const divLista = document.getElementById('lista-jogos');
-            divLista.innerHTML = '<div class="status-loading">Atualizando lista...</div>';
-
+            divLista.innerHTML = "Lendo banco de dados...";
+            
             try {
                 const querySnapshot = await getDocs(collection(db, "listaJogos"));
-                
-                divLista.innerHTML = ""; // Limpa
+                divLista.innerHTML = "";
                 
                 if (querySnapshot.empty) {
-                    divLista.innerHTML = "<p style='text-align:center'>Nenhum jogo encontrado no banco.</p>";
+                    divLista.innerHTML = "<p>Nenhum jogo encontrado.</p>";
                     return;
                 }
 
@@ -149,42 +165,35 @@
                     const data = doc.data();
                     const item = document.createElement('div');
                     item.className = 'game-item';
-                    
-                    // HTML DE CADA ITEM DA LISTA
                     item.innerHTML = `
-                        <div class="game-info">
+                        <div>
                             <span class="game-id">${data.id}</span>
-                            <h3>${data.nome}</h3>
-                            <span class="game-file">📄 ${data.arquivo}</span>
+                            <strong>${data.nome}</strong>
                         </div>
-                        <div class="action-icon">✏️</div>
+                        <span style="font-size:1.2rem">✏️</span>
                     `;
-
-                    // CLICK PARA EDITAR
                     item.onclick = () => preencherEditor(data);
-                    
                     divLista.appendChild(item);
                 });
-
             } catch (e) {
-                divLista.innerHTML = `<p style="color:red">Erro ao carregar: ${e.message}</p>`;
+                divLista.innerHTML = `<p style="color:red">Erro: ${e.message}</p>`;
             }
         }
 
-        // --- 2. PREENCHER EDITOR ---
         function preencherEditor(data) {
             document.getElementById('idJogo').value = data.id;
             document.getElementById('nome').value = data.nome;
             document.getElementById('desc').value = data.desc;
             document.getElementById('arquivo').value = data.arquivo;
             document.getElementById('img').value = data.img;
-
-            // Rola para o topo
             document.getElementById('topo').scrollIntoView({ behavior: 'smooth' });
-            mostrarStatus(`Editando: ${data.nome}`, "status-loading");
+            
+            const status = document.getElementById('status');
+            status.style.display = 'block';
+            status.style.background = '#fff3cd';
+            status.innerText = `Editando: ${data.nome}`;
         }
 
-        // --- 3. SALVAR ---
         window.salvarJogo = async function() {
             const id = document.getElementById('idJogo').value.toLowerCase().trim();
             const nome = document.getElementById('nome').value;
@@ -192,24 +201,22 @@
             const arquivo = document.getElementById('arquivo').value;
             const img = document.getElementById('img').value;
 
-            if(!id || !nome || !arquivo) {
-                alert("ID, Nome e Arquivo são obrigatórios!");
-                return;
-            }
+            if(!id || !arquivo) { alert("ID e Arquivo são obrigatórios!"); return; }
 
             try {
-                // Salva no Firestore
                 await setDoc(doc(db, "listaJogos", id), {
                     id, nome, desc, arquivo, img,
                     dataUpdate: new Date()
                 }, { merge: true });
-                
-                // Inicializa stats
+
                 await setDoc(doc(db, "config", "gameStats"), { [id]: 0 }, { merge: true });
 
-                mostrarStatus("✅ Jogo salvo com sucesso!", "status-success");
+                const status = document.getElementById('status');
+                status.style.display = 'block';
+                status.style.background = '#d4edda';
+                status.style.color = '#155724';
+                status.innerText = "✅ Jogo Salvo com Sucesso!";
                 
-                // Recarrega a lista para mostrar a alteração
                 carregarLista();
 
             } catch (e) {
@@ -217,18 +224,14 @@
             }
         }
 
-        // --- 4. LIMPAR ---
         window.limparFormulario = function() {
             document.getElementById('idJogo').value = "";
             document.getElementById('nome').value = "";
             document.getElementById('desc').value = "";
             document.getElementById('arquivo').value = "";
             document.getElementById('img').value = "";
-            mostrarStatus("Formulário limpo. Pronto para criar novo.", "status-loading");
+            document.getElementById('status').style.display = 'none';
         }
-
-        function mostrarStatus(texto, classe) {
-            const el = document.getElementById('status');
-            el.innerText = texto;
-            el.className = "status-msg " + classe;
-            el.st
+    </script>
+</body>
+</html>
