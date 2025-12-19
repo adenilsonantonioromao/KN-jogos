@@ -96,14 +96,14 @@
 
         .menu-card {
             background: rgba(10, 25, 50, 0.95);
-            padding: 35px;
+            padding: 30px;
             border-radius: 25px;
             border: 3px solid #00f2ff;
             text-align: center;
             pointer-events: auto;
             box-shadow: 0 0 60px rgba(0, 242, 255, 0.4);
             backdrop-filter: blur(20px);
-            max-width: 340px;
+            max-width: 380px;
         }
 
         button {
@@ -129,7 +129,7 @@
 
         h1 {
             margin: 0 0 10px 0;
-            font-size: 38px;
+            font-size: 34px;
             letter-spacing: 1px;
             background: linear-gradient(45deg, #00f2ff, #ffffff);
             -webkit-background-clip: text;
@@ -143,11 +143,55 @@
             opacity: 0.95;
             line-height: 1.6;
             color: #b0fbff;
+            margin-bottom: 20px;
+        }
+
+        .skills-explanation {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            padding: 15px;
+            text-align: left;
+            font-size: 12px;
+            margin: 15px 0;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            border: 1px solid rgba(0, 242, 255, 0.2);
+        }
+
+        .skill-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .skill-item-icon {
+            width: 24px;
+            height: 24px;
+            background: rgba(0, 242, 255, 0.1);
+            border: 1px solid #00f2ff;
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: #00f2ff;
+            flex-shrink: 0;
+        }
+
+        .skill-item-desc {
+            color: #fff;
+            line-height: 1.3;
+        }
+
+        .skill-item-desc b {
+            color: #00f2ff;
+            text-transform: uppercase;
         }
 
         .controls-hint {
             margin-top: 20px;
-            font-size: 11px;
+            font-size: 10px;
             color: #558899;
             text-transform: uppercase;
             letter-spacing: 1px;
@@ -268,7 +312,7 @@
         const BULLET_SPEED = 2.2;
         const ORE_SPEED = 0.38;
         const SPAWN_INTERVAL = 24;
-        const FLAME_METEOR_CHANCE = 0.08; // Chance de um flame meteor aparecer
+        const FLAME_METEOR_CHANCE = 0.08; 
         const FIRE_RATE_NORMAL = 1000; 
         const FIRE_RATE_RAPID = 180; 
         const PLAYER_Z = 5; 
@@ -468,9 +512,8 @@
                     {isFlame && (
                         <>
                             <pointLight color="#ff3300" intensity={20} distance={10} />
-                            {/* Barra de Vida */}
                             <Billboard position={[0, data.size + 1.2, 0]}>
-                                <mesh position={[-0.5, 0, 0]}>
+                                <mesh position={[0, 0, 0]}>
                                     <planeGeometry args={[1, 0.15]} />
                                     <meshBasicMaterial color="#330000" />
                                 </mesh>
@@ -555,7 +598,7 @@
                     const touch = e.touches[0];
                     const xNorm = (touch.clientX / window.innerWidth) * 2 - 1;
                     const yNorm = (touch.clientY / window.innerHeight) * 2 - 1;
-                    const verticalOffset = 8;
+                    const verticalOffset = 10;
                     setPlayerPos({
                         x: Math.max(-BOUNDARY_X, Math.min(BOUNDARY_X, xNorm * BOUNDARY_X * 1.2)),
                         y: Math.max(-BOUNDARY_Y, Math.min(BOUNDARY_Y, (-yNorm * BOUNDARY_Y * 1.5) + verticalOffset))
@@ -810,6 +853,22 @@
                             <div className="menu-card">
                                 <h1>NEON GENESIS ASTEROID</h1>
                                 <p className="info-text">Minere no espaço profundo. Arraste para mover a nave. Multiplique seus pontos com combos!</p>
+                                
+                                <div className="skills-explanation">
+                                    <div className="skill-item">
+                                        <div className="skill-item-icon">1</div>
+                                        <div className="skill-item-desc"><b>Arma:</b> Aumenta drasticamente a cadência de fogo.</div>
+                                    </div>
+                                    <div className="skill-item">
+                                        <div className="skill-item-icon">2</div>
+                                        <div className="skill-item-desc"><b>Escudo:</b> Protege contra impactos frontais diretos.</div>
+                                    </div>
+                                    <div className="skill-item">
+                                        <div className="skill-item-icon">3</div>
+                                        <div className="skill-item-desc"><b>Drone:</b> Atrai cristais e minérios automaticamente.</div>
+                                    </div>
+                                </div>
+
                                 <button onClick={() => setGameState('PLAYING')}>Iniciar Missão</button>
                                 <div className="controls-hint">Teclas WASD, SETAS, 1, 2, 3 ou Toque</div>
                             </div>
@@ -842,7 +901,7 @@
                                         <div className="skill-key">1</div>
                                         <div className="skill-energy" style={{ height: `${skills.s1Energy * 100}%` }}></div>
                                         <ThunderIcon />
-                                        <div className="skill-label">RAIO</div>
+                                        <div className="skill-label">ARMA</div>
                                     </div>
                                     <div className={`skill-button ${skills.s2Active ? 'active' : ''} ${skills.s2Locked ? 'locked' : ''}`} 
                                          onPointerDown={() => handleSkillTouch(2, true)} onPointerUp={() => handleSkillTouch(2, false)} onPointerLeave={() => handleSkillTouch(2, false)}>
