@@ -8,28 +8,34 @@
         body { margin: 0; padding: 0; overflow: hidden; background-color: #050b1a; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: white; user-select: none; touch-action: none; }
         #root { width: 100vw; height: 100vh; }
         .ui-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: none; z-index: 10; }
+        
         .score-board { position: absolute; top: 20px; right: 20px; font-size: 32px; font-weight: bold; text-align: right; text-shadow: 0 0 15px #00f2ff, 0 0 5px #fff; font-variant-numeric: tabular-nums; }
-        .combo-container { position: absolute; top: 20px; left: 20px; display: flex; flex-direction: column; align-items: flex-start; pointer-events: none; transition: all 0.3s ease; }
-        .multiplier-text { font-size: 24px; font-weight: 900; text-transform: uppercase; color: #fff; text-shadow: 0 0 10px #00f2ff, 0 0 20px #00f2ff; margin-bottom: 5px; animation: pulse 1s infinite alternate; }
-        .combo-count { font-size: 18px; color: #b0fbff; font-weight: bold; }
-        .combo-timer-bar { width: 150px; height: 4px; background: rgba(255, 255, 255, 0.1); margin-top: 5px; border-radius: 2px; overflow: hidden; }
-        .combo-timer-fill { height: 100%; background: #00f2ff; box-shadow: 0 0 10px #00f2ff; transition: width 0.05s linear; }
-        @keyframes pulse { from { transform: scale(1); opacity: 0.8; } to { transform: scale(1.1); opacity: 1; } }
+        
+        /* --- COMBO GIGANTE --- */
+        .combo-container { position: absolute; top: 80px; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; pointer-events: none; transition: all 0.3s ease; text-align: center; }
+        .multiplier-text { font-size: 42px; font-weight: 900; text-transform: uppercase; color: #fff; text-shadow: 0 0 15px #00f2ff, 0 0 30px #00f2ff; margin-bottom: 5px; animation: pulse 0.5s infinite alternate; }
+        .combo-count { font-size: 28px; color: #b0fbff; font-weight: bold; letter-spacing: 2px; }
+        .combo-timer-bar { width: 300px; height: 10px; background: rgba(255, 255, 255, 0.2); margin-top: 10px; border-radius: 5px; overflow: hidden; border: 1px solid rgba(255,255,255,0.3); }
+        .combo-timer-fill { height: 100%; background: #00f2ff; box-shadow: 0 0 15px #00f2ff; transition: width 0.05s linear; }
+        @keyframes pulse { from { transform: scale(1); opacity: 0.9; } to { transform: scale(1.15); opacity: 1; } }
+
         .menu-card { background: rgba(10, 20, 40, 0.95); padding: 35px; border-radius: 25px; border: 3px solid #00f2ff; text-align: center; pointer-events: auto; box-shadow: 0 0 60px rgba(0, 242, 255, 0.3); backdrop-filter: blur(15px); max-width: 340px; }
         button { background: linear-gradient(45deg, #00f2ff, #0066ff); color: white; border: none; padding: 18px 45px; font-size: 20px; font-weight: bold; border-radius: 50px; cursor: pointer; transition: all 0.2s; text-transform: uppercase; letter-spacing: 2px; margin-top: 25px; box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3); }
         button:hover { transform: scale(1.05); box-shadow: 0 0 25px #00f2ff; }
         h1 { margin: 0 0 10px 0; font-size: 42px; letter-spacing: 2px; background: linear-gradient(45deg, #00f2ff, #ffffff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-transform: uppercase; font-weight: 900; }
         .info-text { font-size: 15px; opacity: 0.95; line-height: 1.6; color: #b0fbff; }
         .controls-hint { margin-top: 20px; font-size: 11px; color: #558899; text-transform: uppercase; letter-spacing: 1px; }
-        .skills-container { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); display: flex; gap: 20px; pointer-events: auto; }
-        .skill-button { width: 80px; height: 100px; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; background: rgba(10, 20, 40, 0.7); border: 2px solid rgba(0, 242, 255, 0.3); border-radius: 12px; overflow: hidden; position: relative; cursor: pointer; transition: 0.2s; }
-        .skill-button.active { border-color: #00f2ff; box-shadow: 0 0 15px rgba(0, 242, 255, 0.5); transform: scale(1.05); }
+        
+        /* --- BOTÕES PEQUENOS --- */
+        .skills-container { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 15px; pointer-events: auto; }
+        .skill-button { width: 55px; height: 75px; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; background: rgba(10, 20, 40, 0.6); border: 2px solid rgba(0, 242, 255, 0.3); border-radius: 10px; overflow: hidden; position: relative; cursor: pointer; transition: 0.2s; }
+        .skill-button.active { border-color: #00f2ff; box-shadow: 0 0 10px rgba(0, 242, 255, 0.5); transform: scale(1.05); }
         .skill-button.locked { border-color: #ff0055; cursor: not-allowed; opacity: 0.7; }
         .skill-button.locked .skill-energy { background: linear-gradient(to top, #ff0055, #880022); }
         .skill-energy { position: absolute; bottom: 0; left: 0; width: 100%; background: linear-gradient(to top, #00f2ff, #0066ff); transition: height 0.1s linear; z-index: 1; }
-        .skill-icon { position: relative; z-index: 2; width: 32px; height: 32px; margin-bottom: 5px; fill: white; filter: drop-shadow(0 0 5px rgba(0,0,0,0.5)); }
-        .skill-label { position: relative; z-index: 2; font-size: 9px; font-weight: 900; margin-bottom: 8px; color: white; text-shadow: 0 1px 3px black; text-transform: uppercase; letter-spacing: 1px; }
-        .skill-key { position: absolute; top: 5px; left: 5px; font-size: 11px; color: rgba(255,255,255,0.8); font-weight: 900; z-index: 2; background: rgba(0,0,0,0.3); padding: 2px 5px; border-radius: 4px; }
+        .skill-icon { position: relative; z-index: 2; width: 24px; height: 24px; margin-bottom: 4px; fill: white; filter: drop-shadow(0 0 3px rgba(0,0,0,0.5)); }
+        .skill-label { position: relative; z-index: 2; font-size: 7px; font-weight: 900; margin-bottom: 6px; color: white; text-shadow: 0 1px 2px black; text-transform: uppercase; letter-spacing: 0.5px; }
+        .skill-key { position: absolute; top: 3px; left: 3px; font-size: 9px; color: rgba(255,255,255,0.9); font-weight: 900; z-index: 2; background: rgba(0,0,0,0.4); padding: 1px 4px; border-radius: 3px; }
     </style>
 
     <script type="importmap">
@@ -255,7 +261,6 @@
                 if (gameState === 'EXPLODING') {
                     const timer = setTimeout(() => {
                         setGameState('GAME_OVER');
-                        // !!! INTEGRAÇÃO KN JOGOS: ENVIAR PONTOS !!!
                         window.parent.postMessage({ type: 'GAME_OVER', score: score }, '*');
                     }, 1500);
                     return () => clearTimeout(timer);
@@ -411,7 +416,7 @@
 
             const handleSkillTouch = (id, state) => { if (skills[`s${id}Locked`]) return; setSkills(prev => ({ ...prev, [`s${id}Touch`]: state })); };
 
-            // !!! INTEGRAÇÃO KN JOGOS: PEDIR PARA REINICIAR (PAGO) !!!
+            // INTEGRAÇÃO REINICIAR
             const handleRestartRequest = () => {
                 window.parent.postMessage({ type: 'RESTART_REQUEST' }, '*');
             };
@@ -436,8 +441,6 @@
                                 <h1 style={{ color: '#ff0055', textShadow: '0 0 20px #ff0055' }}>SISTEMA FALHOU</h1>
                                 <p>Energia Coletada:</p>
                                 <h2 style={{ fontSize: '56px', margin: '15px 0', color: '#00ffff', textShadow: '0 0 30px rgba(0,255,255,0.7)' }}>{score}</h2>
-                                
-                                {/* BOTÃO CORRIGIDO PARA COBRAR FICHA */}
                                 <button onClick={handleRestartRequest}>REINICIAR (-1 🪙)</button>
                             </div>
                         )}
