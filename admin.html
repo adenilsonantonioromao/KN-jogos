@@ -3,34 +3,35 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Painel Admin V3 - KN Jogos</title>
+    <title>Painel Admin - Lista Completa</title>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #f4f4f9; padding: 20px; max-width: 700px; margin: 0 auto; color: #333; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f4f4f9; padding: 20px; max-width: 800px; margin: 0 auto; color: #333; }
         
-        /* CARTÃO DO FORMULÁRIO */
-        .card { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-bottom: 30px; }
-        h2 { margin-top: 0; color: #FF5722; text-align: center; }
+        /* ÁREA DE EDIÇÃO (TOPO) */
+        .editor-card { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border-left: 5px solid #FF5722; }
+        h2 { margin-top: 0; color: #FF5722; }
         
-        label { font-weight: bold; font-size: 0.9rem; display: block; margin-top: 15px; }
-        input, textarea { width: 100%; padding: 12px; margin-top: 5px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 1rem; }
-        input:focus, textarea:focus { border-color: #FF5722; outline: none; }
+        label { font-weight: bold; font-size: 0.85rem; display: block; margin-top: 15px; color: #555; text-transform: uppercase; }
+        input, textarea { width: 100%; padding: 12px; margin-top: 5px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 1rem; background: #fafafa; }
+        input:focus, textarea:focus { border-color: #FF5722; background: #fff; outline: none; }
         
-        .row { display: flex; gap: 10px; align-items: flex-end; }
-        
+        /* ID com destaque */
+        #idJogo { font-family: monospace; font-weight: bold; letter-spacing: 1px; color: #D81B60; }
+
         /* BOTÕES */
-        button { background: #FF5722; color: white; border: none; padding: 15px; width: 100%; font-weight: bold; cursor: pointer; border-radius: 8px; font-size: 1.1rem; margin-top: 20px; transition: 0.2s; }
-        button:hover { background: #E64A19; }
+        .btn-row { display: flex; gap: 10px; margin-top: 20px; }
+        button { flex: 1; padding: 15px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 1rem; transition: 0.2s; }
         
-        .btn-search { background: #2196F3; width: auto; padding: 12px 20px; margin-top: 0; margin-bottom: 2px;}
-        .btn-search:hover { background: #1976D2; }
+        .btn-save { background: #FF5722; color: white; }
+        .btn-save:hover { background: #E64A19; }
+        
+        .btn-clear { background: #9E9E9E; color: white; }
+        .btn-clear:hover { background: #757575; }
 
-        .btn-clear { background: #9E9E9E; margin-top: 10px; padding: 10px; font-size: 0.9rem; }
-
-        .success { background: #d4edda; color: #155724; padding: 15px; border-radius: 8px; display: none; margin-top: 20px; text-align: center; font-weight: bold; }
-        .hint { font-size: 0.8rem; color: #666; margin-top: 2px; }
-
-        /* LISTA DE JOGOS (NOVO) */
-        .game-list-container { margin-top: 30px; }
+        /* LISTA DE JOGOS (EMBAIXO) */
+        .list-container { margin-top: 40px; }
+        .list-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        
         .game-item { 
             background: white; 
             padding: 15px; 
@@ -41,38 +42,193 @@
             justify-content: space-between; 
             align-items: center; 
             cursor: pointer; 
-            border-left: 5px solid transparent;
-            transition: 0.2s;
+            border: 1px solid transparent;
+            transition: all 0.2s;
         }
-        .game-item:hover { transform: translateX(5px); border-left: 5px solid #FF5722; }
-        .game-item h4 { margin: 0; font-size: 1.1rem; }
-        .game-item small { color: #888; }
-        .tag-edit { background: #E3F2FD; color: #1976D2; padding: 5px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: bold; }
+        
+        .game-item:hover { transform: translateY(-2px); border-color: #FF5722; box-shadow: 0 5px 15px rgba(255, 87, 34, 0.2); }
+        
+        .game-info h3 { margin: 0; font-size: 1.1rem; color: #333; }
+        .game-id { font-family: monospace; color: #D81B60; background: #FCE4EC; padding: 2px 6px; border-radius: 4px; font-size: 0.9rem; }
+        .game-file { color: #888; font-size: 0.85rem; margin-left: 10px; }
+        
+        .action-icon { font-size: 1.5rem; color: #ccc; }
+        .game-item:hover .action-icon { color: #FF5722; }
+
+        .status-msg { text-align: center; padding: 10px; font-weight: bold; display: none; margin-bottom: 10px; border-radius: 5px; }
+        .status-success { background: #d4edda; color: #155724; }
+        .status-loading { color: #666; font-style: italic; }
+
     </style>
 </head>
 <body>
 
-    <!-- FORMULÁRIO DE EDIÇÃO -->
-    <div class="card" id="topo">
-        <h2>👑 Gerenciar Jogos</h2>
-        
-        <label>ID do Jogo (Único)</label>
-        <div class="row">
-            <input type="text" id="idJogo" placeholder="ex: neonrunner">
-            <button class="btn-search" onclick="buscarJogo()">🔍 BUSCAR</button>
-        </div>
+    <!-- MENSAGEM DE STATUS -->
+    <div id="status" class="status-msg"></div>
 
-        <label>Nome Visível</label>
+    <!-- ÁREA DE EDIÇÃO -->
+    <div class="editor-card" id="topo">
+        <h2>✏️ Editar / Cadastrar Jogo</h2>
+        <p style="font-size:0.9rem; color:#666; margin-top:-10px;">Preencha para criar um novo ou selecione abaixo para editar.</p>
+        
+        <label>ID do Jogo (Identificador Único)</label>
+        <input type="text" id="idJogo" placeholder="ex: neonrunner">
+
+        <label>Nome Visível no Site</label>
         <input type="text" id="nome" placeholder="ex: Neon Runner 3D">
 
-        <label>Descrição Curta</label>
-        <textarea id="desc" rows="2" placeholder="ex: Corra e desvie dos obstáculos..."></textarea>
+        <label>Descrição</label>
+        <input type="text" id="desc" placeholder="ex: Desvie dos obstáculos...">
 
-        <label>Nome do Arquivo HTML (na pasta /jogos)</label>
-        <input type="text" id="arquivo" placeholder="ex: neon.html">
+        <div style="display:flex; gap:10px;">
+            <div style="flex:1;">
+                <label>Arquivo HTML (/jogos)</label>
+                <input type="text" id="arquivo" placeholder="ex: neon.html">
+            </div>
+            <div style="flex:1;">
+                <label>Imagem da Capa (/capas)</label>
+                <input type="text" id="img" placeholder="ex: neon.jpg">
+            </div>
+        </div>
 
-        <label>Nome da Imagem (na pasta /capas)</label>
-        <input type="text" id="img" placeholder="ex: neon.jpg">
+        <div class="btn-row">
+            <button class="btn-clear" onclick="limparFormulario()">🧹 Limpar / Novo</button>
+            <button class="btn-save" onclick="salvarJogo()">💾 SALVAR JOGO</button>
+        </div>
+    </div>
 
-        <button onclick="salvarJogo()">💾 SALVAR / ATUALIZAR</button>
-        <button class="btn-clear" onclick="limparCampos()">🧹 Limpar Campos (Novo Jogo)</bu
+    <!-- LISTA DE JOGOS -->
+    <div class="list-container">
+        <div class="list-header">
+            <h3>📂 Lista de Jogos Cadastrados</h3>
+            <button onclick="carregarLista()" style="width: auto; padding: 5px 15px; font-size: 0.8rem; background: #2196F3; color: white;">🔄 Atualizar Lista</button>
+        </div>
+        
+        <div id="lista-jogos">
+            <div class="status-loading">Carregando jogos do banco de dados...</div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, doc, setDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBIR7CqYYvMZVQxtO67JCQoJ3OLT1cvAx8",
+            authDomain: "kn-jogos.firebaseapp.com",
+            projectId: "kn-jogos",
+            storageBucket: "kn-jogos.firebasestorage.app",
+            messagingSenderId: "273132829744",
+            appId: "1:273132829744:web:a03e85b80ffabfa24101f5",
+            measurementId: "G-CX4Z8R1S6F"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // Carrega a lista assim que abrir
+        window.onload = carregarLista;
+        window.carregarLista = carregarLista; // Torna global para o botão
+
+        // --- 1. CARREGAR LISTA ---
+        async function carregarLista() {
+            const divLista = document.getElementById('lista-jogos');
+            divLista.innerHTML = '<div class="status-loading">Atualizando lista...</div>';
+
+            try {
+                const querySnapshot = await getDocs(collection(db, "listaJogos"));
+                
+                divLista.innerHTML = ""; // Limpa
+                
+                if (querySnapshot.empty) {
+                    divLista.innerHTML = "<p style='text-align:center'>Nenhum jogo encontrado no banco.</p>";
+                    return;
+                }
+
+                querySnapshot.forEach((doc) => {
+                    const data = doc.data();
+                    const item = document.createElement('div');
+                    item.className = 'game-item';
+                    
+                    // HTML DE CADA ITEM DA LISTA
+                    item.innerHTML = `
+                        <div class="game-info">
+                            <span class="game-id">${data.id}</span>
+                            <h3>${data.nome}</h3>
+                            <span class="game-file">📄 ${data.arquivo}</span>
+                        </div>
+                        <div class="action-icon">✏️</div>
+                    `;
+
+                    // CLICK PARA EDITAR
+                    item.onclick = () => preencherEditor(data);
+                    
+                    divLista.appendChild(item);
+                });
+
+            } catch (e) {
+                divLista.innerHTML = `<p style="color:red">Erro ao carregar: ${e.message}</p>`;
+            }
+        }
+
+        // --- 2. PREENCHER EDITOR ---
+        function preencherEditor(data) {
+            document.getElementById('idJogo').value = data.id;
+            document.getElementById('nome').value = data.nome;
+            document.getElementById('desc').value = data.desc;
+            document.getElementById('arquivo').value = data.arquivo;
+            document.getElementById('img').value = data.img;
+
+            // Rola para o topo
+            document.getElementById('topo').scrollIntoView({ behavior: 'smooth' });
+            mostrarStatus(`Editando: ${data.nome}`, "status-loading");
+        }
+
+        // --- 3. SALVAR ---
+        window.salvarJogo = async function() {
+            const id = document.getElementById('idJogo').value.toLowerCase().trim();
+            const nome = document.getElementById('nome').value;
+            const desc = document.getElementById('desc').value;
+            const arquivo = document.getElementById('arquivo').value;
+            const img = document.getElementById('img').value;
+
+            if(!id || !nome || !arquivo) {
+                alert("ID, Nome e Arquivo são obrigatórios!");
+                return;
+            }
+
+            try {
+                // Salva no Firestore
+                await setDoc(doc(db, "listaJogos", id), {
+                    id, nome, desc, arquivo, img,
+                    dataUpdate: new Date()
+                }, { merge: true });
+                
+                // Inicializa stats
+                await setDoc(doc(db, "config", "gameStats"), { [id]: 0 }, { merge: true });
+
+                mostrarStatus("✅ Jogo salvo com sucesso!", "status-success");
+                
+                // Recarrega a lista para mostrar a alteração
+                carregarLista();
+
+            } catch (e) {
+                alert("Erro ao salvar: " + e.message);
+            }
+        }
+
+        // --- 4. LIMPAR ---
+        window.limparFormulario = function() {
+            document.getElementById('idJogo').value = "";
+            document.getElementById('nome').value = "";
+            document.getElementById('desc').value = "";
+            document.getElementById('arquivo').value = "";
+            document.getElementById('img').value = "";
+            mostrarStatus("Formulário limpo. Pronto para criar novo.", "status-loading");
+        }
+
+        function mostrarStatus(texto, classe) {
+            const el = document.getElementById('status');
+            el.innerText = texto;
+            el.className = "status-msg " + classe;
+            el.st
