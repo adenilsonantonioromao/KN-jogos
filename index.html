@@ -23,14 +23,68 @@
         .user-info img { width: 45px; height: 45px; border-radius: 50%; border: 2px solid var(--secondary); }
         .chips-display { background: var(--secondary); padding: 5px 15px; border-radius: 20px; font-weight: bold; color: #3E2723; }
 
-        /* --- CARDS DE JOGO --- */
+        /* --- CARDS DE JOGO (LISTA PADRÃO) --- */
         .game-card { background: white; border-radius: 15px; overflow: hidden; box-shadow: 0 4px 0 #CFD8DC; margin-bottom: 20px; text-align: left; transition: transform 0.1s; position: relative; }
         .game-card:active { transform: scale(0.99); }
-        .game-thumb { width: 100%; aspect-ratio: 16 / 9; background-color: #111; background-size: cover; background-position: center; }
+        
+        /* ⚠️ PROPORÇÃO 16:11 EXATA */
+        .game-thumb { width: 100%; aspect-ratio: 16 / 11; background-color: #111; background-size: cover; background-position: center; }
+        
         .game-info { padding: 15px; display: flex; justify-content: space-between; align-items: center; }
         .play-stats { font-size: 0.75rem; color: #999; margin-top: 5px; display: flex; gap: 10px; }
         .play-btn { background: var(--green); color: white; border: none; padding: 10px 25px; border-radius: 10px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 0 #2E7D32; font-family: 'Fredoka One'; }
         .play-btn:active { transform: translateY(4px); box-shadow: none; }
+
+        /* --- NOVO: GRID DE IMAGENS (TOP E FAV) --- */
+        .grid-games {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr); /* 4 Colunas no PC */
+            gap: 10px;
+            padding: 5px;
+        }
+
+        .card-grid {
+            position: relative;
+            border-radius: 15px;
+            overflow: hidden;
+            aspect-ratio: 16 / 11; /* Proporção Exata */
+            cursor: pointer;
+            box-shadow: 0 4px 5px rgba(0,0,0,0.2);
+            transition: transform 0.2s;
+        }
+        .card-grid:active { transform: scale(0.95); }
+
+        .card-grid-thumb {
+            width: 100%; height: 100%;
+            background-size: cover;
+            background-position: center;
+        }
+
+        /* Capa transparente com ícone */
+        .card-overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.3); /* Escurece levemente */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            opacity: 0.8;
+            transition: 0.3s;
+        }
+        .card-grid:hover .card-overlay { background: rgba(0, 0, 0, 0.1); opacity: 1; }
+
+        .play-icon-overlay {
+            font-size: 2.5rem;
+            color: white;
+            text-shadow: 0 0 10px rgba(0,0,0,0.8);
+            filter: drop-shadow(0 4px 2px rgba(0,0,0,0.5));
+        }
+
+        /* Responsividade da Grid no Celular (2 Colunas para não ficar minúsculo) */
+        @media (max-width: 600px) {
+            .grid-games { grid-template-columns: repeat(2, 1fr); }
+            .game-window { height: 75vh; } 
+        }
 
         /* --- JANELA DE JOGO --- */
         #game-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.95); backdrop-filter: blur(5px); z-index: 3000; flex-direction: column; justify-content: center; align-items: center; }
@@ -45,287 +99,3 @@
 
         /* --- RANKING --- */
         .rank-list { list-style: none; padding: 0; margin: 0; }
-        .rank-item { background: white; margin-bottom: 10px; padding: 10px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        .rank-item.me { border: 2px solid var(--primary); background: #FFF3E0; }
-        .rank-pos { font-weight: bold; color: var(--primary); width: 30px; font-size: 1.2rem; }
-        .rank-user { display: flex; align-items: center; gap: 10px; flex-grow: 1; text-align: left; }
-        .rank-user img { width: 30px; height: 30px; border-radius: 50%; }
-        .rank-score { font-weight: bold; color: var(--green); }
-        
-        .tab-content { display: none; padding: 15px; animation: fadeIn 0.3s; }
-        .tab-content.active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-
-        .bottom-nav { position: fixed; bottom: 0; width: 100%; background: white; display: flex; justify-content: space-around; padding: 10px 0; border-top-left-radius: 20px; border-top-right-radius: 20px; box-shadow: 0 -5px 15px rgba(0,0,0,0.05); z-index: 100; max-width: 600px; left: 50%; transform: translateX(-50%); }
-        .nav-btn { background: none; border: none; font-size: 0.75rem; color: #90A4AE; cursor: pointer; display: flex; flex-direction: column; align-items: center; font-weight: bold; width: 25%; }
-        .nav-btn.active { color: var(--primary); }
-        .nav-btn span { font-size: 1.4rem; margin-bottom: 2px; }
-
-        .notification { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: #333; color: white; padding: 10px 20px; border-radius: 30px; z-index: 4000; display: none; font-weight: bold; width: 80%; max-width: 300px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
-        @media (max-width: 600px) { .game-window { height: 75vh; } }
-    </style>
-</head>
-<body>
-
-    <div id="notificacao" class="notification"></div>
-    <div id="login-screen">
-        <div class="login-box">
-            <h1>KN Jogos 🎮</h1>
-            <p>Faça login para salvar seu progresso!</p>
-            <button id="btn-login" class="btn-google"><span>G</span> Entrar com Google</button>
-        </div>
-    </div>
-
-    <div id="game-modal">
-        <div class="game-window">
-            <iframe id="game-frame" src="" allowfullscreen></iframe>
-        </div>
-        <div class="game-controls">
-            <button class="btn-control btn-close" onclick="fecharJogo()">❌ Sair</button>
-            <button class="btn-control btn-restart" onclick="reiniciarJogo()">🔄 Reiniciar (-1 🪙)</button>
-            <button class="btn-control btn-fullscreen" onclick="ativarTelaCheia()">⛶ Tela Cheia</button>
-        </div>
-    </div>
-
-    <div id="app-container" style="display:none; max-width: 600px; margin: 0 auto;">
-        <header>
-            <div class="user-info">
-                <img id="user-photo" src="" alt="Foto">
-                <div><div id="user-name" style="font-weight:bold; font-size:0.9rem;">...</div></div>
-            </div>
-            <div class="chips-display">🪙 <span id="user-fichas">0</span></div>
-        </header>
-
-        <div id="tab-novos" class="tab-content active">
-            <h2>Novos Jogos 🔥</h2>
-            <div id="loading-games">Carregando jogos...</div>
-            <div id="lista-novos"></div>
-        </div>
-        <div id="tab-populares" class="tab-content"><h2>Mais Jogados 🏆</h2><div id="lista-populares"></div></div>
-        <div id="tab-favoritos" class="tab-content"><h2>Seus Favoritos ❤️</h2><div id="lista-favoritos"></div></div>
-        <div id="tab-rank" class="tab-content">
-            <h2>Ranking Global 🌍</h2>
-            <button class="btn-control btn-fullscreen" style="margin: 0 auto 15px auto; font-size: 0.8rem; background: var(--primary);" onclick="rolarAteMim()">📍 Onde eu estou?</button>
-            <div id="loading-rank">Carregando...</div>
-            <ul id="lista-rank" class="rank-list"></ul>
-        </div>
-        <nav class="bottom-nav">
-            <button class="nav-btn active" onclick="mudarAba('novos', this)"><span>🔥</span>Novos</button>
-            <button class="nav-btn" onclick="mudarAba('populares', this)"><span>⭐</span>Top</button>
-            <button class="nav-btn" onclick="mudarAba('favoritos', this)"><span>❤️</span>Favs</button>
-            <button class="nav-btn" onclick="mudarAba('rank', this)"><span>📊</span>Rank</button>
-        </nav>
-    </div>
-
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc, getDocs, setDoc, updateDoc, increment, collection, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-
-        // CONFIGURAÇÃO FIREBASE
-        const firebaseConfig = {
-            apiKey: "AIzaSyBIR7CqYYvMZVQxtO67JCQoJ3OLT1cvAx8",
-            authDomain: "kn-jogos.firebaseapp.com",
-            projectId: "kn-jogos",
-            storageBucket: "kn-jogos.firebasestorage.app",
-            messagingSenderId: "273132829744",
-            appId: "1:273132829744:web:a03e85b80ffabfa24101f5",
-            measurementId: "G-CX4Z8R1S6F"
-        };
-
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-        const provider = new GoogleAuthProvider();
-        
-        let currentUser = null;
-        let globalStats = {}; 
-        let userStats = {}; 
-        let JOGOS_CONFIG = []; // Agora vem do Banco
-
-        document.getElementById('btn-login').addEventListener('click', () => {
-            signInWithPopup(auth, provider).catch(alert);
-        });
-
-        onAuthStateChanged(auth, async (user) => {
-            if (user) {
-                currentUser = user;
-                document.getElementById('login-screen').style.display = 'none';
-                document.getElementById('app-container').style.display = 'block';
-                await carregarUsuario(user);
-                await carregarListaDeJogos(); // NOVO: Carrega jogos do banco
-                await carregarStatsGlobais();
-                renderizarTodosJogos();
-            }
-        });
-
-        async function carregarListaDeJogos() {
-            try {
-                const querySnapshot = await getDocs(collection(db, "listaJogos"));
-                JOGOS_CONFIG = [];
-                querySnapshot.forEach((doc) => {
-                    JOGOS_CONFIG.push(doc.data());
-                });
-                document.getElementById('loading-games').style.display = 'none';
-            } catch (e) {
-                console.error("Erro ao carregar jogos:", e);
-                document.getElementById('loading-games').innerText = "Erro ao carregar jogos.";
-            }
-        }
-
-        async function carregarUsuario(user) {
-            const userRef = doc(db, "users", user.uid);
-            let snap = await getDoc(userRef);
-            if (!snap.exists()) {
-                await setDoc(userRef, { nome: user.displayName, email: user.email, foto: user.photoURL, fichas: 5, pontuacaoTotal: 0, recordes: {}, jogosJogados: {} });
-                snap = await getDoc(userRef);
-            }
-            const data = snap.data();
-            userStats = data.jogosJogados || {};
-            document.getElementById('user-name').innerText = user.displayName.split(' ')[0];
-            document.getElementById('user-photo').src = user.photoURL;
-            document.getElementById('user-fichas').innerText = data.fichas;
-        }
-
-        async function carregarStatsGlobais() {
-            const snap = await getDoc(doc(db, "config", "gameStats"));
-            if(snap.exists()) globalStats = snap.data();
-        }
-
-        function criarCardHTML(jogo, playsGlobal, playsUser) {
-            // Nota: Agora as imagens e arquivos são buscados nas pastas
-            const caminhoImg = `capas/${jogo.img}`;
-            const caminhoArquivo = `jogos/${jogo.arquivo}`;
-            
-            return `
-            <div class="game-card">
-                <div class="game-thumb" style="background-image: url('${caminhoImg}');"></div>
-                <div class="game-info">
-                    <div>
-                        <h3 style="margin:0; font-size:1.1rem;">${jogo.nome}</h3>
-                        <p style="margin:5px 0; font-size:0.8rem; color:#666;">${jogo.desc}</p>
-                        <div class="play-stats"><span>🌍 ${playsGlobal || 0} plays</span><span>👤 ${playsUser || 0}</span></div>
-                    </div>
-                    <button class="play-btn" onclick="iniciarJogo('${caminhoArquivo}', '${jogo.id}')">JOGAR</button>
-                </div>
-            </div>`;
-        }
-
-        function renderizarTodosJogos() {
-            const divNovos = document.getElementById('lista-novos');
-            divNovos.innerHTML = JOGOS_CONFIG.map(j => criarCardHTML(j, globalStats[j.id], userStats[j.id])).join('');
-            
-            // Populares e Favoritos
-            const populares = [...JOGOS_CONFIG].sort((a,b) => (globalStats[b.id] || 0) - (globalStats[a.id] || 0));
-            document.getElementById('lista-populares').innerHTML = populares.map(j => criarCardHTML(j, globalStats[j.id], userStats[j.id])).join('');
-            
-            const favoritos = [...JOGOS_CONFIG].filter(j => (userStats[j.id] || 0) > 0).sort((a,b) => (userStats[b.id] || 0) - (userStats[a.id] || 0));
-            document.getElementById('lista-favoritos').innerHTML = favoritos.length ? favoritos.map(j => criarCardHTML(j, globalStats[j.id], userStats[j.id])).join('') : "<p style='color:#666'>Ainda não jogou nada.</p>";
-        }
-
-        window.mudarAba = async function(abaID, btn) {
-            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-            document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
-            document.getElementById('tab-' + abaID).classList.add('active');
-            btn.classList.add('active');
-            if(abaID === 'rank') carregarRanking();
-        }
-
-        async function carregarRanking() {
-            const list = document.getElementById('lista-rank');
-            list.innerHTML = "";
-            document.getElementById('loading-rank').style.display = 'block';
-            try {
-                const q = query(collection(db, "users"), orderBy("pontuacaoTotal", "desc"), limit(50));
-                const querySnapshot = await getDocs(q);
-                document.getElementById('loading-rank').style.display = 'none';
-                let rank = 1;
-                querySnapshot.forEach((docSnap) => {
-                    const u = docSnap.data();
-                    const isMe = docSnap.id === currentUser.uid;
-                    const html = `<li id="${isMe ? 'meu-rank' : ''}" class="rank-item ${isMe ? 'me' : ''}"><div class="rank-pos">#${rank}</div><div class="rank-user"><img src="${u.foto}"><div><strong>${u.nome.split(' ')[0]}</strong></div></div><div class="rank-score">${u.pontuacaoTotal}</div></li>`;
-                    list.innerHTML += html;
-                    rank++;
-                });
-            } catch (error) { console.error(error); }
-        }
-
-        window.rolarAteMim = function() {
-            const el = document.getElementById('meu-rank');
-            if(el) { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); el.style.border = "3px solid red"; setTimeout(() => el.style.border = "2px solid var(--primary)", 2000); }
-            else alert("Jogue mais para entrar no ranking!");
-        }
-
-        window.iniciarJogo = async function(urlArquivo, idJogo) {
-            if(!currentUser) return;
-            const userRef = doc(db, "users", currentUser.uid);
-            const snap = await getDoc(userRef);
-            if (snap.data().fichas < 1) { mostrarNotificacao("🚫 Sem fichas!"); return; }
-
-            const updates = { fichas: increment(-1) };
-            updates[`jogosJogados.${idJogo}`] = increment(1);
-            await updateDoc(userRef, updates);
-            setDoc(doc(db, "config", "gameStats"), { [idJogo]: increment(1) }, { merge: true });
-
-            document.getElementById('user-fichas').innerText = snap.data().fichas - 1;
-            window.jogoAtualID = idJogo;
-
-            const modal = document.getElementById('game-modal');
-            const iframe = document.getElementById('game-frame');
-            modal.style.display = 'flex';
-            iframe.src = urlArquivo; 
-        }
-
-        window.reiniciarJogo = async function() {
-            if(!currentUser) return;
-            if(!confirm("⚠️ JOGAR NOVAMENTE: Custo 1 Ficha 🪙\n\nConfirmar?")) return;
-            const userRef = doc(db, "users", currentUser.uid);
-            const snap = await getDoc(userRef);
-            if (snap.data().fichas < 1) { mostrarNotificacao("🚫 Sem fichas! :("); return; }
-            const updates = { fichas: increment(-1) };
-            updates[`jogosJogados.${window.jogoAtualID}`] = increment(1);
-            await updateDoc(userRef, updates);
-            setDoc(doc(db, "config", "gameStats"), { [window.jogoAtualID]: increment(1) }, { merge: true });
-            document.getElementById('user-fichas').innerText = snap.data().fichas - 1;
-            const iframe = document.getElementById('game-frame');
-            iframe.src = iframe.src;
-            mostrarNotificacao("🔄 Recarregando...");
-        }
-
-        window.fecharJogo = function() {
-            document.getElementById('game-modal').style.display = 'none';
-            document.getElementById('game-frame').src = "";
-            location.reload(); 
-        }
-
-        window.ativarTelaCheia = function() {
-            const iframe = document.getElementById('game-frame');
-            if (iframe.requestFullscreen) iframe.requestFullscreen();
-            else if (iframe.webkitRequestFullscreen) iframe.webkitRequestFullscreen();
-        }
-
-        window.addEventListener('message', async function(event) {
-            if (event.data.type === 'GAME_OVER') {
-                const pontos = event.data.score;
-                mostrarNotificacao(`Fim! Pontos: ${pontos}`);
-                const userRef = doc(db, "users", currentUser.uid);
-                const snap = await getDoc(userRef);
-                let recordes = snap.data().recordes || {};
-                if (pontos > (recordes[window.jogoAtualID] || 0)) {
-                    recordes[window.jogoAtualID] = pontos;
-                    await updateDoc(userRef, { recordes: recordes, pontuacaoTotal: increment(pontos) });
-                    mostrarNotificacao(`🏆 NOVO RECORDE: ${pontos}!`);
-                }
-            }
-            if (event.data.type === 'RESTART_REQUEST') reiniciarJogo();
-        });
-
-        function mostrarNotificacao(msg) {
-            const el = document.getElementById('notificacao');
-            el.innerText = msg;
-            el.style.display = 'block';
-            setTimeout(() => el.style.display = 'none', 4000);
-        }
-    </script>
-</body>
-</html>
