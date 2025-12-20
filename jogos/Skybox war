@@ -1,0 +1,727 @@
+
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Skybox war</title>
+    
+    <!-- Importmap exato solicitado -->
+    <script type="importmap">
+{
+  "imports": {
+    "react": "https://esm.sh/react@18.2.0",
+    "react/jsx-runtime": "https://esm.sh/react@18.2.0/jsx-runtime",
+    "react-dom": "https://esm.sh/react-dom@18.2.0",
+    "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
+    "three": "https://esm.sh/three@0.160.0",
+    "@react-three/fiber": "https://esm.sh/@react-three/fiber@8.15.16?external=react,react-dom,three",
+    "@react-three/drei": "https://esm.sh/@react-three/drei@9.99.0?external=react,react-dom,three,@react-three/fiber",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "react/": "https://esm.sh/react@^19.2.3/"
+  }
+}
+</script>
+
+    <!-- Babel Standalone para transpilação in-browser do JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #87CEEB;
+            font-family: 'Rounded Mplus 1c', 'Segoe UI', sans-serif;
+            color: white;
+            user-select: none;
+            touch-action: none; 
+        }
+
+        #root {
+            width: 100vw;
+            height: 100vh;
+        }
+
+        .ui-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .score-board {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 36px;
+            font-weight: 900;
+            color: #FFD700;
+            text-shadow: 3px 3px 0px #d4af37, 0 0 10px rgba(255,255,255,0.5);
+            font-variant-numeric: tabular-nums;
+        }
+
+        .lives-container {
+            position: absolute;
+            top: 70px;
+            right: 20px;
+            display: flex;
+            gap: 5px;
+        }
+
+        .heart {
+            font-size: 24px;
+            filter: drop-shadow(0 2px 2px rgba(0,0,0,0.2));
+            animation: pulse 1s infinite alternate;
+        }
+
+        @keyframes pulse {
+            from { transform: scale(1); }
+            to { transform: scale(1.1); }
+        }
+
+        .boss-health-container {
+            position: absolute;
+            top: 25px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 400px;
+            text-align: center;
+            pointer-events: none;
+        }
+
+        .boss-label {
+            font-size: 14px;
+            font-weight: 900;
+            color: #ff3333;
+            text-shadow: 1px 1px 2px black;
+            margin-bottom: 5px;
+            letter-spacing: 2px;
+        }
+
+        .boss-bar-bg {
+            width: 100%;
+            height: 20px;
+            background: rgba(0,0,0,0.7);
+            border: 3px solid #fff;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+        }
+
+        .boss-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #990000, #ff0000, #ff5555);
+            transition: width 0.2s ease-out;
+        }
+
+        .combo-container {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .multiplier-text {
+            font-size: 22px;
+            font-weight: 900;
+            text-transform: uppercase;
+            color: #FF69B4;
+            text-shadow: 2px 2px 0px #fff;
+            margin-bottom: 5px;
+            animation: bounce 0.6s infinite alternate;
+        }
+
+        @keyframes bounce {
+            from { transform: translateY(0); }
+            to { transform: translateY(-5px); }
+        }
+
+        .menu-card {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 40px;
+            border-radius: 40px;
+            border: 8px solid #FFD700;
+            text-align: center;
+            pointer-events: auto;
+            box-shadow: 0 15px 0px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            max-width: 400px;
+            color: #333;
+        }
+
+        button {
+            background: linear-gradient(180deg, #FFD700, #FFA500);
+            color: white;
+            border: none;
+            padding: 20px 50px;
+            font-size: 24px;
+            font-weight: 900;
+            border-radius: 60px;
+            cursor: pointer;
+            transition: transform 0.2s;
+            text-transform: uppercase;
+            box-shadow: 0 8px 0px #cc8400;
+            margin-top: 20px;
+        }
+
+        button:active {
+            transform: translateY(4px);
+            box-shadow: 0 4px 0px #cc8400;
+        }
+
+        h1 {
+            margin: 0 0 15px 0;
+            font-size: 38px;
+            color: #0077be;
+            font-weight: 900;
+            text-shadow: 2px 2px 0px #fff;
+            line-height: 1;
+        }
+
+        .skills-container {
+            position: absolute;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 20px;
+            pointer-events: auto;
+        }
+
+        .skill-button {
+            width: 75px;
+            height: 90px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-end;
+            background: white;
+            border: 4px solid #eee;
+            border-radius: 20px;
+            overflow: hidden;
+            position: relative;
+            cursor: pointer;
+            box-shadow: 0 8px 0px #ddd;
+        }
+
+        .skill-button.active {
+            border-color: #00f2ff;
+            transform: translateY(4px);
+            box-shadow: 0 4px 0px #ddd;
+        }
+
+        .skill-energy-bar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: linear-gradient(to top, #FF69B4, #FF1493);
+            transition: height 0.1s linear;
+        }
+
+        .skill-text {
+            position: relative;
+            z-index: 2;
+            font-size: 11px;
+            font-weight: 900;
+            margin-bottom: 10px;
+            color: #333;
+            text-transform: uppercase;
+        }
+
+        .skill-icon-ui {
+            font-size: 28px;
+            margin-bottom: 5px;
+            position: relative;
+            z-index: 2;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel" data-type="module">
+        import React, { useState, useEffect, useRef, useMemo } from 'react';
+        import { createRoot } from 'react-dom/client';
+        import * as THREE from 'three';
+        import { Canvas, useFrame } from '@react-three/fiber';
+        import { Sky, PerspectiveCamera, Stars } from '@react-three/drei';
+
+        // --- Constantes de Jogo ---
+        const PLAYER_Z = 10;
+        const BOUNDARY_X = 22;
+        const BOUNDARY_Y = 12; 
+        const OCEAN_Y = -15;
+        const INVINCIBILITY_TIME = 1000;
+        const BOSS_SPAWN_TIME = 60000; 
+        const CAMERA_BACK_LIMIT = 55; 
+        const POOL_SIZE = 60; 
+        const MISSILE_LIFETIME = 3000; 
+
+        const COOLDOWNS = { s1: 5000, s2: 4000, s3: 3000 };
+
+        const _v1 = new THREE.Vector3();
+        const _vDir = new THREE.Vector3();
+
+        // --- Utilitários ---
+        function getRandomVibrantColor() {
+            const hues = [0, 30, 60, 120, 200, 280, 320];
+            const hue = hues[Math.floor(Math.random() * hues.length)];
+            return `hsl(${hue}, 90%, 60%)`;
+        }
+
+        // --- Componentes 3D ---
+
+        function Ocean({ levelSpeedFactor }) {
+            const meshRef = useRef(null);
+            const waterTexture = useMemo(() => {
+                const canvas = document.createElement('canvas');
+                canvas.width = 128; canvas.height = 128;
+                const ctx = canvas.getContext('2d');
+                ctx.fillStyle = '#1e90ff'; ctx.fillRect(0, 0, 128, 128);
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+                ctx.lineWidth = 4;
+                const drawWave = (x, y) => {
+                    ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + 10, y + 5); ctx.lineTo(x + 20, y); ctx.stroke();
+                };
+                for (let i = 0; i < 4; i++) for (let j = 0; j < 4; j++) drawWave(i * 32 + 5, j * 32 + 10);
+                const tex = new THREE.CanvasTexture(canvas);
+                tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+                tex.repeat.set(50, 50);
+                return tex;
+            }, []);
+
+            useFrame((_, delta) => {
+                if (meshRef.current) waterTexture.offset.y += (40 * levelSpeedFactor * 0.005) * delta;
+            });
+
+            return (
+                <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, OCEAN_Y, 0]} receiveShadow ref={meshRef}>
+                    <planeGeometry args={[2000, 2000]} />
+                    <meshStandardMaterial map={waterTexture} roughness={0.2} metalness={0.1} transparent opacity={0.9} />
+                </mesh>
+            );
+        }
+
+        function AirplaneModel({ bodyColor, wingColor, propellerRef, scale = 1, isBoss = false }) {
+            return (
+                <group scale={scale}>
+                    <mesh castShadow>
+                        <boxGeometry args={isBoss ? [12, 4.5, 18] : [0.8, 0.8, 3]} />
+                        <meshStandardMaterial color={bodyColor} />
+                    </mesh>
+                    <mesh position={[0, 0, isBoss ? -2 : -0.4]} castShadow>
+                        <boxGeometry args={isBoss ? [45, 0.6, 7] : [6, 0.1, 1.2]} />
+                        <meshStandardMaterial color={wingColor} />
+                    </mesh>
+                    <mesh position={[0, isBoss ? 4.5 : 0.5, isBoss ? 6 : 1.3]} castShadow>
+                        <boxGeometry args={isBoss ? [1, 5.5, 4.5] : [0.1, 0.8, 0.4]} />
+                        <meshStandardMaterial color={bodyColor} />
+                    </mesh>
+                    <mesh position={[0, 0, isBoss ? -9.3 : -1.6]} ref={propellerRef}>
+                        <boxGeometry args={isBoss ? [0.6, 9, 0.6] : [0.1, 2, 0.1]} />
+                        <meshStandardMaterial color="#111" />
+                    </mesh>
+                </group>
+            );
+        }
+
+        function Explosion({ data }) {
+            const group = useRef(null);
+            useFrame((_, delta) => {
+                if (group.current) {
+                    group.current.children.forEach((child) => {
+                        child.position.addScaledVector(child.userData.vel, delta);
+                        child.scale.multiplyScalar(0.85);
+                    });
+                }
+            });
+            return (
+                <group ref={group} position={[data.x, data.y, data.z]}>
+                    {Array.from({ length: 12 }).map((_, i) => (
+                        <mesh key={i} userData={{ vel: new THREE.Vector3((Math.random() - 0.5) * 40, (Math.random() - 0.5) * 40, (Math.random() - 0.5) * 40) }}>
+                            <boxGeometry args={[0.7, 0.7, 0.7]} />
+                            <meshBasicMaterial color={data.color} transparent opacity={0.9} />
+                        </mesh>
+                    ))}
+                </group>
+            );
+        }
+
+        function TowerUnit({ data }) {
+            return (
+                <group position={[data.x, OCEAN_Y + 1.5, data.z]}>
+                    <mesh position={[0, -1, 0]}>
+                        <cylinderGeometry args={[8, 10, 2, 8]} />
+                        <meshStandardMaterial color="#4d7c0f" />
+                    </mesh>
+                    <mesh position={[0, 2, 0]} castShadow>
+                        <boxGeometry args={[2, 5, 2]} />
+                        <meshStandardMaterial color="#666" />
+                    </mesh>
+                    <mesh position={[0, 5, 0]}>
+                        <sphereGeometry args={[1.5]} />
+                        <meshStandardMaterial color="#333" />
+                    </mesh>
+                </group>
+            );
+        }
+
+        function ShipUnit({ data }) {
+            return (
+                <group position={[data.x, OCEAN_Y + 1, data.z]}>
+                    <mesh castShadow>
+                        <boxGeometry args={[4, 2, 14]} />
+                        <meshStandardMaterial color="#334155" />
+                    </mesh>
+                    <mesh position={[0, 2, -3]} castShadow>
+                        <boxGeometry args={[2.5, 3.5, 5]} />
+                        <meshStandardMaterial color="#475569" />
+                    </mesh>
+                </group>
+            );
+        }
+
+        // --- Lógica Principal ---
+
+        function GameCore({ setGameState, setScore, setSkills, setLives, gameState, levelData, setLevelData, setBossUI, score }) {
+            const game = useRef({
+                pos: { x: 0, y: 0 },
+                enemies: [], ships: [], islands: [], boss: null,
+                bullets: Array.from({ length: POOL_SIZE }, () => ({ x: 0, y: 0, z: 0, active: false })),
+                enemyBullets: Array.from({ length: POOL_SIZE }, () => ({ x: 0, y: 0, z: 0, active: false, vel: null, isLaser: false })),
+                homingMissiles: [], playerHoming: [], torpedos: [], explosions: [],
+                isDodging: false, isInvincible: false, lastFire: 0, lastEnemyFire: 0, startTime: 0,
+                skillTimers: { s1: 0, s2: 0, s3: 0 }, keys: {}
+            });
+
+            useEffect(() => {
+                const handleSkills = (key) => {
+                    const g = game.current;
+                    const now = performance.now();
+                    if (key === '1' && now - g.skillTimers.s1 > COOLDOWNS.s1) {
+                        const allAirTargets = [...g.enemies];
+                        if (g.boss) allAirTargets.push({ ...g.boss, isBoss: true });
+                        const targets = allAirTargets.filter(t => t.z < PLAYER_Z).sort((a, b) => Math.abs((a.z||a.pos?.z) - PLAYER_Z) - Math.abs((b.z||b.pos?.z) - PLAYER_Z)).slice(0, 3);
+                        targets.forEach((t, i) => {
+                            setTimeout(() => {
+                                g.playerHoming.push({ x: g.pos.x + (i - 1) * 2, y: g.pos.y, z: PLAYER_Z, target: t, vel: new THREE.Vector3(0,0,-1.5), active: true, createdAt: performance.now() });
+                            }, i * 120);
+                        });
+                        g.skillTimers.s1 = now;
+                    }
+                    if (key === '2' && now - g.skillTimers.s2 > COOLDOWNS.s2) {
+                        g.torpedos.push({ x: g.pos.x, y: g.pos.y, z: PLAYER_Z, vel: new THREE.Vector3(0, -0.7, -2), inWater: false, trail: [], active: true });
+                        g.skillTimers.s2 = now;
+                    }
+                    if (key === '3' && now - g.skillTimers.s3 > COOLDOWNS.s3) {
+                        g.isDodging = true; g.skillTimers.s3 = now;
+                        setTimeout(() => g.isDodging = false, 1000);
+                    }
+                };
+
+                const down = (e) => {
+                    game.current.keys[e.key.toLowerCase()] = true;
+                    if (gameState === 'PLAYING') handleSkills(e.key);
+                };
+                const up = (e) => game.current.keys[e.key.toLowerCase()] = false;
+                window.addEventListener('keydown', down);
+                window.addEventListener('keyup', up);
+                return () => { window.removeEventListener('keydown', down); window.removeEventListener('keyup', up); };
+            }, [gameState]);
+
+            useFrame((state, delta) => {
+                if (gameState !== 'PLAYING') return;
+                const g = game.current;
+                const now = state.clock.elapsedTime * 1000;
+                const pNow = performance.now();
+                const levelTime = (state.clock.elapsedTime * 1000 - g.startTime) % BOSS_SPAWN_TIME;
+                
+                if (Math.floor(now) % 60 < 20) {
+                    setSkills({
+                        s1Energy: Math.min(1, (pNow - g.skillTimers.s1) / COOLDOWNS.s1),
+                        s2Energy: Math.min(1, (pNow - g.skillTimers.s2) / COOLDOWNS.s2),
+                        s3Energy: Math.min(1, (pNow - g.skillTimers.s3) / COOLDOWNS.s3),
+                    });
+                    setLevelData(prev => ({ ...prev, time: levelTime }));
+                    if (g.boss) setBossUI({ visible: true, health: g.boss.health, maxHealth: g.boss.maxHealth });
+                    else setBossUI({ visible: false, health: 0, maxHealth: 0 });
+                }
+
+                const levelSpeedFactor = 1 + ((levelData.current - 1) * 0.12);
+                const moveSpeed = 52 * delta;
+                if (g.keys['a'] || g.keys['arrowleft']) g.pos.x = Math.max(-BOUNDARY_X, g.pos.x - moveSpeed);
+                if (g.keys['d'] || g.keys['arrowright']) g.pos.x = Math.min(BOUNDARY_X, g.pos.x + moveSpeed);
+                if (g.keys['w'] || g.keys['arrowup']) g.pos.y = Math.min(BOUNDARY_Y, g.pos.y + moveSpeed);
+                if (g.keys['s'] || g.keys['arrowdown']) g.pos.y = Math.max(-BOUNDARY_Y, g.pos.y - moveSpeed);
+
+                // Spawning
+                if (Math.random() < (levelData.current === 1 ? 0.012 : 0.02 + levelData.current * 0.005) && g.enemies.length < (levelData.current === 1 ? 6 : 10)) {
+                    g.enemies.push({ id: Math.random(), x: (Math.random() - 0.5) * 85, y: 2 + Math.random() * 12, z: -350, bodyColor: getRandomVibrantColor(), wingColor: getRandomVibrantColor(), active: true });
+                }
+                if (Math.random() < 0.006 && g.islands.length < 5) g.islands.push({ id: Math.random(), x: (Math.random() - 0.5) * 110, z: -400, active: true });
+                if (Math.random() < 0.005 && g.ships.length < 4) g.ships.push({ id: Math.random(), x: (Math.random() - 0.5) * 95, z: -450, health: 4, active: true });
+
+                // Boss
+                if (levelTime > BOSS_SPAWN_TIME - 1000 && !g.boss) g.boss = { x: 0, y: 5, z: -550, health: 220 + (levelData.current * 90), maxHealth: 220 + (levelData.current * 90), lastAttack: 0, active: true };
+                if (g.boss) {
+                    g.boss.z = THREE.MathUtils.lerp(g.boss.z, -120, 0.025); g.boss.x = THREE.MathUtils.lerp(g.boss.x, g.pos.x, 0.035);
+                    if (now - g.boss.lastAttack > 2200 - (levelData.current * 100)) {
+                        if (Math.random() > 0.4) {
+                            const b1 = g.enemyBullets.find(eb => !eb.active); if(b1) { b1.x = g.boss.x - 18; b1.y = g.boss.y; b1.z = g.boss.z + 10; b1.active = true; b1.isLaser = true; b1.vel = null; }
+                            const b2 = g.enemyBullets.find(eb => !eb.active); if(b2) { b2.x = g.boss.x + 18; b2.y = g.boss.y; b2.z = g.boss.z + 10; b2.active = true; b2.isLaser = true; b2.vel = null; }
+                        } else {
+                            for(let i=0; i<3; i++) g.homingMissiles.push({ x: g.boss.x + (i-1)*10, y: g.boss.y, z: g.boss.z + 5, vel: new THREE.Vector3(0,0,2), tracking: true, active: true });
+                        }
+                        g.boss.lastAttack = now;
+                    }
+                }
+
+                if (now - g.lastFire > 220) {
+                    const b1 = g.bullets.find(pb => !pb.active); if(b1){ b1.x = g.pos.x - 2; b1.y = g.pos.y; b1.z = PLAYER_Z - 1; b1.active = true; }
+                    const b2 = g.bullets.find(pb => !pb.active); if(b2){ b2.x = g.pos.x + 2; b2.y = g.pos.y; b2.z = PLAYER_Z - 1; b2.active = true; }
+                    g.lastFire = now;
+                }
+
+                // AI
+                if (now - g.lastEnemyFire > (levelData.current === 1 ? 2500 : 1500 - (levelData.current * 60))) {
+                    g.ships.forEach(s => { if(s.z > -280) g.homingMissiles.push({ x: s.x, y: OCEAN_Y + 5, z: s.z, vel: new THREE.Vector3(0,0,1.8), tracking: true, active: true }); });
+                    g.islands.forEach(isl => { if(isl.z > -280) {
+                        const eb = g.enemyBullets.find(eb => !eb.active);
+                        if(eb) { eb.x = isl.x; eb.y = OCEAN_Y + 6; eb.z = isl.z; eb.active = true; eb.isLaser = false; eb.vel = new THREE.Vector3(g.pos.x - isl.x, g.pos.y - (OCEAN_Y + 6), PLAYER_Z - isl.z).normalize().multiplyScalar(1.5); }
+                    }});
+                    g.lastEnemyFire = now;
+                }
+
+                // World
+                const airplaneSpeed = levelData.current === 1 ? 55 : 80;
+                g.enemies.forEach(e => e.z += airplaneSpeed * levelSpeedFactor * delta);
+                g.ships.forEach(s => s.z += 45 * levelSpeedFactor * delta);
+                g.islands.forEach(i => i.z += 45 * levelSpeedFactor * delta);
+                g.bullets.forEach(b => { if(b.active) { b.z -= 210 * delta; if(b.z < -550) b.active = false; } });
+                g.enemyBullets.forEach(eb => { if(eb.active) { if(eb.vel){ eb.x += eb.vel.x; eb.y += eb.vel.y; eb.z += eb.vel.z; } else { eb.z += 100 * levelSpeedFactor * delta; } if(eb.z > CAMERA_BACK_LIMIT || eb.z < -600) eb.active = false; } });
+                
+                g.playerHoming.forEach(m => { if(m.active) { if(pNow - m.createdAt > MISSILE_LIFETIME) { m.active = false; return; } if(m.target) { const tx = m.target.isBoss ? g.boss?.x : m.target.x; const ty = m.target.isBoss ? g.boss?.y : (m.target.y || OCEAN_Y + 5); const tz = m.target.isBoss ? g.boss?.z : m.target.z; if(tz !== undefined) { _vDir.set(tx - m.x, ty - m.y, tz - m.z).normalize(); m.vel.lerp(_vDir.multiplyScalar(3.8), 0.12); } } m.x += m.vel.x; m.y += m.vel.y; m.z += m.vel.z; if(m.z < -650 || m.z > CAMERA_BACK_LIMIT) m.active = false; } });
+                g.homingMissiles.forEach(m => { if(m.active) { if(m.tracking) { _vDir.set(g.pos.x - m.x, g.pos.y - m.y, PLAYER_Z - m.z).normalize(); m.vel.lerp(_vDir.multiplyScalar(2.2), 0.05); if(m.z > PLAYER_Z - 2) m.tracking = false; } m.x += m.vel.x; m.y += m.vel.y; m.z += m.vel.z; if(m.z > CAMERA_BACK_LIMIT || m.z < -700) m.active = false; } });
+                
+                g.torpedos.forEach(m => { if(m.active) { if(!m.inWater) { m.x += m.vel.x; m.y += m.vel.y; m.z += m.vel.z; if(m.y <= OCEAN_Y) { m.inWater = true; m.y = OCEAN_Y; const t = g.ships.find(s => s.z < PLAYER_Z); if(t){ m.vel.set(t.x - m.x, 0, t.z - m.z).normalize().multiplyScalar(3.5); } else { m.vel.set(0, 0, -3.5); } } } else { m.x += m.vel.x; m.z += m.vel.z; if(Math.floor(now) % 60 < 20) m.trail.unshift({ x: m.x, z: m.z }); if(m.trail.length > 12) m.trail.pop(); g.ships.forEach(s => { if(m.active && s.active && Math.abs(s.x - m.x) < 8 && Math.abs(s.z - m.z) < 8){ g.explosions.push({ id: Math.random(), x: s.x, y: OCEAN_Y, z: s.z, color: '#ff5500', time: now }); s.active = false; m.active = false; setScore(sc => sc + 30); } }); g.islands.forEach(isl => { if(m.active && Math.abs(m.x - isl.x) < 9 && Math.abs(m.z - isl.z) < 9){ g.explosions.push({ id: Math.random(), x: m.x, y: OCEAN_Y + 1, z: m.z, color: '#888', time: now }); m.active = false; } }); } if(m.z < -600 || m.z > CAMERA_BACK_LIMIT) m.active = false; } });
+
+                // Colisões
+                g.bullets.filter(b => b.active).forEach(b => {
+                    g.enemies.forEach(e => { if(e.active && Math.abs(b.x - e.x) < 4 && Math.abs(b.y - e.y) < 3.5 && Math.abs(b.z - e.z) < 4.5){ g.explosions.push({ id: Math.random(), x: e.x, y: e.y, z: e.z, color: e.bodyColor, time: now }); e.active = false; b.active = false; setScore(sc => sc + 15); } });
+                    if(g.boss && Math.abs(b.x - g.boss.x) < 24 && Math.abs(b.y - g.boss.y) < 9 && Math.abs(b.z - g.boss.z) < 15){ g.boss.health -= 1; b.active = false; if(g.boss.health <= 0){ for(let i=0; i<8; i++) g.explosions.push({ id: Math.random(), x: g.boss.x + (Math.random()-0.5)*35, y: g.boss.y, z: g.boss.z, color: '#ff0000', time: now }); g.boss = null; setScore(sc => sc + 150); setLevelData(prev => ({ ...prev, current: prev.current + 1 })); g.startTime = now; } }
+                });
+
+                g.playerHoming.forEach(m => {
+                    if(m.active && g.boss && Math.abs(m.x - g.boss.x) < 28 && Math.abs(m.z - g.boss.z) < 20){ g.boss.health -= 15; g.explosions.push({ id: Math.random(), x: m.x, y: m.y, z: m.z, color: '#ff0000', time: now }); m.active = false; if(g.boss.health <= 0){ setScore(sc => sc + 150); g.boss = null; setLevelData(prev => ({ ...prev, current: prev.current + 1 })); g.startTime = now; } }
+                    g.enemies.forEach(e => { if(m.active && e.active && Math.abs(m.x - e.x) < 7 && Math.abs(m.z - e.z) < 7){ g.explosions.push({ id: Math.random(), x: e.x, y: e.y, z: e.z, color: '#ffffff', time: now }); e.active = false; m.active = false; setScore(sc => sc + 15); } });
+                });
+
+                if(!g.isInvincible && !g.isDodging){
+                    [...g.enemyBullets.filter(b => b.active), ...g.homingMissiles.filter(m => m.active)].forEach(proj => {
+                        if(Math.abs(proj.x - g.pos.x) < 4.5 && Math.abs(proj.y - g.pos.y) < 4.5 && Math.abs(proj.z - PLAYER_Z) < 4.5){
+                            g.isInvincible = true;
+                            setLives(l => { 
+                                if (l <= 1) {
+                                    setGameState('GAME_OVER');
+                                    // REGRA 1 (GAME OVER): Enviar pontuação para o portal
+                                    window.parent.postMessage({ type: 'GAME_OVER', score: score }, '*');
+                                }
+                                return l - 1; 
+                            });
+                            setTimeout(() => g.isInvincible = false, INVINCIBILITY_TIME); proj.active = false;
+                        }
+                    });
+                }
+
+                g.enemies = g.enemies.filter(e => e.active); g.ships = g.ships.filter(s => s.active); g.islands = g.islands.filter(i => i.active); g.torpedos = g.torpedos.filter(m => m.active); g.homingMissiles = g.homingMissiles.filter(m => m.active); g.playerHoming = g.playerHoming.filter(m => m.active); g.explosions = g.explosions.filter(ex => now - ex.time < 1200);
+            });
+
+            return (
+                <group>
+                    <Ocean levelSpeedFactor={1 + ((levelData.current - 1) * 0.12)} />
+                    <PlayerRenderer game={game} />
+                    <EntitiesRenderer game={game} />
+                    <ProjectilesRenderer game={game} />
+                    {game.current.boss && <BossRenderer boss={game.current.boss} />}
+                    <Sky distance={450000} sunPosition={[0, 0.5, 0]} />
+                    <Stars radius={100} depth={50} count={1200} factor={4} />
+                    <ambientLight intensity={0.7} />
+                    <directionalLight castShadow position={[30, 60, 30]} intensity={1.8} />
+                </group>
+            );
+        }
+
+        // --- Renderers ---
+
+        function PlayerRenderer({ game }) {
+            const ref = useRef(null);
+            const prop = useRef(null);
+            useFrame((state, delta) => {
+                if (ref.current) {
+                    const { pos, isDodging, isInvincible } = game.current;
+                    ref.current.position.lerp(_v1.set(pos.x, pos.y, PLAYER_Z), 0.35);
+                    if (isDodging) ref.current.rotation.z += 22 * delta;
+                    else ref.current.rotation.z = THREE.MathUtils.lerp(ref.current.rotation.z, (ref.current.position.x - pos.x) * 0.8, 0.18);
+                    ref.current.rotation.x = THREE.MathUtils.lerp(ref.current.rotation.x, (pos.y - ref.current.position.y) * 0.55, 0.18);
+                    ref.current.visible = isInvincible ? Math.floor(state.clock.elapsedTime * 35) % 2 === 0 : true;
+                }
+                if (prop.current) prop.current.rotation.z += 55 * delta;
+            });
+            return <group ref={ref}><AirplaneModel bodyColor="#4477aa" wingColor="#ffcc00" propellerRef={prop} /></group>;
+        }
+
+        function EntitiesRenderer({ game }) {
+            return (
+                <group>
+                    {game.current.enemies.map(e => <group key={e.id} position={[e.x, e.y, e.z]} rotation={[0, Math.PI, 0]}><AirplaneModel bodyColor={e.bodyColor} wingColor={e.wingColor} /></group>)}
+                    {game.current.ships.map(s => <ShipUnit key={s.id} data={s} />)}
+                    {game.current.islands.map(i => <TowerUnit key={i.id} data={i} />)}
+                    {game.current.explosions.map(ex => <Explosion key={ex.id} data={ex} />)}
+                </group>
+            );
+        }
+
+        function ProjectilesRenderer({ game }) {
+            return (
+                <group>
+                    {game.current.bullets.map((b, i) => <mesh key={i} position={[b.x, b.y, b.z]} visible={b.active}><boxGeometry args={[0.3, 0.3, 4]}/><meshBasicMaterial color="#ffff00"/></mesh>)}
+                    {game.current.enemyBullets.map((eb, i) => <mesh key={i} position={[eb.x, eb.y, eb.z]} visible={eb.active}><boxGeometry args={eb.isLaser ? [1.2, 1.2, 40] : [1.6, 1.6, 1.6]}/><meshBasicMaterial color={eb.isLaser ? "#ff0000" : "#ffcc00"}/></mesh>)}
+                    {game.current.playerHoming.map((m, i) => <group key={i} position={[m.x, m.y, m.z]} rotation={[0, Math.PI, 0]} visible={m.active}><mesh rotation={[Math.PI/2, 0, 0]}><cylinderGeometry args={[0.45, 0.45, 4]}/><meshStandardMaterial color="#fff"/></mesh><mesh position={[0,0,-1.8]}><boxGeometry args={[1.8,0.3,1.4]}/><meshBasicMaterial color="#ff3333"/></mesh></group>)}
+                    {game.current.torpedos.map((m, i) => <group key={i} visible={m.active}><group position={[m.x, m.y, m.z]} rotation={[Math.PI/2, 0, 0]}><mesh><cylinderGeometry args={[0.8, 0.8, 6]}/><meshStandardMaterial color="#222"/></mesh></group>{m.inWater && m.trail.map((pt, idx) => <mesh key={idx} position={[pt.x, OCEAN_Y + 0.15, pt.z]} rotation={[-Math.PI/2, 0, 0]}><planeGeometry args={[2.5, 2.5]} /><meshBasicMaterial color="#ffffff" transparent opacity={0.6 - (idx * 0.05)} /></mesh>)}</group>)}
+                    {game.current.homingMissiles.map((m, i) => <group key={i} position={[m.x, m.y, m.z]} visible={m.active}><mesh><boxGeometry args={[1.1, 1.1, 4]}/><meshStandardMaterial color="#ff0044" emissive="#ff0044" emissiveIntensity={5}/></mesh><pointLight color="#ff0000" intensity={1.5} distance={25} /></group>)}
+                </group>
+            );
+        }
+
+        function BossRenderer({ boss }) {
+            const prop = useRef(null);
+            useFrame((_, delta) => { if(prop.current) prop.current.rotation.z += 65 * delta; });
+            return <group position={[boss.x, boss.y, boss.z]}><AirplaneModel bodyColor="#1a202c" wingColor="#e53e3e" propellerRef={prop} isBoss={true} /></group>;
+        }
+
+        // --- Aplicativo ---
+
+        function App() {
+            const [gameState, setGameState] = useState('START');
+            const [score, setScore] = useState(0);
+            const [lives, setLives] = useState(3);
+            const [skills, setSkills] = useState({ s1Energy: 1, s2Energy: 1, s3Energy: 1 });
+            const [levelData, setLevelData] = useState({ current: 1, time: 0 });
+            const [bossUI, setBossUI] = useState({ visible: false, health: 0, maxHealth: 0 });
+
+            // Sincronização de comandos do Portal
+            useEffect(() => {
+                const handlePortalMessage = (e) => {
+                    if (e.data && e.data.type === 'RESTART_CONFIRMED') {
+                        startNewGame();
+                    }
+                };
+                window.addEventListener('message', handlePortalMessage);
+                return () => window.removeEventListener('message', handlePortalMessage);
+            }, []);
+
+            const startNewGame = () => {
+                setScore(0); setLives(3); setGameState('PLAYING'); setLevelData({ current: 1, time: 0 }); setBossUI({ visible: false, health: 0, maxHealth: 0 });
+            };
+
+            const handleRestartRequest = () => {
+                // REGRA 2 (REINICIAR): Pedir permissão ao site para cobrar ficha
+                window.parent.postMessage({ type: 'RESTART_REQUEST' }, '*');
+            };
+
+            return (
+                <div style={{ width: '100vw', height: '100vh', background: '#87CEEB', position: 'relative', overflow: 'hidden' }}>
+                    <Canvas shadows>
+                        <PerspectiveCamera makeDefault position={[0, 18, 50]} rotation={[-0.32, 0, 0]} fov={55} />
+                        <GameCore 
+                            gameState={gameState} setGameState={setGameState} 
+                            setScore={setScore} setSkills={setSkills} setLives={setLives} 
+                            levelData={levelData} setLevelData={setLevelData} setBossUI={setBossUI} score={score}
+                        />
+                    </Canvas>
+
+                    <div className="ui-overlay">
+                        {gameState === 'START' && (
+                            <div className="menu-card">
+                                <h1>SKYBOX WAR</h1>
+                                <p>Domine os céus do Pacífico. Mostre quem é o Ás!</p>
+                                <div style={{ fontSize: '14px', margin: '20px 0', lineHeight: '1.7' }}>
+                                    <b>WASD / Setas</b> para pilotar<br/>
+                                    <b>Arsenal:</b><br/>
+                                    [1] Mísseis Inteligentes (Ar-Ar)<br/>
+                                    [2] Torpedos de Precisão (Mar)<br/>
+                                    [3] Giro de Esquiva
+                                </div>
+                                <button onClick={startNewGame}>DECOLAR AGORA</button>
+                            </div>
+                        )}
+                        
+                        {gameState === 'GAME_OVER' && (
+                            <div className="menu-card">
+                                <h1 style={{color: '#e53e3e'}}>FIM DE VOO</h1>
+                                <p style={{ fontSize: '24px', fontWeight: 'bold' }}>PONTOS: {score}</p>
+                                <p>MISSÃO FINAL: {levelData.current}</p>
+                                <button onClick={handleRestartRequest}>JOGAR NOVAMENTE</button>
+                            </div>
+                        )}
+
+                        {gameState === 'PLAYING' && (
+                            <>
+                                <div className="score-board">{score}</div>
+                                {bossUI.visible && (
+                                    <div className="boss-health-container">
+                                        <div className="boss-label">BOSS DETECTADO</div>
+                                        <div className="boss-bar-bg">
+                                            <div className="boss-bar-fill" style={{ width: `${(bossUI.health / bossUI.maxHealth) * 100}%` }}></div>
+                                        </div>
+                                    </div>
+                                )}
+                                <div className="combo-container">
+                                    <div className="multiplier-text">NÍVEL {levelData.current}</div>
+                                    <div style={{ width: '220px', height: '12px', background: 'rgba(255,255,255,0.2)', borderRadius: '6px', overflow: 'hidden', border: '2px solid white' }}>
+                                        <div style={{ width: `${(levelData.time / BOSS_SPAWN_TIME) * 100}%`, height: '100%', background: '#fff' }}></div>
+                                    </div>
+                                </div>
+                                <div className="lives-container">
+                                    {Array.from({ length: 3 }).map((_, i) => (
+                                        <div key={i} className="heart" style={{ opacity: i < lives ? 1 : 0.2 }}>❤️</div>
+                                    ))}
+                                </div>
+                                <div className="skills-container">
+                                    <SkillItem icon="🚀" label="MÍSSIL" energy={skills.s1Energy} keybind="1" />
+                                    <SkillItem icon="🌊" label="TORPEDO" energy={skills.s2Energy} keybind="2" />
+                                    <SkillItem icon="🔄" label="ESQUIVA" energy={skills.s3Energy} keybind="3" />
+                                </div>
+                            </>
+                        )}
+                    </div>
+                </div>
+            );
+        }
+
+        function SkillItem({ icon, label, energy, keybind }) {
+            return (
+                <div className={`skill-button ${energy >= 1 ? 'active' : ''}`}>
+                    <div className="skill-energy-bar" style={{ height: `${energy * 100}%`, opacity: energy >= 1 ? 0.95 : 0.45 }}></div>
+                    <div className="skill-icon-ui">{icon}</div>
+                    <div className="skill-text">{label} [{keybind}]</div>
+                </div>
+            );
+        }
+
+        const container = document.getElementById('root');
+        if (container) createRoot(container).render(<App />);
+    </script>
+</body>
+</html>
