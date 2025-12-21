@@ -3,41 +3,41 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>TANK VS DINOS: PROTOCOLO KN</title>
+    <title>Tank vs Dinos</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&family=JetBrains+Mono:wght@400;700&display=swap');
-        
-        body {
-            margin: 0;
-            overflow: hidden;
-            background-color: #050a05;
+
+        body { 
+            margin: 0; 
+            padding: 0;
+            overflow: hidden; 
+            background-color: #0f2d1a; 
             color: #ffffff;
             font-family: 'JetBrains Mono', monospace;
             user-select: none;
             -webkit-user-select: none;
             touch-action: none;
         }
-        #ui-layer {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            z-index: 10;
+        canvas {
+            display: block;
+            image-rendering: pixelated;
+            touch-action: none;
         }
-        .pointer-events-auto { pointer-events: auto; }
-        .header-font { font-family: 'Orbitron', sans-serif; }
-        .neon-border {
+        .futuristic-border {
             border: 2px solid #00ff66;
-            box-shadow: 0 0 15px rgba(0, 255, 102, 0.4);
+            box-shadow: 0 0 20px rgba(0, 255, 102, 0.5), inset 0 0 10px rgba(0, 255, 102, 0.3);
+            background: rgba(0, 30, 15, 0.9);
+            backdrop-filter: blur(4px);
         }
-        .hud-gradient {
-            background: linear-gradient(180deg, rgba(0,20,10,0.8) 0%, rgba(0,0,0,0.4) 100%);
+        .neon-text {
+            color: #00ff66;
+            text-shadow: 0 0 12px rgba(0, 255, 102, 0.9);
+        }
+        .header-font {
+            font-family: 'Orbitron', sans-serif;
         }
     </style>
-
     <script type="importmap">
     {
       "imports": {
@@ -45,9 +45,7 @@
         "react/jsx-runtime": "https://esm.sh/react@18.2.0/jsx-runtime",
         "react-dom": "https://esm.sh/react-dom@18.2.0",
         "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
-        "three": "https://esm.sh/three@0.160.0",
-        "@react-three/fiber": "https://esm.sh/@react-three/fiber@8.15.16?external=react,react-dom,three",
-        "@react-three/drei": "https://esm.sh/@react-three/drei@9.99.0?external=react,react-dom,three,@react-three/fiber"
+        "@google/genai": "https://esm.sh/@google/genai@0.1.1" 
       }
     }
     </script>
@@ -55,347 +53,298 @@
 </head>
 <body>
     <div id="root"></div>
-    <div id="ui-layer"></div>
-
     <script type="text/babel" data-type="module">
-        import React, { useState, useRef, useMemo, useEffect, useCallback } from 'react';
+        import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
         import { createRoot } from 'react-dom/client';
-        import * as THREE from 'three';
-        import { Canvas, useFrame, useThree } from '@react-three/fiber';
-        import { OrbitControls, PerspectiveCamera, Stars, Text, Float, RoundedBox } from '@react-three/drei';
+        import { GoogleGenAI } from "@google/genai";
 
-        // --- CONSTANTES ---
-        const WORLD_SIZE = 120; // Escala 3D
-        const TANK_SPEED = 15;
-        const TANK_ROT_SPEED = 3.5;
-        const DINO_BASE_SPEED = 6.5; // +30% em relação ao original
-        const MAX_OBSTACLES = 10;
-        const BULLET_SPEED = 50;
+        // Polyfill para evitar crash no navegador
+        const process = { env: { API_KEY: '' } };
 
-        const DINO_TYPES = [
-            { type: 'RAPTOR', color: '#00ff66', scale: 0.8, hp: 50, points: 5 },
-            { type: 'TREX', color: '#ff0033', scale: 2.2, hp: 450, points: 75 },
-            { type: 'SPINO', color: '#ffaa00', scale: 1.8, hp: 220, points: 45 },
-            { type: 'TRICE', color: '#3366ff', scale: 1.5, hp: 350, points: 20 }
+        // --- 1. CONTEÚDO DE 'types.ts' ---
+        
+        var GameStatus;
+        (function (GameStatus) {
+            GameStatus["MENU"] = "MENU";
+            GameStatus["BRIEFING"] = "BRIEFING";
+            GameStatus["PLAYING"] = "PLAYING";
+            GameStatus["GAME_OVER"] = "GAME_OVER";
+        })(GameStatus || (GameStatus = {}));
+
+        var DinoType;
+        (function (DinoType) {
+            DinoType["RAPTOR"] = "RAPTOR";
+            DinoType["TREX"] = "TREX";
+            DinoType["SPINO"] = "SPINO";
+            DinoType["DILO"] = "DILOPHOSAURUS";
+            DinoType["ANKYLO"] = "ANKYLOSAURUS";
+            DinoType["TRICE"] = "TRICERATOPS";
+            DinoType["PTERO"] = "PTERODACTYL";
+            DinoType["COMPS"] = "COMPSOGNATHUS";
+            DinoType["CARNO"] = "CARNOTAURUS";
+            DinoType["STEGO"] = "STEGOSAURUS";
+        })(DinoType || (DinoType = {}));
+
+        // --- 2. CONTEÚDO DE 'constants.ts' ---
+
+        const WORLD_WIDTH = 3500;
+        const WORLD_HEIGHT = 3500;
+        const BASE_TANK_SPEED = 4.7;
+        const TANK_ROTATION_SPEED = 0.055;
+        const TANK_RADIUS = 28;
+        const FIRE_COOLDOWN = 280;
+        const OBJECTIVE_RADIUS = 80;
+        const VISION_RADIUS = 550;
+
+        const DINO_CONFIGS = {
+            [DinoType.RAPTOR]: { hp: 50, speed: 2.99, damage: 12, radius: 22, color: '#00ff66', accent: '#004400', icon: '🦖', points: 5 },
+            [DinoType.TREX]: { hp: 450, speed: 1.43, damage: 60, radius: 55, color: '#ff0033', accent: '#440000', icon: '🦖', points: 75 },
+            [DinoType.SPINO]: { hp: 220, speed: 2.08, damage: 35, radius: 45, color: '#ffaa00', accent: '#663300', icon: '🐊', points: 45 },
+            [DinoType.DILO]: { hp: 70, speed: 2.47, damage: 20, radius: 25, color: '#cc00ff', accent: '#330044', icon: '🦎', points: 7 },
+            [DinoType.ANKYLO]: { hp: 600, speed: 0.91, damage: 40, radius: 50, color: '#888888', accent: '#333333', icon: '🐢', points: 30 },
+            [DinoType.TRICE]: { hp: 350, speed: 1.82, damage: 45, radius: 48, color: '#3366ff', accent: '#001144', icon: '🦏', points: 20 },
+            [DinoType.PTERO]: { hp: 40, speed: 3.64, damage: 10, radius: 20, color: '#00ffff', accent: '#004444', icon: '🦅', points: 6 },
+            [DinoType.COMPS]: { hp: 20, speed: 4.16, damage: 5, radius: 15, color: '#ffff00', accent: '#444400', icon: '🐁', points: 2 },
+            [DinoType.CARNO]: { hp: 200, speed: 2.73, damage: 30, radius: 35, color: '#ff6600', accent: '#442200', icon: '🐆', points: 18 },
+            [DinoType.STEGO]: { hp: 400, speed: 1.17, damage: 25, radius: 46, color: '#00cc00', accent: '#003300', icon: '🌳', points: 25 }
+        };
+
+        const INITIAL_BRIEFING = "Comandante, os bio-predadores romperam o cerco. O setor está saturado. Mantenha os sistemas de mira ativos e siga para o ponto de extração sinalizado no radar. Boa sorte.";
+
+        const WAR_EFFORT_UPGRADES = [
+            { id: 'armor', name: 'Blindagem de Titânio', description: '+35 HP Máximo', icon: '🛡️' },
+            { id: 'engine', name: 'Propulsores de Íons', description: '+25% Velocidade Tática', icon: '⚙️' },
+            { id: 'fire_rate', name: 'Sincronizador de Disparo', description: '-30% Tempo de Recarga', icon: '⚡' },
+            { id: 'damage', name: 'Cargas de Plasma', description: '+40% Poder de Fogo', icon: '💥' },
+            { id: 'vision', name: 'Sensor de Calor', description: '+30% Alcance de Visão', icon: '👁️' },
+            { id: 'radar', name: 'Radar de Longa Distância', description: 'Minimapa Ampliado', icon: '📡' },
+            { id: 'shield', name: 'Campo de Força', description: 'Redução de Dano Recebido', icon: '💠' },
+            { id: 'auto_repair', name: 'Nanobots de Reparo', description: 'Recuperação Gradual de Vida', icon: '🔧' },
+            { id: 'piercing', name: 'Munição Atravessante', description: 'Tiros Perfuram Inimigos', icon: '🎯' },
+            { id: 'multishot', name: 'Canhão Duplo', description: 'Chance de Disparo Duplo', icon: '☄️' }
         ];
 
-        // --- COMPONENTES DE JOGO ---
+        // --- 3. CONTEÚDO DE 'services/geminiService.ts' ---
+        
+        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
-        const Bullet = ({ position, rotation, onHit }) => {
-            const mesh = useRef();
-            useFrame((state, delta) => {
-                if (mesh.current) {
-                    mesh.current.position.x += Math.sin(rotation) * BULLET_SPEED * delta;
-                    mesh.current.position.z += Math.cos(rotation) * BULLET_SPEED * delta;
-                    
-                    // Colisão com borda
-                    if (Math.abs(mesh.current.position.x) > WORLD_SIZE/2 || Math.abs(mesh.current.position.z) > WORLD_SIZE/2) {
-                        onHit();
+        async function getMissionBriefing(wave, score, targetDino) {
+            try {
+                const response = await ai.models.generateContent({
+                    model: 'gemini-1.5-flash', // Ajustado para modelo compatível
+                    contents: [{ role: 'user', parts: [{ text: `You are a military commander in a sci-fi world. A pilot is at wave ${wave} with score ${score}. The primary threat detected is the ${targetDino}. Write a 2-sentence mission briefing. Be intense, atmospheric, and mention how the ${targetDino} is behaving in the sector.` }] }],
+                });
+                return response.text ? response.text() : "Hold the line, pilot. They're coming from the brush. Do not let them breach the perimeter.";
+            } catch (error) {
+                console.error("Gemini briefing failed:", error);
+                return `Intelligence reports a massive concentration of ${targetDino} units. Lock and load, it's going to be a long night.`;
+            }
+        }
+
+        // --- 4. CONTEÚDO DE 'components/GameCanvas.tsx' ---
+
+        const GameCanvas = ({ status, onGameOver, onWaveComplete, onScoreUpdate, initialScore, currentWave, upgrades }) => {
+            const canvasRef = useRef(null);
+            const grassPatternRef = useRef(null);
+            const [keys, setKeys] = useState(new Set());
+            const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+            const [isMouseDown, setIsMouseDown] = useState(false);
+            const [activeSpecies, setActiveSpecies] = useState(new Set());
+
+            const upgradeEffects = useMemo(() => ({
+                speedBoost: upgrades.includes('engine') ? 1.25 : 1.0,
+                damageBoost: upgrades.includes('damage') ? 1.4 : 1.0,
+                fireRateBoost: upgrades.includes('fire_rate') ? 0.7 : 1.0,
+                armorBoost: upgrades.includes('armor') ? 35 : 0,
+                visionBoost: upgrades.includes('vision') ? 1.3 : 1.0,
+                shieldBoost: upgrades.includes('shield') ? 0.75 : 1.0,
+                autoRepair: upgrades.includes('auto_repair') ? 0.05 : 0
+            }), [upgrades]);
+
+            const speedModifier = useMemo(() => (1.0 + (initialScore / 10000) + (currentWave * 0.05)) * upgradeEffects.speedBoost, [initialScore, currentWave, upgradeEffects.speedBoost]);
+
+            const tankRef = useRef({
+                id: 'player',
+                pos: { x: WORLD_WIDTH / 2, y: WORLD_HEIGHT / 2 },
+                radius: TANK_RADIUS,
+                rotation: 0,
+                turretRotation: 0,
+                hp: 100,
+                maxHp: 100,
+                speed: BASE_TANK_SPEED,
+                score: Math.floor(initialScore),
+                ammo: 100,
+                lastShot: 0,
+            });
+
+            const objectivePosRef = useRef({ x: 0, y: 0, isDiscovered: false });
+            const obstaclesRef = useRef([]);
+            const dinosRef = useRef([]);
+            const projectilesRef = useRef([]);
+            const bloodParticlesRef = useRef([]);
+            const cameraRef = useRef({ x: 0, y: 0 });
+            const frameIdRef = useRef(0);
+            const minimapSize = 160;
+            const minimapScale = minimapSize / WORLD_WIDTH;
+
+            useEffect(() => {
+                const patternCanvas = document.createElement('canvas');
+                patternCanvas.width = 128; patternCanvas.height = 128;
+                const pctx = patternCanvas.getContext('2d');
+                if (pctx) {
+                    pctx.fillStyle = '#7de69d';
+                    pctx.fillRect(0, 0, 128, 128);
+                    for (let i = 0; i < 300; i++) {
+                        pctx.fillStyle = ['#bbf7d0', '#4ade80', '#22c55e'][Math.floor(Math.random() * 3)];
+                        pctx.fillRect(Math.random() * 128, Math.random() * 128, 2, 2);
                     }
-                }
-            });
-
-            return (
-                <mesh ref={mesh} position={position}>
-                    <sphereGeometry args={[0.3, 8, 8]} />
-                    <meshStandardMaterial color="#ffff00" emissive="#ffff00" emissiveIntensity={2} />
-                </mesh>
-            );
-        };
-
-        const Dino = ({ config, playerPos, onDamagePlayer, onDie }) => {
-            const mesh = useRef();
-            const [hp, setHp] = useState(config.hp);
-            const speed = (DINO_BASE_SPEED + Math.random() * 2) * (config.type === 'RAPTOR' ? 1.5 : 1);
-
-            useFrame((state, delta) => {
-                if (!mesh.current) return;
-
-                // Seguir jogador
-                const angle = Math.atan2(playerPos.current.x - mesh.current.position.x, playerPos.current.z - mesh.current.position.z);
-                mesh.current.rotation.y = angle;
-                
-                mesh.current.position.x += Math.sin(angle) * speed * delta;
-                mesh.current.position.z += Math.cos(angle) * speed * delta;
-
-                // Colisão com jogador
-                const dist = mesh.current.position.distanceTo(playerPos.current);
-                if (dist < 3) {
-                    onDamagePlayer(config.type === 'TREX' ? 1 : 0.2);
-                }
-            });
-
-            return (
-                <group ref={mesh} position={[Math.random() * 80 - 40, 0, Math.random() * 80 - 40]}>
-                    <mesh position={[0, config.scale, 0]}>
-                        <boxGeometry args={[config.scale, config.scale, config.scale * 1.5]} />
-                        <meshStandardMaterial color={config.color} />
-                    </mesh>
-                    <mesh position={[0, config.scale * 2, config.scale * 0.5]}>
-                        <boxGeometry args={[config.scale * 0.8, config.scale * 0.8, config.scale * 0.8]} />
-                        <meshStandardMaterial color={config.color} />
-                    </mesh>
-                </group>
-            );
-        };
-
-        const Scene = ({ setScore, setHealth, setGameOver }) => {
-            const { camera, mouse, size } = useThree();
-            const tank = useRef();
-            const turret = useRef();
-            const playerPos = useRef(new THREE.Vector3(0, 0, 0));
-            const [bullets, setBullets] = useState([]);
-            const [dinos, setDinos] = useState([]);
-            const lastShot = useRef(0);
-
-            // Gerar Obstáculos (Max 10)
-            const obstacles = useMemo(() => {
-                return Array.from({ length: MAX_OBSTACLES }).map((_, i) => ({
-                    id: i,
-                    pos: [(Math.random() - 0.5) * WORLD_SIZE * 0.8, 2, (Math.random() - 0.5) * WORLD_SIZE * 0.8],
-                    size: [5 + Math.random() * 5, 4, 5 + Math.random() * 5]
-                }));
-            }, []);
-
-            // Spawn inicial de dinos
-            useEffect(() => {
-                const initialDinos = Array.from({ length: 80 }).map((_, i) => ({
-                    id: i,
-                    config: DINO_TYPES[Math.floor(Math.random() * DINO_TYPES.length)]
-                }));
-                setDinos(initialDinos);
-            }, []);
-
-            const shoot = useCallback(() => {
-                const now = Date.now();
-                if (now - lastShot.current > 250) {
-                    const rot = tank.current.rotation.y + turret.current.rotation.y;
-                    setBullets(prev => [...prev, {
-                        id: now,
-                        pos: [tank.current.position.x, 2, tank.current.position.z],
-                        rot: rot
-                    }]);
-                    lastShot.current = now;
+                    const ctx = document.createElement('canvas').getContext('2d');
+                    if (ctx) grassPatternRef.current = ctx.createPattern(patternCanvas, 'repeat');
                 }
             }, []);
 
-            const keys = useRef({});
-            useEffect(() => {
-                const down = (e) => keys.current[e.code] = true;
-                const up = (e) => keys.current[e.code] = false;
-                window.addEventListener('keydown', down);
-                window.addEventListener('keyup', up);
-                window.addEventListener('mousedown', shoot);
-                return () => {
-                    window.removeEventListener('keydown', down);
-                    window.removeEventListener('keyup', up);
-                    window.removeEventListener('mousedown', shoot);
-                };
-            }, [shoot]);
-
-            useFrame((state, delta) => {
-                if (!tank.current) return;
-
-                // Movimento Tanque
-                if (keys.current['KeyW']) {
-                    tank.current.position.x += Math.sin(tank.current.rotation.y) * TANK_SPEED * delta;
-                    tank.current.position.z += Math.cos(tank.current.rotation.y) * TANK_SPEED * delta;
+            const checkCollision = useCallback((x, y, radius, obstacles, buffer = 0) => {
+                const totalRadius = radius + buffer;
+                for (const ob of obstacles) {
+                    const closestX = Math.max(ob.pos.x, Math.min(x, ob.pos.x + ob.width));
+                    const closestY = Math.max(ob.pos.y, Math.min(y, ob.pos.y + ob.height));
+                    const dist = Math.hypot(x - closestX, y - closestY);
+                    if (dist < totalRadius) return true;
                 }
-                if (keys.current['KeyS']) {
-                    tank.current.position.x -= Math.sin(tank.current.rotation.y) * TANK_SPEED * delta;
-                    tank.current.position.z -= Math.cos(tank.current.rotation.y) * TANK_SPEED * delta;
-                }
-                if (keys.current['KeyA']) tank.current.rotation.y += TANK_ROT_SPEED * delta;
-                if (keys.current['KeyD']) tank.current.rotation.y -= TANK_ROT_SPEED * delta;
-
-                // Limites de Mundo
-                tank.current.position.x = THREE.MathUtils.clamp(tank.current.position.x, -WORLD_SIZE/2 + 2, WORLD_SIZE/2 - 2);
-                tank.current.position.z = THREE.MathUtils.clamp(tank.current.position.z, -WORLD_SIZE/2 + 2, WORLD_SIZE/2 - 2);
-
-                playerPos.current.copy(tank.current.position);
-
-                // Mira da Torreta (Segue o Mouse)
-                const vector = new THREE.Vector3(mouse.x, mouse.y, 0.5);
-                vector.unproject(camera);
-                const dir = vector.sub(camera.position).normalize();
-                const distance = -camera.position.y / dir.y;
-                const pos = camera.position.clone().add(dir.multiplyScalar(distance));
-                
-                const lookAngle = Math.atan2(pos.x - tank.current.position.x, pos.z - tank.current.position.z);
-                turret.current.rotation.y = lookAngle - tank.current.rotation.y;
-
-                // Câmera segue tanque
-                state.camera.position.lerp(new THREE.Vector3(tank.current.position.x, 40, tank.current.position.z + 25), 0.1);
-                state.camera.lookAt(tank.current.position);
-            });
-
-            return (
-                <>
-                    <Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade speed={1} />
-                    <ambientLight intensity={0.5} />
-                    <directionalLight position={[10, 20, 10]} intensity={1.5} castShadow />
-
-                    {/* Chão e Limites */}
-                    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.1, 0]} receiveShadow>
-                        <planeGeometry args={[WORLD_SIZE, WORLD_SIZE]} />
-                        <meshStandardMaterial color="#0a1a0a" />
-                    </mesh>
-
-                    {/* Linha Vermelha de Perímetro */}
-                    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.1, 0]}>
-                        <ringGeometry args={[WORLD_SIZE/2 - 0.5, WORLD_SIZE/2, 4, 1]} rotation={[0,0,Math.PI/4]} />
-                        <meshStandardMaterial color="red" emissive="red" emissiveIntensity={5} transparent opacity={0.8} />
-                    </mesh>
-
-                    {/* Obstáculos */}
-                    {obstacles.map(ob => (
-                        <RoundedBox key={ob.id} position={ob.pos} args={ob.size} radius={0.5}>
-                            <meshStandardMaterial color="#222" metalness={0.8} roughness={0.2} />
-                        </RoundedBox>
-                    ))}
-
-                    {/* Tanque */}
-                    <group ref={tank} castShadow>
-                        {/* Corpo */}
-                        <mesh position={[0, 1, 0]}>
-                            <boxGeometry args={[4, 1.5, 5]} />
-                            <meshStandardMaterial color="#1a331a" />
-                        </mesh>
-                        {/* Lagartas */}
-                        <mesh position={[-2.2, 0.6, 0]}>
-                            <boxGeometry args={[0.8, 1.2, 5.5]} />
-                            <meshStandardMaterial color="#111" />
-                        </mesh>
-                        <mesh position={[2.2, 0.6, 0]}>
-                            <boxGeometry args={[0.8, 1.2, 5.5]} />
-                            <meshStandardMaterial color="#111" />
-                        </mesh>
-                        {/* Torreta */}
-                        <group ref={turret} position={[0, 2, 0]}>
-                            <mesh position={[0, 0.5, 0]}>
-                                <boxGeometry args={[2.5, 1, 2.5]} />
-                                <meshStandardMaterial color="#2a4d2a" />
-                            </mesh>
-                            <mesh position={[0, 0.5, 2]}>
-                                <cylinderGeometry args={[0.3, 0.3, 4]} rotation={[Math.PI / 2, 0, 0]} />
-                                <meshStandardMaterial color="#333" />
-                            </mesh>
-                        </group>
-                    </group>
-
-                    {/* Balas */}
-                    {bullets.map(b => (
-                        <Bullet key={b.id} position={b.pos} rotation={b.rot} onHit={() => setBullets(prev => prev.filter(p => p.id !== b.id))} />
-                    ))}
-
-                    {/* Dinos */}
-                    {dinos.map(d => (
-                        <Dino 
-                            key={d.id} 
-                            config={d.config} 
-                            playerPos={playerPos} 
-                            onDamagePlayer={(dmg) => setHealth(h => {
-                                const newH = Math.max(0, h - dmg);
-                                if (newH <= 0) setGameOver(true);
-                                return newH;
-                            })}
-                            onDie={() => {
-                                setScore(s => s + d.config.points);
-                                setDinos(prev => prev.filter(p => p.id !== d.id));
-                            }}
-                        />
-                    ))}
-                </>
-            );
-        };
-
-        // --- INTERFACE E ESTADO GLOBAL ---
-
-        const Game = () => {
-            const [score, setScore] = useState(0);
-            const [health, setHealth] = useState(100);
-            const [gameOver, setGameOver] = useState(false);
-            const [started, setStarted] = useState(false);
+                return false;
+            }, []);
 
             useEffect(() => {
-                if (gameOver) {
-                    window.parent.postMessage({ type: 'GAME_OVER', score: Math.floor(score) }, '*');
+                if (status === GameStatus.PLAYING) {
+                    const tank = tankRef.current;
+                    tank.maxHp = 100 + upgradeEffects.armorBoost;
+                    tank.hp = tank.maxHp;
+                    tank.pos = { x: WORLD_WIDTH / 2, y: WORLD_HEIGHT / 2 };
+
+                    const obstacles = [];
+                    for (let i = 0; i < 10; i++) {
+                        const w = 150 + Math.random() * 200, h = 150 + Math.random() * 200;
+                        const pos = { x: 500 + Math.random() * (WORLD_WIDTH - 1000), y: 500 + Math.random() * (WORLD_HEIGHT - 1000) };
+                        if (Math.hypot(pos.x - WORLD_WIDTH/2, pos.y - WORLD_HEIGHT/2) > 500) {
+                            obstacles.push({ pos, width: w, height: h, type: 'WALL', isDiscovered: true });
+                        }
+                    }
+                    obstaclesRef.current = obstacles;
+
+                    const margin = 200;
+                    const cornerPositions = [
+                        { x: margin, y: margin },
+                        { x: WORLD_WIDTH - margin, y: margin },
+                        { x: margin, y: WORLD_HEIGHT - margin },
+                        { x: WORLD_WIDTH - margin, y: WORLD_HEIGHT - margin }
+                    ];
+                    objectivePosRef.current = { ...cornerPositions[Math.floor(Math.random() * 4)], isDiscovered: true };
+
+                    const types = Object.keys(DINO_CONFIGS);
+                    const newDinos = [];
+                    let remainingDinos = Math.max(80, currentWave * 20);
+                    
+                    while (remainingDinos > 0) {
+                        const type = types[Math.floor(Math.random() * Math.min(types.length, 2 + currentWave))];
+                        const config = DINO_CONFIGS[type];
+                        
+                        const isPackDino = config.hp <= 70;
+                        const packSize = isPackDino ? Math.min(remainingDinos, 2 + Math.floor(Math.random() * 4)) : 1;
+                        
+                        let centerPos = { x: 0, y: 0 };
+                        let validSpot = false;
+                        let attempts = 0;
+
+                        while (!validSpot && attempts < 50) {
+                            const angle = Math.random() * Math.PI * 2;
+                            const dist = 800 + Math.random() * 2200;
+                            centerPos = { 
+                                x: Math.max(100, Math.min(WORLD_WIDTH - 100, tank.pos.x + Math.cos(angle) * dist)),
+                                y: Math.max(100, Math.min(WORLD_HEIGHT - 100, tank.pos.y + Math.sin(angle) * dist))
+                            };
+                            if (!checkCollision(centerPos.x, centerPos.y, 120, obstacles, 20)) validSpot = true;
+                            attempts++;
+                        }
+
+                        if (validSpot) {
+                            for (let j = 0; j < packSize; j++) {
+                                const offsetAngle = (Math.PI * 2 / packSize) * j;
+                                const offsetDist = packSize > 1 ? 60 : 0;
+                                const dPos = {
+                                    x: centerPos.x + Math.cos(offsetAngle) * offsetDist,
+                                    y: centerPos.y + Math.sin(offsetAngle) * offsetDist
+                                };
+                                
+                                newDinos.push({
+                                    id: Math.random().toString(36), type, pos: dPos, radius: config.radius, rotation: 0,
+                                    hp: config.hp + currentWave * 15, maxHp: config.hp + currentWave * 15,
+                                    speed: config.speed, damage: config.damage, lastAttack: 0, color: config.color, 
+                                    isActive: Math.random() < 0.4 
+                                });
+                            }
+                        }
+                        remainingDinos -= packSize;
+                    }
+                    dinosRef.current = newDinos;
+                    bloodParticlesRef.current = [];
                 }
-            }, [gameOver, score]);
+            }, [status, currentWave, upgradeEffects.armorBoost, checkCollision]);
 
-            const restart = () => {
-                window.parent.postMessage({ type: 'RESTART_REQUEST' }, '*');
-            };
+            const update = useCallback(() => {
+                if (status !== GameStatus.PLAYING) return;
+                const tank = tankRef.current;
+                if (upgradeEffects.autoRepair > 0) tank.hp = Math.min(tank.maxHp, tank.hp + upgradeEffects.autoRepair);
 
-            return (
-                <div className="w-full h-full">
-                    <Canvas shadows>
-                        <PerspectiveCamera makeDefault position={[0, 40, 30]} />
-                        {started && !gameOver && (
-                            <Scene setScore={setScore} setHealth={setHealth} setGameOver={setGameOver} />
-                        )}
-                    </Canvas>
+                const curSpeed = tank.speed * speedModifier;
+                let mx = 0, my = 0;
+                if (keys.has('KeyW') || keys.has('ArrowUp')) { mx += Math.cos(tank.rotation) * curSpeed; my += Math.sin(tank.rotation) * curSpeed; }
+                if (keys.has('KeyS') || keys.has('ArrowDown')) { mx -= Math.cos(tank.rotation) * curSpeed; my -= Math.sin(tank.rotation) * curSpeed; }
+                if (keys.has('KeyA') || keys.has('ArrowLeft')) tank.rotation -= TANK_ROTATION_SPEED;
+                if (keys.has('KeyD') || keys.has('ArrowRight')) tank.rotation += TANK_ROTATION_SPEED;
 
-                    {/* HUD */}
-                    <div id="ui-layer">
-                        {!started && (
-                            <div className="absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm pointer-events-auto">
-                                <div className="text-center p-12 neon-border bg-black/80 rounded-[2rem]">
-                                    <h1 className="text-6xl font-black italic header-font text-green-500 mb-6">TANK VS DINOS</h1>
-                                    <p className="text-green-400 mb-8 font-mono">PROTOCOLO DE DEFESA KN JOGOS</p>
-                                    <button 
-                                        onClick={() => setStarted(true)}
-                                        className="px-12 py-4 bg-green-600 hover:bg-green-500 text-black font-black text-2xl uppercase rounded-xl transition-all active:scale-95"
-                                    >
-                                        INICIAR BATALHA
-                                    </button>
-                                    <div className="mt-6 text-gray-500 text-sm font-mono uppercase">
-                                        WASD: Mover | MOUSE: Mirar & Atirar
-                                    </div>
-                                </div>
-                            </div>
-                        )}
+                const nx = Math.max(tank.radius, Math.min(WORLD_WIDTH - tank.radius, tank.pos.x + mx));
+                const ny = Math.max(tank.radius, Math.min(WORLD_HEIGHT - tank.radius, tank.pos.y + my));
+                if (!checkCollision(nx, ny, tank.radius, obstaclesRef.current)) { tank.pos.x = nx; tank.pos.y = ny; }
 
-                        {started && !gameOver && (
-                            <div className="p-6 flex justify-between items-start">
-                                <div className="p-4 bg-black/60 rounded-xl neon-border min-w-[200px]">
-                                    <div className="text-xs text-green-400 font-bold uppercase mb-1">Status do Hull</div>
-                                    <div className="w-full h-4 bg-gray-900 rounded-full overflow-hidden border border-white/10">
-                                        <div 
-                                            className="h-full bg-gradient-to-r from-red-600 to-green-500 transition-all duration-300"
-                                            style={{ width: `${health}%` }}
-                                        />
-                                    </div>
-                                    <div className="text-right text-white font-bold mt-1">{Math.floor(health)}%</div>
-                                </div>
-                                <div className="text-center p-4 bg-black/60 rounded-xl neon-border min-w-[150px]">
-                                    <div className="text-xs text-green-400 font-bold uppercase">Créditos de Guerra</div>
-                                    <div className="text-3xl font-black text-white">{score}</div>
-                                </div>
-                            </div>
-                        )}
+                const species = new Set();
+                const curVision = VISION_RADIUS * upgradeEffects.visionBoost;
+                dinosRef.current.forEach(d => {
+                    if (d.hp <= 0) return;
+                    const dist = Math.hypot(tank.pos.x - d.pos.x, tank.pos.y - d.pos.y);
+                    if (dist < curVision + 150) d.isActive = true;
+                    if (d.isActive) {
+                        species.add(d.type);
+                        const angle = Math.atan2(tank.pos.y - d.pos.y, tank.pos.x - d.pos.x);
+                        d.rotation = angle;
+                        const dnx = d.pos.x + Math.cos(angle) * d.speed * speedModifier;
+                        const dny = d.pos.y + Math.sin(angle) * d.speed * speedModifier;
+                        if (!checkCollision(dnx, dny, d.radius, obstaclesRef.current)) { d.pos.x = dnx; d.pos.y = dny; }
+                        if (dist < tank.radius + d.radius && Date.now() - d.lastAttack > 800) {
+                            tank.hp -= d.damage * upgradeEffects.shieldBoost;
+                            d.lastAttack = Date.now();
+                            if (tank.hp <= 0) onGameOver(tank.score);
+                        }
+                    }
+                });
+                setActiveSpecies(species);
 
-                        {gameOver && (
-                            <div className="absolute inset-0 flex flex-col items-center justify-center bg-red-950/80 backdrop-blur-md pointer-events-auto">
-                                <h2 className="text-7xl font-black italic header-font text-white mb-4">UNIDADE ABATIDA</h2>
-                                <div className="text-3xl text-yellow-400 font-mono mb-12 uppercase tracking-widest">
-                                    Score Final: {score} PTS
-                                </div>
-                                <button 
-                                    onClick={restart}
-                                    className="px-16 py-6 bg-white text-red-900 font-black text-3xl uppercase rounded-2xl hover:bg-green-500 hover:text-black transition-all shadow-2xl"
-                                >
-                                    JOGAR NOVAMENTE
-                                </button>
-                            </div>
-                        )}
-                    </div>
-                </div>
-            );
-        };
+                tank.turretRotation = Math.atan2(mousePos.y + cameraRef.current.y - tank.pos.y, mousePos.x + cameraRef.current.x - tank.pos.x);
+                if (isMouseDown && Date.now() - tank.lastShot > FIRE_COOLDOWN * upgradeEffects.fireRateBoost) {
+                    projectilesRef.current.push({
+                        pos: { ...tank.pos }, velocity: { x: Math.cos(tank.turretRotation) * 22, y: Math.sin(tank.turretRotation) * 22 },
+                        damage: 45 * upgradeEffects.damageBoost, life: 85
+                    });
+                    tank.lastShot = Date.now();
+                }
 
-        const root = createRoot(document.getElementById('root'));
-        root.render(<Game />);
-    </script>
-</body>
-</html>
+                projectilesRef.current.forEach(p => {
+                    p.pos.x += p.velocity.x; p.pos.y += p.velocity.y; p.life--;
+                    dinosRef.current.forEach(d => {
+                        if (d.hp > 0 && Math.hypot(p.pos.x - d.pos.x, p.pos.y - d.pos.y) < d.radius + 15) {
+                            d.hp -= p.damage; d.isActive = true;
+                            if (!upgrades.includes('piercing')) p.life = 0;
+                            if (d.hp <= 0) {
+                                const dinoPoints = DINO_CONFIGS[d.type]?.points || 3;
+                                tank.score += Math.floor(dinoPoints);
+                                onScoreUpdate(tank.score);
+                                const particleCount = 10 + Math.floor(M
