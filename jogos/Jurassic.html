@@ -3,54 +3,399 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Tank vs Dinos: Conflito Jurássico</title>
+    <title>TANK VS DINOS: PROTOCOLO KN</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&family=JetBrains+Mono:wght@400;700&display=swap');
         
         body {
             margin: 0;
-            padding: 0;
             overflow: hidden;
-            background-color: #0f2d1a;
+            background-color: #050a05;
             color: #ffffff;
             font-family: 'JetBrains Mono', monospace;
             user-select: none;
             -webkit-user-select: none;
             touch-action: none;
         }
-        canvas {
-            display: block;
-            image-rendering: pixelated;
-            touch-action: none;
+        #ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 10;
         }
-        .futuristic-border {
+        .pointer-events-auto { pointer-events: auto; }
+        .header-font { font-family: 'Orbitron', sans-serif; }
+        .neon-border {
             border: 2px solid #00ff66;
-            box-shadow: 0 0 20px rgba(0, 255, 102, 0.5), inset 0 0 10px rgba(0, 255, 102, 0.3);
-            background: rgba(0, 30, 15, 0.9);
-            backdrop-filter: blur(4px);
+            box-shadow: 0 0 15px rgba(0, 255, 102, 0.4);
         }
-        .neon-text {
-            color: #00ff66;
-            text-shadow: 0 0 12px rgba(0, 255, 102, 0.9);
-        }
-        .header-font {
-            font-family: 'Orbitron', sans-serif;
+        .hud-gradient {
+            background: linear-gradient(180deg, rgba(0,20,10,0.8) 0%, rgba(0,0,0,0.4) 100%);
         }
     </style>
-<script type="importmap">
-{
-  "imports": {
-    "react": "https://esm.sh/react@^19.2.3",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
-    "@google/genai": "https://esm.sh/@google/genai@^1.34.0",
-    "react/": "https://esm.sh/react@^19.2.3/"
-  }
-}
-</script>
+
+    <script type="importmap">
+    {
+      "imports": {
+        "react": "https://esm.sh/react@18.2.0",
+        "react/jsx-runtime": "https://esm.sh/react@18.2.0/jsx-runtime",
+        "react-dom": "https://esm.sh/react-dom@18.2.0",
+        "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
+        "three": "https://esm.sh/three@0.160.0",
+        "@react-three/fiber": "https://esm.sh/@react-three/fiber@8.15.16?external=react,react-dom,three",
+        "@react-three/drei": "https://esm.sh/@react-three/drei@9.99.0?external=react,react-dom,three,@react-three/fiber"
+      }
+    }
+    </script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 </head>
 <body>
     <div id="root"></div>
-    <script type="module" src="index.tsx"></script>
+    <div id="ui-layer"></div>
+
+    <script type="text/babel" data-type="module">
+        import React, { useState, useRef, useMemo, useEffect, useCallback } from 'react';
+        import { createRoot } from 'react-dom/client';
+        import * as THREE from 'three';
+        import { Canvas, useFrame, useThree } from '@react-three/fiber';
+        import { OrbitControls, PerspectiveCamera, Stars, Text, Float, RoundedBox } from '@react-three/drei';
+
+        // --- CONSTANTES ---
+        const WORLD_SIZE = 120; // Escala 3D
+        const TANK_SPEED = 15;
+        const TANK_ROT_SPEED = 3.5;
+        const DINO_BASE_SPEED = 6.5; // +30% em relação ao original
+        const MAX_OBSTACLES = 10;
+        const BULLET_SPEED = 50;
+
+        const DINO_TYPES = [
+            { type: 'RAPTOR', color: '#00ff66', scale: 0.8, hp: 50, points: 5 },
+            { type: 'TREX', color: '#ff0033', scale: 2.2, hp: 450, points: 75 },
+            { type: 'SPINO', color: '#ffaa00', scale: 1.8, hp: 220, points: 45 },
+            { type: 'TRICE', color: '#3366ff', scale: 1.5, hp: 350, points: 20 }
+        ];
+
+        // --- COMPONENTES DE JOGO ---
+
+        const Bullet = ({ position, rotation, onHit }) => {
+            const mesh = useRef();
+            useFrame((state, delta) => {
+                if (mesh.current) {
+                    mesh.current.position.x += Math.sin(rotation) * BULLET_SPEED * delta;
+                    mesh.current.position.z += Math.cos(rotation) * BULLET_SPEED * delta;
+                    
+                    // Colisão com borda
+                    if (Math.abs(mesh.current.position.x) > WORLD_SIZE/2 || Math.abs(mesh.current.position.z) > WORLD_SIZE/2) {
+                        onHit();
+                    }
+                }
+            });
+
+            return (
+                <mesh ref={mesh} position={position}>
+                    <sphereGeometry args={[0.3, 8, 8]} />
+                    <meshStandardMaterial color="#ffff00" emissive="#ffff00" emissiveIntensity={2} />
+                </mesh>
+            );
+        };
+
+        const Dino = ({ config, playerPos, onDamagePlayer, onDie }) => {
+            const mesh = useRef();
+            const [hp, setHp] = useState(config.hp);
+            const speed = (DINO_BASE_SPEED + Math.random() * 2) * (config.type === 'RAPTOR' ? 1.5 : 1);
+
+            useFrame((state, delta) => {
+                if (!mesh.current) return;
+
+                // Seguir jogador
+                const angle = Math.atan2(playerPos.current.x - mesh.current.position.x, playerPos.current.z - mesh.current.position.z);
+                mesh.current.rotation.y = angle;
+                
+                mesh.current.position.x += Math.sin(angle) * speed * delta;
+                mesh.current.position.z += Math.cos(angle) * speed * delta;
+
+                // Colisão com jogador
+                const dist = mesh.current.position.distanceTo(playerPos.current);
+                if (dist < 3) {
+                    onDamagePlayer(config.type === 'TREX' ? 1 : 0.2);
+                }
+            });
+
+            return (
+                <group ref={mesh} position={[Math.random() * 80 - 40, 0, Math.random() * 80 - 40]}>
+                    <mesh position={[0, config.scale, 0]}>
+                        <boxGeometry args={[config.scale, config.scale, config.scale * 1.5]} />
+                        <meshStandardMaterial color={config.color} />
+                    </mesh>
+                    <mesh position={[0, config.scale * 2, config.scale * 0.5]}>
+                        <boxGeometry args={[config.scale * 0.8, config.scale * 0.8, config.scale * 0.8]} />
+                        <meshStandardMaterial color={config.color} />
+                    </mesh>
+                </group>
+            );
+        };
+
+        const Scene = ({ setScore, setHealth, setGameOver }) => {
+            const { camera, mouse, size } = useThree();
+            const tank = useRef();
+            const turret = useRef();
+            const playerPos = useRef(new THREE.Vector3(0, 0, 0));
+            const [bullets, setBullets] = useState([]);
+            const [dinos, setDinos] = useState([]);
+            const lastShot = useRef(0);
+
+            // Gerar Obstáculos (Max 10)
+            const obstacles = useMemo(() => {
+                return Array.from({ length: MAX_OBSTACLES }).map((_, i) => ({
+                    id: i,
+                    pos: [(Math.random() - 0.5) * WORLD_SIZE * 0.8, 2, (Math.random() - 0.5) * WORLD_SIZE * 0.8],
+                    size: [5 + Math.random() * 5, 4, 5 + Math.random() * 5]
+                }));
+            }, []);
+
+            // Spawn inicial de dinos
+            useEffect(() => {
+                const initialDinos = Array.from({ length: 80 }).map((_, i) => ({
+                    id: i,
+                    config: DINO_TYPES[Math.floor(Math.random() * DINO_TYPES.length)]
+                }));
+                setDinos(initialDinos);
+            }, []);
+
+            const shoot = useCallback(() => {
+                const now = Date.now();
+                if (now - lastShot.current > 250) {
+                    const rot = tank.current.rotation.y + turret.current.rotation.y;
+                    setBullets(prev => [...prev, {
+                        id: now,
+                        pos: [tank.current.position.x, 2, tank.current.position.z],
+                        rot: rot
+                    }]);
+                    lastShot.current = now;
+                }
+            }, []);
+
+            const keys = useRef({});
+            useEffect(() => {
+                const down = (e) => keys.current[e.code] = true;
+                const up = (e) => keys.current[e.code] = false;
+                window.addEventListener('keydown', down);
+                window.addEventListener('keyup', up);
+                window.addEventListener('mousedown', shoot);
+                return () => {
+                    window.removeEventListener('keydown', down);
+                    window.removeEventListener('keyup', up);
+                    window.removeEventListener('mousedown', shoot);
+                };
+            }, [shoot]);
+
+            useFrame((state, delta) => {
+                if (!tank.current) return;
+
+                // Movimento Tanque
+                if (keys.current['KeyW']) {
+                    tank.current.position.x += Math.sin(tank.current.rotation.y) * TANK_SPEED * delta;
+                    tank.current.position.z += Math.cos(tank.current.rotation.y) * TANK_SPEED * delta;
+                }
+                if (keys.current['KeyS']) {
+                    tank.current.position.x -= Math.sin(tank.current.rotation.y) * TANK_SPEED * delta;
+                    tank.current.position.z -= Math.cos(tank.current.rotation.y) * TANK_SPEED * delta;
+                }
+                if (keys.current['KeyA']) tank.current.rotation.y += TANK_ROT_SPEED * delta;
+                if (keys.current['KeyD']) tank.current.rotation.y -= TANK_ROT_SPEED * delta;
+
+                // Limites de Mundo
+                tank.current.position.x = THREE.MathUtils.clamp(tank.current.position.x, -WORLD_SIZE/2 + 2, WORLD_SIZE/2 - 2);
+                tank.current.position.z = THREE.MathUtils.clamp(tank.current.position.z, -WORLD_SIZE/2 + 2, WORLD_SIZE/2 - 2);
+
+                playerPos.current.copy(tank.current.position);
+
+                // Mira da Torreta (Segue o Mouse)
+                const vector = new THREE.Vector3(mouse.x, mouse.y, 0.5);
+                vector.unproject(camera);
+                const dir = vector.sub(camera.position).normalize();
+                const distance = -camera.position.y / dir.y;
+                const pos = camera.position.clone().add(dir.multiplyScalar(distance));
+                
+                const lookAngle = Math.atan2(pos.x - tank.current.position.x, pos.z - tank.current.position.z);
+                turret.current.rotation.y = lookAngle - tank.current.rotation.y;
+
+                // Câmera segue tanque
+                state.camera.position.lerp(new THREE.Vector3(tank.current.position.x, 40, tank.current.position.z + 25), 0.1);
+                state.camera.lookAt(tank.current.position);
+            });
+
+            return (
+                <>
+                    <Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade speed={1} />
+                    <ambientLight intensity={0.5} />
+                    <directionalLight position={[10, 20, 10]} intensity={1.5} castShadow />
+
+                    {/* Chão e Limites */}
+                    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.1, 0]} receiveShadow>
+                        <planeGeometry args={[WORLD_SIZE, WORLD_SIZE]} />
+                        <meshStandardMaterial color="#0a1a0a" />
+                    </mesh>
+
+                    {/* Linha Vermelha de Perímetro */}
+                    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.1, 0]}>
+                        <ringGeometry args={[WORLD_SIZE/2 - 0.5, WORLD_SIZE/2, 4, 1]} rotation={[0,0,Math.PI/4]} />
+                        <meshStandardMaterial color="red" emissive="red" emissiveIntensity={5} transparent opacity={0.8} />
+                    </mesh>
+
+                    {/* Obstáculos */}
+                    {obstacles.map(ob => (
+                        <RoundedBox key={ob.id} position={ob.pos} args={ob.size} radius={0.5}>
+                            <meshStandardMaterial color="#222" metalness={0.8} roughness={0.2} />
+                        </RoundedBox>
+                    ))}
+
+                    {/* Tanque */}
+                    <group ref={tank} castShadow>
+                        {/* Corpo */}
+                        <mesh position={[0, 1, 0]}>
+                            <boxGeometry args={[4, 1.5, 5]} />
+                            <meshStandardMaterial color="#1a331a" />
+                        </mesh>
+                        {/* Lagartas */}
+                        <mesh position={[-2.2, 0.6, 0]}>
+                            <boxGeometry args={[0.8, 1.2, 5.5]} />
+                            <meshStandardMaterial color="#111" />
+                        </mesh>
+                        <mesh position={[2.2, 0.6, 0]}>
+                            <boxGeometry args={[0.8, 1.2, 5.5]} />
+                            <meshStandardMaterial color="#111" />
+                        </mesh>
+                        {/* Torreta */}
+                        <group ref={turret} position={[0, 2, 0]}>
+                            <mesh position={[0, 0.5, 0]}>
+                                <boxGeometry args={[2.5, 1, 2.5]} />
+                                <meshStandardMaterial color="#2a4d2a" />
+                            </mesh>
+                            <mesh position={[0, 0.5, 2]}>
+                                <cylinderGeometry args={[0.3, 0.3, 4]} rotation={[Math.PI / 2, 0, 0]} />
+                                <meshStandardMaterial color="#333" />
+                            </mesh>
+                        </group>
+                    </group>
+
+                    {/* Balas */}
+                    {bullets.map(b => (
+                        <Bullet key={b.id} position={b.pos} rotation={b.rot} onHit={() => setBullets(prev => prev.filter(p => p.id !== b.id))} />
+                    ))}
+
+                    {/* Dinos */}
+                    {dinos.map(d => (
+                        <Dino 
+                            key={d.id} 
+                            config={d.config} 
+                            playerPos={playerPos} 
+                            onDamagePlayer={(dmg) => setHealth(h => {
+                                const newH = Math.max(0, h - dmg);
+                                if (newH <= 0) setGameOver(true);
+                                return newH;
+                            })}
+                            onDie={() => {
+                                setScore(s => s + d.config.points);
+                                setDinos(prev => prev.filter(p => p.id !== d.id));
+                            }}
+                        />
+                    ))}
+                </>
+            );
+        };
+
+        // --- INTERFACE E ESTADO GLOBAL ---
+
+        const Game = () => {
+            const [score, setScore] = useState(0);
+            const [health, setHealth] = useState(100);
+            const [gameOver, setGameOver] = useState(false);
+            const [started, setStarted] = useState(false);
+
+            useEffect(() => {
+                if (gameOver) {
+                    window.parent.postMessage({ type: 'GAME_OVER', score: Math.floor(score) }, '*');
+                }
+            }, [gameOver, score]);
+
+            const restart = () => {
+                window.parent.postMessage({ type: 'RESTART_REQUEST' }, '*');
+            };
+
+            return (
+                <div className="w-full h-full">
+                    <Canvas shadows>
+                        <PerspectiveCamera makeDefault position={[0, 40, 30]} />
+                        {started && !gameOver && (
+                            <Scene setScore={setScore} setHealth={setHealth} setGameOver={setGameOver} />
+                        )}
+                    </Canvas>
+
+                    {/* HUD */}
+                    <div id="ui-layer">
+                        {!started && (
+                            <div className="absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm pointer-events-auto">
+                                <div className="text-center p-12 neon-border bg-black/80 rounded-[2rem]">
+                                    <h1 className="text-6xl font-black italic header-font text-green-500 mb-6">TANK VS DINOS</h1>
+                                    <p className="text-green-400 mb-8 font-mono">PROTOCOLO DE DEFESA KN JOGOS</p>
+                                    <button 
+                                        onClick={() => setStarted(true)}
+                                        className="px-12 py-4 bg-green-600 hover:bg-green-500 text-black font-black text-2xl uppercase rounded-xl transition-all active:scale-95"
+                                    >
+                                        INICIAR BATALHA
+                                    </button>
+                                    <div className="mt-6 text-gray-500 text-sm font-mono uppercase">
+                                        WASD: Mover | MOUSE: Mirar & Atirar
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {started && !gameOver && (
+                            <div className="p-6 flex justify-between items-start">
+                                <div className="p-4 bg-black/60 rounded-xl neon-border min-w-[200px]">
+                                    <div className="text-xs text-green-400 font-bold uppercase mb-1">Status do Hull</div>
+                                    <div className="w-full h-4 bg-gray-900 rounded-full overflow-hidden border border-white/10">
+                                        <div 
+                                            className="h-full bg-gradient-to-r from-red-600 to-green-500 transition-all duration-300"
+                                            style={{ width: `${health}%` }}
+                                        />
+                                    </div>
+                                    <div className="text-right text-white font-bold mt-1">{Math.floor(health)}%</div>
+                                </div>
+                                <div className="text-center p-4 bg-black/60 rounded-xl neon-border min-w-[150px]">
+                                    <div className="text-xs text-green-400 font-bold uppercase">Créditos de Guerra</div>
+                                    <div className="text-3xl font-black text-white">{score}</div>
+                                </div>
+                            </div>
+                        )}
+
+                        {gameOver && (
+                            <div className="absolute inset-0 flex flex-col items-center justify-center bg-red-950/80 backdrop-blur-md pointer-events-auto">
+                                <h2 className="text-7xl font-black italic header-font text-white mb-4">UNIDADE ABATIDA</h2>
+                                <div className="text-3xl text-yellow-400 font-mono mb-12 uppercase tracking-widest">
+                                    Score Final: {score} PTS
+                                </div>
+                                <button 
+                                    onClick={restart}
+                                    className="px-16 py-6 bg-white text-red-900 font-black text-3xl uppercase rounded-2xl hover:bg-green-500 hover:text-black transition-all shadow-2xl"
+                                >
+                                    JOGAR NOVAMENTE
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        };
+
+        const root = createRoot(document.getElementById('root'));
+        root.render(<Game />);
+    </script>
 </body>
 </html>
