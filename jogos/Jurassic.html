@@ -2,27 +2,25 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Tank vs Dinos</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&family=JetBrains+Mono:wght@400;700&display=swap');
-
+        
         body { 
             margin: 0; 
-            padding: 0;
             overflow: hidden; 
             background-color: #0f2d1a; 
+            touch-action: none; 
             color: #ffffff;
             font-family: 'JetBrains Mono', monospace;
             user-select: none;
             -webkit-user-select: none;
-            touch-action: none;
         }
         canvas {
             display: block;
             image-rendering: pixelated;
-            touch-action: none;
         }
         .futuristic-border {
             border: 2px solid #00ff66;
@@ -39,16 +37,18 @@
         }
     </style>
     <script type="importmap">
-    {
-      "imports": {
-        "react": "https://esm.sh/react@18.2.0",
-        "react/jsx-runtime": "https://esm.sh/react@18.2.0/jsx-runtime",
-        "react-dom": "https://esm.sh/react-dom@18.2.0",
-        "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
-        "@google/genai": "https://esm.sh/@google/genai@0.1.1" 
-      }
-    }
-    </script>
+{
+  "imports": {
+    "react": "https://esm.sh/react@18.2.0",
+    "react/jsx-runtime": "https://esm.sh/react@18.2.0/jsx-runtime",
+    "react-dom": "https://esm.sh/react-dom@18.2.0",
+    "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
+    "@google/genai": "https://esm.sh/@google/genai@1.34.0",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "react/": "https://esm.sh/react@^19.2.3/"
+  }
+}
+</script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 </head>
 <body>
@@ -58,37 +58,33 @@
         import { createRoot } from 'react-dom/client';
         import { GoogleGenAI } from "@google/genai";
 
-        // Polyfill para evitar crash no navegador
-        const process = { env: { API_KEY: '' } };
-
-        // --- 1. CONTEÚDO DE 'types.ts' ---
+        // --- 1. TYPES / ENUMS (Converted to objects for compatibility) ---
         
-        var GameStatus;
-        (function (GameStatus) {
-            GameStatus["MENU"] = "MENU";
-            GameStatus["BRIEFING"] = "BRIEFING";
-            GameStatus["PLAYING"] = "PLAYING";
-            GameStatus["GAME_OVER"] = "GAME_OVER";
-        })(GameStatus || (GameStatus = {}));
+        const GameStatus = {
+          MENU: 'MENU',
+          BRIEFING: 'BRIEFING',
+          PLAYING: 'PLAYING',
+          GAME_OVER: 'GAME_OVER'
+        };
 
-        var DinoType;
-        (function (DinoType) {
-            DinoType["RAPTOR"] = "RAPTOR";
-            DinoType["TREX"] = "TREX";
-            DinoType["SPINO"] = "SPINO";
-            DinoType["DILO"] = "DILOPHOSAURUS";
-            DinoType["ANKYLO"] = "ANKYLOSAURUS";
-            DinoType["TRICE"] = "TRICERATOPS";
-            DinoType["PTERO"] = "PTERODACTYL";
-            DinoType["COMPS"] = "COMPSOGNATHUS";
-            DinoType["CARNO"] = "CARNOTAURUS";
-            DinoType["STEGO"] = "STEGOSAURUS";
-        })(DinoType || (DinoType = {}));
+        const DinoType = {
+          RAPTOR: 'RAPTOR',
+          TREX: 'TREX',
+          SPINO: 'SPINO',
+          DILO: 'DILOPHOSAURUS',
+          ANKYLO: 'ANKYLOSAURUS',
+          TRICE: 'TRICERATOPS',
+          PTERO: 'PTERODACTYL',
+          COMPS: 'COMPSOGNATHUS',
+          CARNO: 'CARNOTAURUS',
+          STEGO: 'STEGOSAURUS'
+        };
 
-        // --- 2. CONTEÚDO DE 'constants.ts' ---
-
+        // --- 2. CONSTANTS ---
+        
         const WORLD_WIDTH = 3500;
         const WORLD_HEIGHT = 3500;
+
         const BASE_TANK_SPEED = 4.7;
         const TANK_ROTATION_SPEED = 0.055;
         const TANK_RADIUS = 28;
@@ -97,254 +93,616 @@
         const VISION_RADIUS = 550;
 
         const DINO_CONFIGS = {
-            [DinoType.RAPTOR]: { hp: 50, speed: 2.99, damage: 12, radius: 22, color: '#00ff66', accent: '#004400', icon: '🦖', points: 5 },
-            [DinoType.TREX]: { hp: 450, speed: 1.43, damage: 60, radius: 55, color: '#ff0033', accent: '#440000', icon: '🦖', points: 75 },
-            [DinoType.SPINO]: { hp: 220, speed: 2.08, damage: 35, radius: 45, color: '#ffaa00', accent: '#663300', icon: '🐊', points: 45 },
-            [DinoType.DILO]: { hp: 70, speed: 2.47, damage: 20, radius: 25, color: '#cc00ff', accent: '#330044', icon: '🦎', points: 7 },
-            [DinoType.ANKYLO]: { hp: 600, speed: 0.91, damage: 40, radius: 50, color: '#888888', accent: '#333333', icon: '🐢', points: 30 },
-            [DinoType.TRICE]: { hp: 350, speed: 1.82, damage: 45, radius: 48, color: '#3366ff', accent: '#001144', icon: '🦏', points: 20 },
-            [DinoType.PTERO]: { hp: 40, speed: 3.64, damage: 10, radius: 20, color: '#00ffff', accent: '#004444', icon: '🦅', points: 6 },
-            [DinoType.COMPS]: { hp: 20, speed: 4.16, damage: 5, radius: 15, color: '#ffff00', accent: '#444400', icon: '🐁', points: 2 },
-            [DinoType.CARNO]: { hp: 200, speed: 2.73, damage: 30, radius: 35, color: '#ff6600', accent: '#442200', icon: '🐆', points: 18 },
-            [DinoType.STEGO]: { hp: 400, speed: 1.17, damage: 25, radius: 46, color: '#00cc00', accent: '#003300', icon: '🌳', points: 25 }
+          [DinoType.RAPTOR]: { hp: 50, speed: 2.99, damage: 12, radius: 22, color: '#00ff66', accent: '#004400', icon: '🦖', points: 5 },
+          [DinoType.TREX]: { hp: 450, speed: 1.43, damage: 60, radius: 55, color: '#ff0033', accent: '#440000', icon: '🦖', points: 75 },
+          [DinoType.SPINO]: { hp: 220, speed: 2.08, damage: 35, radius: 45, color: '#ffaa00', accent: '#663300', icon: '🐊', points: 45 },
+          [DinoType.DILO]: { hp: 70, speed: 2.47, damage: 20, radius: 25, color: '#cc00ff', accent: '#330044', icon: '🦎', points: 7 },
+          [DinoType.ANKYLO]: { hp: 600, speed: 0.91, damage: 40, radius: 50, color: '#888888', accent: '#333333', icon: '🐢', points: 30 },
+          [DinoType.TRICE]: { hp: 350, speed: 1.82, damage: 45, radius: 48, color: '#3366ff', accent: '#001144', icon: '🦏', points: 20 },
+          [DinoType.PTERO]: { hp: 40, speed: 3.64, damage: 10, radius: 20, color: '#00ffff', accent: '#004444', icon: '🦅', points: 6 },
+          [DinoType.COMPS]: { hp: 20, speed: 4.16, damage: 5, radius: 15, color: '#ffff00', accent: '#444400', icon: '🐁', points: 2 },
+          [DinoType.CARNO]: { hp: 200, speed: 2.73, damage: 30, radius: 35, color: '#ff6600', accent: '#442200', icon: '🐆', points: 18 },
+          [DinoType.STEGO]: { hp: 400, speed: 1.17, damage: 25, radius: 46, color: '#00cc00', accent: '#003300', icon: '🌳', points: 25 }
         };
 
         const INITIAL_BRIEFING = "Comandante, os bio-predadores romperam o cerco. O setor está saturado. Mantenha os sistemas de mira ativos e siga para o ponto de extração sinalizado no radar. Boa sorte.";
 
         const WAR_EFFORT_UPGRADES = [
-            { id: 'armor', name: 'Blindagem de Titânio', description: '+35 HP Máximo', icon: '🛡️' },
-            { id: 'engine', name: 'Propulsores de Íons', description: '+25% Velocidade Tática', icon: '⚙️' },
-            { id: 'fire_rate', name: 'Sincronizador de Disparo', description: '-30% Tempo de Recarga', icon: '⚡' },
-            { id: 'damage', name: 'Cargas de Plasma', description: '+40% Poder de Fogo', icon: '💥' },
-            { id: 'vision', name: 'Sensor de Calor', description: '+30% Alcance de Visão', icon: '👁️' },
-            { id: 'radar', name: 'Radar de Longa Distância', description: 'Minimapa Ampliado', icon: '📡' },
-            { id: 'shield', name: 'Campo de Força', description: 'Redução de Dano Recebido', icon: '💠' },
-            { id: 'auto_repair', name: 'Nanobots de Reparo', description: 'Recuperação Gradual de Vida', icon: '🔧' },
-            { id: 'piercing', name: 'Munição Atravessante', description: 'Tiros Perfuram Inimigos', icon: '🎯' },
-            { id: 'multishot', name: 'Canhão Duplo', description: 'Chance de Disparo Duplo', icon: '☄️' }
+          { id: 'armor', name: 'Blindagem de Titânio', description: '+35 HP Máximo', icon: '🛡️' },
+          { id: 'engine', name: 'Propulsores de Íons', description: '+25% Velocidade Tática', icon: '⚙️' },
+          { id: 'fire_rate', name: 'Sincronizador de Disparo', description: '-30% Tempo de Recarga', icon: '⚡' },
+          { id: 'damage', name: 'Cargas de Plasma', description: '+40% Poder de Fogo', icon: '💥' },
+          { id: 'vision', name: 'Sensor de Calor', description: '+30% Alcance de Visão', icon: '👁️' },
+          { id: 'radar', name: 'Radar de Longa Distância', description: 'Minimapa Ampliado', icon: '📡' },
+          { id: 'shield', name: 'Campo de Força', description: 'Redução de Dano Recebido', icon: '💠' },
+          { id: 'auto_repair', name: 'Nanobots de Reparo', description: 'Recuperação Gradual de Vida', icon: '🔧' },
+          { id: 'piercing', name: 'Munição Atravessante', description: 'Tiros Perfuram Inimigos', icon: '🎯' },
+          { id: 'multishot', name: 'Canhão Duplo', description: 'Chance de Disparo Duplo', icon: '☄️' }
         ];
 
-        // --- 3. CONTEÚDO DE 'services/geminiService.ts' ---
+        // --- 3. SERVICES ---
         
-        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-
         async function getMissionBriefing(wave, score, targetDino) {
-            try {
-                const response = await ai.models.generateContent({
-                    model: 'gemini-1.5-flash', // Ajustado para modelo compatível
-                    contents: [{ role: 'user', parts: [{ text: `You are a military commander in a sci-fi world. A pilot is at wave ${wave} with score ${score}. The primary threat detected is the ${targetDino}. Write a 2-sentence mission briefing. Be intense, atmospheric, and mention how the ${targetDino} is behaving in the sector.` }] }],
-                });
-                return response.text ? response.text() : "Hold the line, pilot. They're coming from the brush. Do not let them breach the perimeter.";
-            } catch (error) {
-                console.error("Gemini briefing failed:", error);
-                return `Intelligence reports a massive concentration of ${targetDino} units. Lock and load, it's going to be a long night.`;
-            }
+          try {
+            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+            const response = await ai.models.generateContent({
+              model: 'gemini-3-flash-preview',
+              contents: `You are a military commander in a sci-fi world. A pilot is at wave ${wave} with score ${score}. 
+                         The primary threat detected is the ${targetDino}. 
+                         Write a 2-sentence mission briefing. 
+                         Be intense, atmospheric, and mention how the ${targetDino} is behaving in the sector.`,
+            });
+            return response.text || "Hold the line, pilot. They're coming from the brush. Do not let them breach the perimeter.";
+          } catch (error) {
+            console.error("Gemini briefing failed:", error);
+            return `Intelligence reports a massive concentration of ${targetDino} units. Lock and load, it's going to be a long night.`;
+          }
         }
 
-        // --- 4. CONTEÚDO DE 'components/GameCanvas.tsx' ---
-
+        // --- 4. GAME CANVAS ---
+        
         const GameCanvas = ({ status, onGameOver, onWaveComplete, onScoreUpdate, initialScore, currentWave, upgrades }) => {
-            const canvasRef = useRef(null);
-            const grassPatternRef = useRef(null);
-            const [keys, setKeys] = useState(new Set());
-            const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
-            const [isMouseDown, setIsMouseDown] = useState(false);
-            const [activeSpecies, setActiveSpecies] = useState(new Set());
+          const canvasRef = useRef(null);
+          const grassPatternRef = useRef(null);
+          const [keys, setKeys] = useState(new Set());
+          const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+          const [isMouseDown, setIsMouseDown] = useState(false);
+          const [activeSpecies, setActiveSpecies] = useState(new Set());
 
-            const upgradeEffects = useMemo(() => ({
-                speedBoost: upgrades.includes('engine') ? 1.25 : 1.0,
-                damageBoost: upgrades.includes('damage') ? 1.4 : 1.0,
-                fireRateBoost: upgrades.includes('fire_rate') ? 0.7 : 1.0,
-                armorBoost: upgrades.includes('armor') ? 35 : 0,
-                visionBoost: upgrades.includes('vision') ? 1.3 : 1.0,
-                shieldBoost: upgrades.includes('shield') ? 0.75 : 1.0,
-                autoRepair: upgrades.includes('auto_repair') ? 0.05 : 0
-            }), [upgrades]);
+          const upgradeEffects = useMemo(() => ({
+            speedBoost: upgrades.includes('engine') ? 1.25 : 1.0,
+            damageBoost: upgrades.includes('damage') ? 1.4 : 1.0,
+            fireRateBoost: upgrades.includes('fire_rate') ? 0.7 : 1.0,
+            armorBoost: upgrades.includes('armor') ? 35 : 0,
+            visionBoost: upgrades.includes('vision') ? 1.3 : 1.0,
+            shieldBoost: upgrades.includes('shield') ? 0.75 : 1.0,
+            autoRepair: upgrades.includes('auto_repair') ? 0.05 : 0
+          }), [upgrades]);
 
-            const speedModifier = useMemo(() => (1.0 + (initialScore / 10000) + (currentWave * 0.05)) * upgradeEffects.speedBoost, [initialScore, currentWave, upgradeEffects.speedBoost]);
+          const speedModifier = useMemo(() => (1.0 + (initialScore / 10000) + (currentWave * 0.05)) * upgradeEffects.speedBoost, [initialScore, currentWave, upgradeEffects.speedBoost]);
 
-            const tankRef = useRef({
-                id: 'player',
-                pos: { x: WORLD_WIDTH / 2, y: WORLD_HEIGHT / 2 },
-                radius: TANK_RADIUS,
-                rotation: 0,
-                turretRotation: 0,
-                hp: 100,
-                maxHp: 100,
-                speed: BASE_TANK_SPEED,
-                score: Math.floor(initialScore),
-                ammo: 100,
-                lastShot: 0,
+          const tankRef = useRef({
+            id: 'player',
+            pos: { x: WORLD_WIDTH / 2, y: WORLD_HEIGHT / 2 },
+            radius: TANK_RADIUS,
+            rotation: 0,
+            turretRotation: 0,
+            hp: 100,
+            maxHp: 100,
+            speed: BASE_TANK_SPEED,
+            score: Math.floor(initialScore),
+            ammo: 100,
+            lastShot: 0,
+          });
+
+          const objectivePosRef = useRef({ x: 0, y: 0, isDiscovered: false });
+          const obstaclesRef = useRef([]);
+          const dinosRef = useRef([]);
+          const projectilesRef = useRef([]);
+          const bloodParticlesRef = useRef([]);
+          const cameraRef = useRef({ x: 0, y: 0 });
+          const frameIdRef = useRef(0);
+
+          const minimapSize = 160;
+          const minimapScale = minimapSize / WORLD_WIDTH;
+
+          useEffect(() => {
+            const patternCanvas = document.createElement('canvas');
+            patternCanvas.width = 128; patternCanvas.height = 128;
+            const pctx = patternCanvas.getContext('2d');
+            if (pctx) {
+              pctx.fillStyle = '#7de69d';
+              pctx.fillRect(0, 0, 128, 128);
+              for (let i = 0; i < 300; i++) {
+                pctx.fillStyle = ['#bbf7d0', '#4ade80', '#22c55e'][Math.floor(Math.random() * 3)];
+                pctx.fillRect(Math.random() * 128, Math.random() * 128, 2, 2);
+              }
+              const ctx = document.createElement('canvas').getContext('2d');
+              if (ctx) grassPatternRef.current = ctx.createPattern(patternCanvas, 'repeat');
+            }
+          }, []);
+
+          const checkCollision = useCallback((x, y, radius, obstacles, buffer = 0) => {
+            const totalRadius = radius + buffer;
+            for (const ob of obstacles) {
+              const closestX = Math.max(ob.pos.x, Math.min(x, ob.pos.x + ob.width));
+              const closestY = Math.max(ob.pos.y, Math.min(y, ob.pos.y + ob.height));
+              const dist = Math.hypot(x - closestX, y - closestY);
+              if (dist < totalRadius) return true;
+            }
+            return false;
+          }, []);
+
+          useEffect(() => {
+            if (status === GameStatus.PLAYING) {
+              const tank = tankRef.current;
+              tank.maxHp = 100 + upgradeEffects.armorBoost;
+              tank.hp = tank.maxHp;
+              tank.pos = { x: WORLD_WIDTH / 2, y: WORLD_HEIGHT / 2 };
+              
+              const obstacles = [];
+              for (let i = 0; i < 10; i++) {
+                const w = 150 + Math.random() * 200, h = 150 + Math.random() * 200;
+                const pos = { x: 500 + Math.random() * (WORLD_WIDTH - 1000), y: 500 + Math.random() * (WORLD_HEIGHT - 1000) };
+                if (Math.hypot(pos.x - WORLD_WIDTH/2, pos.y - WORLD_HEIGHT/2) > 500) {
+                  obstacles.push({ pos, width: w, height: h, type: 'WALL', isDiscovered: true });
+                }
+              }
+              obstaclesRef.current = obstacles;
+
+              const margin = 200;
+              const cornerPositions = [
+                { x: margin, y: margin },
+                { x: WORLD_WIDTH - margin, y: margin },
+                { x: margin, y: WORLD_HEIGHT - margin },
+                { x: WORLD_WIDTH - margin, y: WORLD_HEIGHT - margin }
+              ];
+              objectivePosRef.current = { ...cornerPositions[Math.floor(Math.random() * 4)], isDiscovered: true };
+
+              const types = Object.keys(DINO_CONFIGS);
+              const newDinos = [];
+              let remainingDinos = Math.max(80, currentWave * 20);
+              
+              while (remainingDinos > 0) {
+                const type = types[Math.floor(Math.random() * Math.min(types.length, 2 + currentWave))];
+                const config = DINO_CONFIGS[type];
+                
+                const isPackDino = config.hp <= 70;
+                const packSize = isPackDino ? Math.min(remainingDinos, 2 + Math.floor(Math.random() * 4)) : 1;
+                
+                let centerPos = { x: 0, y: 0 };
+                let validSpot = false;
+                let attempts = 0;
+
+                while (!validSpot && attempts < 50) {
+                  const angle = Math.random() * Math.PI * 2;
+                  const dist = 800 + Math.random() * 2200;
+                  centerPos = { 
+                    x: Math.max(100, Math.min(WORLD_WIDTH - 100, tank.pos.x + Math.cos(angle) * dist)),
+                    y: Math.max(100, Math.min(WORLD_HEIGHT - 100, tank.pos.y + Math.sin(angle) * dist))
+                  };
+                  if (!checkCollision(centerPos.x, centerPos.y, 120, obstacles, 20)) validSpot = true;
+                  attempts++;
+                }
+
+                if (validSpot) {
+                  for (let j = 0; j < packSize; j++) {
+                    const offsetAngle = (Math.PI * 2 / packSize) * j;
+                    const offsetDist = packSize > 1 ? 60 : 0;
+                    const dPos = {
+                      x: centerPos.x + Math.cos(offsetAngle) * offsetDist,
+                      y: centerPos.y + Math.sin(offsetAngle) * offsetDist
+                    };
+                    
+                    newDinos.push({
+                      id: Math.random().toString(36), type, pos: dPos, radius: config.radius, rotation: 0,
+                      hp: config.hp + currentWave * 15, maxHp: config.hp + currentWave * 15,
+                      speed: config.speed, damage: config.damage, lastAttack: 0, color: config.color, 
+                      isActive: Math.random() < 0.4 
+                    });
+                  }
+                }
+                remainingDinos -= packSize;
+              }
+              dinosRef.current = newDinos;
+              bloodParticlesRef.current = [];
+            }
+          }, [status, currentWave, upgradeEffects.armorBoost, checkCollision]);
+
+          const update = useCallback(() => {
+            if (status !== GameStatus.PLAYING) return;
+            const tank = tankRef.current;
+            if (upgradeEffects.autoRepair > 0) tank.hp = Math.min(tank.maxHp, tank.hp + upgradeEffects.autoRepair);
+
+            const curSpeed = tank.speed * speedModifier;
+            let mx = 0, my = 0;
+            if (keys.has('KeyW') || keys.has('ArrowUp')) { mx += Math.cos(tank.rotation) * curSpeed; my += Math.sin(tank.rotation) * curSpeed; }
+            if (keys.has('KeyS') || keys.has('ArrowDown')) { mx -= Math.cos(tank.rotation) * curSpeed; my -= Math.sin(tank.rotation) * curSpeed; }
+            if (keys.has('KeyA') || keys.has('ArrowLeft')) tank.rotation -= TANK_ROTATION_SPEED;
+            if (keys.has('KeyD') || keys.has('ArrowRight')) tank.rotation += TANK_ROTATION_SPEED;
+
+            const nx = Math.max(tank.radius, Math.min(WORLD_WIDTH - tank.radius, tank.pos.x + mx));
+            const ny = Math.max(tank.radius, Math.min(WORLD_HEIGHT - tank.radius, tank.pos.y + my));
+            if (!checkCollision(nx, ny, tank.radius, obstaclesRef.current)) { tank.pos.x = nx; tank.pos.y = ny; }
+
+            const species = new Set();
+            const curVision = VISION_RADIUS * upgradeEffects.visionBoost;
+            dinosRef.current.forEach(d => {
+              if (d.hp <= 0) return;
+              const dist = Math.hypot(tank.pos.x - d.pos.x, tank.pos.y - d.pos.y);
+              if (dist < curVision + 150) d.isActive = true;
+              if (d.isActive) {
+                species.add(d.type);
+                const angle = Math.atan2(tank.pos.y - d.pos.y, tank.pos.x - d.pos.x);
+                d.rotation = angle;
+                const dnx = d.pos.x + Math.cos(angle) * d.speed * speedModifier;
+                const dny = d.pos.y + Math.sin(angle) * d.speed * speedModifier;
+                if (!checkCollision(dnx, dny, d.radius, obstaclesRef.current)) { d.pos.x = dnx; d.pos.y = dny; }
+                if (dist < tank.radius + d.radius && Date.now() - d.lastAttack > 800) {
+                  tank.hp -= d.damage * upgradeEffects.shieldBoost;
+                  d.lastAttack = Date.now();
+                  if (tank.hp <= 0) onGameOver(tank.score);
+                }
+              }
+            });
+            setActiveSpecies(species);
+
+            tank.turretRotation = Math.atan2(mousePos.y + cameraRef.current.y - tank.pos.y, mousePos.x + cameraRef.current.x - tank.pos.x);
+            if (isMouseDown && Date.now() - tank.lastShot > FIRE_COOLDOWN * upgradeEffects.fireRateBoost) {
+              projectilesRef.current.push({
+                pos: { ...tank.pos }, velocity: { x: Math.cos(tank.turretRotation) * 22, y: Math.sin(tank.turretRotation) * 22 },
+                damage: 45 * upgradeEffects.damageBoost, life: 85
+              });
+              tank.lastShot = Date.now();
+            }
+
+            projectilesRef.current.forEach(p => {
+              p.pos.x += p.velocity.x; p.pos.y += p.velocity.y; p.life--;
+              dinosRef.current.forEach(d => {
+                if (d.hp > 0 && Math.hypot(p.pos.x - d.pos.x, p.pos.y - d.pos.y) < d.radius + 15) {
+                  d.hp -= p.damage; d.isActive = true;
+                  if (!upgrades.includes('piercing')) p.life = 0;
+                  if (d.hp <= 0) {
+                    const dinoPoints = DINO_CONFIGS[d.type]?.points || 3;
+                    tank.score += Math.floor(dinoPoints);
+                    onScoreUpdate(tank.score);
+                    const particleCount = 10 + Math.floor(Math.random() * 8);
+                    for (let i = 0; i < particleCount; i++) {
+                      bloodParticlesRef.current.push({
+                        pos: { ...d.pos },
+                        velocity: { x: (Math.random() - 0.5) * 8, y: (Math.random() - 0.5) * 8 },
+                        life: 180, maxLife: 180, size: 2 + Math.random() * 4, color: '#991111'
+                      });
+                    }
+                  }
+                }
+              });
             });
 
-            const objectivePosRef = useRef({ x: 0, y: 0, isDiscovered: false });
-            const obstaclesRef = useRef([]);
-            const dinosRef = useRef([]);
-            const projectilesRef = useRef([]);
-            const bloodParticlesRef = useRef([]);
-            const cameraRef = useRef({ x: 0, y: 0 });
-            const frameIdRef = useRef(0);
-            const minimapSize = 160;
-            const minimapScale = minimapSize / WORLD_WIDTH;
+            bloodParticlesRef.current.forEach(p => {
+              p.pos.x += p.velocity.x; p.pos.y += p.velocity.y;
+              p.velocity.x *= 0.97; p.velocity.y *= 0.97; p.life--;
+            });
 
-            useEffect(() => {
-                const patternCanvas = document.createElement('canvas');
-                patternCanvas.width = 128; patternCanvas.height = 128;
-                const pctx = patternCanvas.getContext('2d');
-                if (pctx) {
-                    pctx.fillStyle = '#7de69d';
-                    pctx.fillRect(0, 0, 128, 128);
-                    for (let i = 0; i < 300; i++) {
-                        pctx.fillStyle = ['#bbf7d0', '#4ade80', '#22c55e'][Math.floor(Math.random() * 3)];
-                        pctx.fillRect(Math.random() * 128, Math.random() * 128, 2, 2);
-                    }
-                    const ctx = document.createElement('canvas').getContext('2d');
-                    if (ctx) grassPatternRef.current = ctx.createPattern(patternCanvas, 'repeat');
-                }
-            }, []);
+            projectilesRef.current = projectilesRef.current.filter(p => p.life > 0);
+            dinosRef.current = dinosRef.current.filter(d => d.hp > 0);
+            bloodParticlesRef.current = bloodParticlesRef.current.filter(p => p.life > 0);
 
-            const checkCollision = useCallback((x, y, radius, obstacles, buffer = 0) => {
-                const totalRadius = radius + buffer;
-                for (const ob of obstacles) {
-                    const closestX = Math.max(ob.pos.x, Math.min(x, ob.pos.x + ob.width));
-                    const closestY = Math.max(ob.pos.y, Math.min(y, ob.pos.y + ob.height));
-                    const dist = Math.hypot(x - closestX, y - closestY);
-                    if (dist < totalRadius) return true;
-                }
-                return false;
-            }, []);
+            if (Math.hypot(tank.pos.x - objectivePosRef.current.x, tank.pos.y - objectivePosRef.current.y) < OBJECTIVE_RADIUS) {
+              onWaveComplete(currentWave + 1);
+            }
 
-            useEffect(() => {
-                if (status === GameStatus.PLAYING) {
-                    const tank = tankRef.current;
-                    tank.maxHp = 100 + upgradeEffects.armorBoost;
-                    tank.hp = tank.maxHp;
-                    tank.pos = { x: WORLD_WIDTH / 2, y: WORLD_HEIGHT / 2 };
+            if (canvasRef.current) {
+              cameraRef.current.x = tank.pos.x - canvasRef.current.width / 2;
+              cameraRef.current.y = tank.pos.y - canvasRef.current.height / 2;
+            }
+          }, [status, keys, mousePos, isMouseDown, currentWave, upgrades, upgradeEffects, speedModifier, onGameOver, onWaveComplete, onScoreUpdate, checkCollision]);
 
-                    const obstacles = [];
-                    for (let i = 0; i < 10; i++) {
-                        const w = 150 + Math.random() * 200, h = 150 + Math.random() * 200;
-                        const pos = { x: 500 + Math.random() * (WORLD_WIDTH - 1000), y: 500 + Math.random() * (WORLD_HEIGHT - 1000) };
-                        if (Math.hypot(pos.x - WORLD_WIDTH/2, pos.y - WORLD_HEIGHT/2) > 500) {
-                            obstacles.push({ pos, width: w, height: h, type: 'WALL', isDiscovered: true });
-                        }
-                    }
-                    obstaclesRef.current = obstacles;
+          const draw = useCallback((ctx) => {
+            const cam = cameraRef.current, tank = tankRef.current;
+            ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+            
+            if (grassPatternRef.current) {
+              ctx.save();
+              ctx.translate(-cam.x, -cam.y);
+              ctx.fillStyle = grassPatternRef.current;
+              ctx.fillRect(cam.x, cam.y, ctx.canvas.width, ctx.canvas.height);
+              ctx.restore();
+            }
 
-                    const margin = 200;
-                    const cornerPositions = [
-                        { x: margin, y: margin },
-                        { x: WORLD_WIDTH - margin, y: margin },
-                        { x: margin, y: WORLD_HEIGHT - margin },
-                        { x: WORLD_WIDTH - margin, y: WORLD_HEIGHT - margin }
-                    ];
-                    objectivePosRef.current = { ...cornerPositions[Math.floor(Math.random() * 4)], isDiscovered: true };
+            ctx.save();
+            ctx.strokeStyle = '#ff0000';
+            ctx.lineWidth = 6;
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = '#ff0000';
+            ctx.strokeRect(0 - cam.x, 0 - cam.y, WORLD_WIDTH, WORLD_HEIGHT);
+            ctx.restore();
 
-                    const types = Object.keys(DINO_CONFIGS);
-                    const newDinos = [];
-                    let remainingDinos = Math.max(80, currentWave * 20);
-                    
-                    while (remainingDinos > 0) {
-                        const type = types[Math.floor(Math.random() * Math.min(types.length, 2 + currentWave))];
-                        const config = DINO_CONFIGS[type];
-                        
-                        const isPackDino = config.hp <= 70;
-                        const packSize = isPackDino ? Math.min(remainingDinos, 2 + Math.floor(Math.random() * 4)) : 1;
-                        
-                        let centerPos = { x: 0, y: 0 };
-                        let validSpot = false;
-                        let attempts = 0;
+            bloodParticlesRef.current.forEach(p => {
+              ctx.fillStyle = p.color; ctx.globalAlpha = p.life / p.maxLife;
+              ctx.fillRect(p.pos.x - cam.x - p.size/2, p.pos.y - cam.y - p.size/2, p.size, p.size);
+            });
+            ctx.globalAlpha = 1.0;
 
-                        while (!validSpot && attempts < 50) {
-                            const angle = Math.random() * Math.PI * 2;
-                            const dist = 800 + Math.random() * 2200;
-                            centerPos = { 
-                                x: Math.max(100, Math.min(WORLD_WIDTH - 100, tank.pos.x + Math.cos(angle) * dist)),
-                                y: Math.max(100, Math.min(WORLD_HEIGHT - 100, tank.pos.y + Math.sin(angle) * dist))
-                            };
-                            if (!checkCollision(centerPos.x, centerPos.y, 120, obstacles, 20)) validSpot = true;
-                            attempts++;
-                        }
+            obstaclesRef.current.forEach(ob => {
+              ctx.fillStyle = '#4b5563'; ctx.fillRect(ob.pos.x - cam.x, ob.pos.y - cam.y, ob.width, ob.height);
+              ctx.strokeStyle = '#34d39944'; ctx.strokeRect(ob.pos.x - cam.x, ob.pos.y - cam.y, ob.width, ob.height);
+            });
 
-                        if (validSpot) {
-                            for (let j = 0; j < packSize; j++) {
-                                const offsetAngle = (Math.PI * 2 / packSize) * j;
-                                const offsetDist = packSize > 1 ? 60 : 0;
-                                const dPos = {
-                                    x: centerPos.x + Math.cos(offsetAngle) * offsetDist,
-                                    y: centerPos.y + Math.sin(offsetAngle) * offsetDist
-                                };
-                                
-                                newDinos.push({
-                                    id: Math.random().toString(36), type, pos: dPos, radius: config.radius, rotation: 0,
-                                    hp: config.hp + currentWave * 15, maxHp: config.hp + currentWave * 15,
-                                    speed: config.speed, damage: config.damage, lastAttack: 0, color: config.color, 
-                                    isActive: Math.random() < 0.4 
-                                });
-                            }
-                        }
-                        remainingDinos -= packSize;
-                    }
-                    dinosRef.current = newDinos;
-                    bloodParticlesRef.current = [];
-                }
-            }, [status, currentWave, upgradeEffects.armorBoost, checkCollision]);
+            const obj = objectivePosRef.current;
+            ctx.save();
+            ctx.translate(obj.x - cam.x, obj.y - cam.y);
+            ctx.beginPath(); ctx.arc(0, 0, OBJECTIVE_RADIUS, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(52, 211, 153, 0.15)'; ctx.fill();
+            ctx.strokeStyle = '#34d399'; ctx.lineWidth = 4; ctx.setLineDash([15, 8]); ctx.stroke();
+            ctx.restore();
 
-            const update = useCallback(() => {
-                if (status !== GameStatus.PLAYING) return;
-                const tank = tankRef.current;
-                if (upgradeEffects.autoRepair > 0) tank.hp = Math.min(tank.maxHp, tank.hp + upgradeEffects.autoRepair);
+            dinosRef.current.forEach(d => {
+              const config = DINO_CONFIGS[d.type];
+              ctx.save();
+              ctx.translate(d.pos.x - cam.x, d.pos.y - cam.y);
+              ctx.rotate(d.rotation);
+              ctx.fillStyle = config.color; ctx.fillRect(-d.radius, -d.radius/2, d.radius*2, d.radius);
+              ctx.fillStyle = 'white'; ctx.fillRect(d.radius*0.6, -d.radius*0.4, 4, 4);
+              ctx.restore();
+            });
 
-                const curSpeed = tank.speed * speedModifier;
-                let mx = 0, my = 0;
-                if (keys.has('KeyW') || keys.has('ArrowUp')) { mx += Math.cos(tank.rotation) * curSpeed; my += Math.sin(tank.rotation) * curSpeed; }
-                if (keys.has('KeyS') || keys.has('ArrowDown')) { mx -= Math.cos(tank.rotation) * curSpeed; my -= Math.sin(tank.rotation) * curSpeed; }
-                if (keys.has('KeyA') || keys.has('ArrowLeft')) tank.rotation -= TANK_ROTATION_SPEED;
-                if (keys.has('KeyD') || keys.has('ArrowRight')) tank.rotation += TANK_ROTATION_SPEED;
+            ctx.save();
+            ctx.translate(tank.pos.x - cam.x, tank.pos.y - cam.y);
+            ctx.save(); ctx.rotate(tank.rotation);
+            ctx.fillStyle = '#34d399'; ctx.fillRect(tank.radius * 0.9, -tank.radius * 0.45, 8, 4); ctx.fillRect(tank.radius * 0.9, tank.radius * 0.25, 8, 4);
+            ctx.restore();
+            ctx.save(); ctx.rotate(tank.rotation + Math.PI/2);
+            ctx.fillStyle = '#0f172a'; ctx.fillRect(-tank.radius*0.9, -tank.radius*1.2, tank.radius*1.8, tank.radius*2.4);
+            ctx.restore();
+            ctx.save(); ctx.rotate(tank.turretRotation);
+            ctx.fillStyle = '#334155'; ctx.fillRect(-tank.radius*0.7, -tank.radius*0.7, tank.radius*1.4, tank.radius*1.4);
+            ctx.fillStyle = '#94a3b8'; ctx.fillRect(0, -tank.radius*0.2, tank.radius*2.8, tank.radius*0.4);
+            ctx.restore();
+            ctx.restore();
 
-                const nx = Math.max(tank.radius, Math.min(WORLD_WIDTH - tank.radius, tank.pos.x + mx));
-                const ny = Math.max(tank.radius, Math.min(WORLD_HEIGHT - tank.radius, tank.pos.y + my));
-                if (!checkCollision(nx, ny, tank.radius, obstaclesRef.current)) { tank.pos.x = nx; tank.pos.y = ny; }
+            ctx.save();
+            ctx.strokeStyle = '#34d399'; ctx.lineWidth = 2; ctx.shadowBlur = 8; ctx.shadowColor = '#34d399';
+            ctx.beginPath(); ctx.arc(mousePos.x, mousePos.y, 20, 0, Math.PI*2);
+            ctx.moveTo(mousePos.x - 30, mousePos.y); ctx.lineTo(mousePos.x - 10, mousePos.y);
+            ctx.moveTo(mousePos.x + 30, mousePos.y); ctx.lineTo(mousePos.x + 10, mousePos.y);
+            ctx.moveTo(mousePos.x, mousePos.y - 30); ctx.lineTo(mousePos.x, mousePos.y - 10);
+            ctx.moveTo(mousePos.x, mousePos.y + 30); ctx.lineTo(mousePos.x, mousePos.y + 10);
+            ctx.stroke();
+            ctx.restore();
 
-                const species = new Set();
-                const curVision = VISION_RADIUS * upgradeEffects.visionBoost;
-                dinosRef.current.forEach(d => {
-                    if (d.hp <= 0) return;
-                    const dist = Math.hypot(tank.pos.x - d.pos.x, tank.pos.y - d.pos.y);
-                    if (dist < curVision + 150) d.isActive = true;
-                    if (d.isActive) {
-                        species.add(d.type);
-                        const angle = Math.atan2(tank.pos.y - d.pos.y, tank.pos.x - d.pos.x);
-                        d.rotation = angle;
-                        const dnx = d.pos.x + Math.cos(angle) * d.speed * speedModifier;
-                        const dny = d.pos.y + Math.sin(angle) * d.speed * speedModifier;
-                        if (!checkCollision(dnx, dny, d.radius, obstaclesRef.current)) { d.pos.x = dnx; d.pos.y = dny; }
-                        if (dist < tank.radius + d.radius && Date.now() - d.lastAttack > 800) {
-                            tank.hp -= d.damage * upgradeEffects.shieldBoost;
-                            d.lastAttack = Date.now();
-                            if (tank.hp <= 0) onGameOver(tank.score);
-                        }
-                    }
-                });
-                setActiveSpecies(species);
+            ctx.fillStyle = '#fbbf24';
+            projectilesRef.current.forEach(p => {
+              ctx.beginPath(); ctx.arc(p.pos.x - cam.x, p.pos.y - cam.y, 6, 0, Math.PI*2); ctx.fill();
+            });
+          }, [mousePos]);
 
-                tank.turretRotation = Math.atan2(mousePos.y + cameraRef.current.y - tank.pos.y, mousePos.x + cameraRef.current.x - tank.pos.x);
-                if (isMouseDown && Date.now() - tank.lastShot > FIRE_COOLDOWN * upgradeEffects.fireRateBoost) {
-                    projectilesRef.current.push({
-                        pos: { ...tank.pos }, velocity: { x: Math.cos(tank.turretRotation) * 22, y: Math.sin(tank.turretRotation) * 22 },
-                        damage: 45 * upgradeEffects.damageBoost, life: 85
-                    });
-                    tank.lastShot = Date.now();
-                }
+          useEffect(() => {
+            const handleMove = (e) => {
+              if (!canvasRef.current) return;
+              const r = canvasRef.current.getBoundingClientRect();
+              setMousePos({ x: e.clientX - r.left, y: e.clientY - r.top });
+            };
+            const handleDown = () => setIsMouseDown(true);
+            const handleUp = () => setIsMouseDown(false);
+            const handleKeyDown = (e) => setKeys(p => new Set(p).add(e.code));
+            const handleKeyUp = (e) => setKeys(p => { const n = new Set(p); n.delete(e.code); return n; });
 
-                projectilesRef.current.forEach(p => {
-                    p.pos.x += p.velocity.x; p.pos.y += p.velocity.y; p.life--;
-                    dinosRef.current.forEach(d => {
-                        if (d.hp > 0 && Math.hypot(p.pos.x - d.pos.x, p.pos.y - d.pos.y) < d.radius + 15) {
-                            d.hp -= p.damage; d.isActive = true;
-                            if (!upgrades.includes('piercing')) p.life = 0;
-                            if (d.hp <= 0) {
-                                const dinoPoints = DINO_CONFIGS[d.type]?.points || 3;
-                                tank.score += Math.floor(dinoPoints);
-                                onScoreUpdate(tank.score);
-                                const particleCount = 10 + Math.floor(M
+            window.addEventListener('mousemove', handleMove);
+            window.addEventListener('mousedown', handleDown);
+            window.addEventListener('mouseup', handleUp);
+            window.addEventListener('keydown', handleKeyDown);
+            window.addEventListener('keyup', handleKeyUp);
+            const loop = () => { update(); if (canvasRef.current) { const ctx = canvasRef.current.getContext('2d'); if (ctx) draw(ctx); } frameIdRef.current = requestAnimationFrame(loop); };
+            frameIdRef.current = requestAnimationFrame(loop);
+            return () => {
+              window.removeEventListener('mousemove', handleMove); window.removeEventListener('mousedown', handleDown);
+              window.removeEventListener('mouseup', handleUp); window.removeEventListener('keydown', handleKeyDown);
+              window.removeEventListener('keyup', handleKeyUp); cancelAnimationFrame(frameIdRef.current);
+            };
+          }, [update, draw]);
+
+          useEffect(() => {
+            const resize = () => { if (canvasRef.current) { canvasRef.current.width = window.innerWidth; canvasRef.current.height = window.innerHeight; } };
+            window.addEventListener('resize', resize); resize();
+            return () => window.removeEventListener('resize', resize);
+          }, []);
+
+          return (
+            <div className="relative w-full h-full overflow-hidden" style={{ cursor: 'none' }}>
+              <canvas ref={canvasRef} className="block" />
+              <div className="absolute top-3 left-3 z-50 pointer-events-none flex flex-col gap-3">
+                <div className="p-3 bg-black/70 border border-green-500/40 rounded-xl backdrop-blur-md min-w-[200px]">
+                  <div className="flex justify-between items-end mb-1">
+                    <span className="text-[10px] text-green-400 font-bold uppercase tracking-tighter">Integridade Hull</span>
+                    <span className="text-white font-bold text-sm">{Math.floor(tankRef.current.hp)}%</span>
+                  </div>
+                  <div className="w-full h-3 bg-gray-900 rounded-full border border-white/10 p-[2px]">
+                    <div className="h-full bg-gradient-to-r from-red-600 to-green-500 rounded-full transition-all duration-300" style={{ width: `${(tankRef.current.hp / tankRef.current.maxHp) * 100}%` }} />
+                  </div>
+                </div>
+                <div className="p-2 bg-black/50 border border-green-500/20 rounded-xl flex gap-1 backdrop-blur-sm scale-90 origin-top-left">
+                  {WAR_EFFORT_UPGRADES.map(up => {
+                    const hasIt = upgrades.includes(up.id);
+                    return (
+                      <div key={up.id} className={`w-8 h-8 flex items-center justify-center rounded border transition-all duration-500 ${hasIt ? 'bg-green-500/20 border-green-400 shadow-[0_0_8px_green]' : 'bg-gray-950 border-white/5 opacity-20 grayscale'}`}>
+                        <span className="text-sm">{up.icon}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+              <div className="absolute top-3 left-1/2 -translate-x-1/2 z-50 pointer-events-none">
+                <div className="grid grid-cols-5 grid-rows-2 gap-1.5 p-2 bg-black/70 border border-red-500/30 rounded-xl backdrop-blur-md shadow-lg">
+                  {Object.keys(DINO_CONFIGS).map((type) => {
+                    const config = DINO_CONFIGS[type];
+                    const isActive = activeSpecies.has(type);
+                    return (
+                      <div key={type} className={`w-9 h-10 flex flex-col items-center justify-center rounded border transition-all duration-300 ${isActive ? 'bg-red-600/20 border-red-500 shadow-[0_0_10px_red] scale-105' : 'bg-gray-950 border-white/5 opacity-20'}`}>
+                        <span className="text-lg">{config.icon}</span>
+                        <div className={`w-1 h-1 rounded-full mt-0.5 ${isActive ? 'bg-red-400 animate-pulse' : 'bg-gray-700'}`} />
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+              <div className="absolute top-3 right-3 z-50 pointer-events-none flex flex-col gap-3 items-end">
+                <div className="p-2 bg-black/70 border border-green-500/40 rounded-xl backdrop-blur-md">
+                   <div className="relative bg-gray-950/80 border border-green-500/20 overflow-hidden" style={{ width: minimapSize, height: minimapSize }}>
+                      {obstaclesRef.current.map((ob, i) => (
+                        <div key={i} className="absolute bg-gray-700/50" style={{ left: ob.pos.x * minimapScale, top: ob.pos.y * minimapScale, width: ob.width * minimapScale, height: ob.height * minimapScale }} />
+                      ))}
+                      <div className="absolute w-2 h-2 bg-green-400 rounded-full animate-ping" style={{ left: objectivePosRef.current.x * minimapScale - 4, top: objectivePosRef.current.y * minimapScale - 4 }} />
+                      <div className="absolute w-2 h-2 bg-white border border-green-500" style={{ left: tankRef.current.pos.x * minimapScale - 4, top: tankRef.current.pos.y * minimapScale - 4, transform: `rotate(${tankRef.current.rotation}rad)` }} />
+                   </div>
+                   <div className="text-[8px] text-green-400 font-mono text-center mt-1 uppercase tracking-widest font-bold">Bio-Scan Active</div>
+                </div>
+                <div className="p-3 bg-black/80 border border-green-500/40 rounded-xl text-center shadow-lg min-w-[120px]">
+                  <div className="text-green-400 font-mono text-[9px] uppercase tracking-widest mb-0.5">Créditos de Guerra</div>
+                  <div className="text-white text-xl font-black">{Math.floor(initialScore).toLocaleString()}</div>
+                </div>
+              </div>
+            </div>
+          );
+        };
+
+        // --- 5. APP COMPONENT ---
+        
+        const App = () => {
+          const [status, setStatus] = useState(GameStatus.MENU);
+          const [score, setScore] = useState(0);
+          const [wave, setWave] = useState(1);
+          const [briefing, setBriefing] = useState(INITIAL_BRIEFING);
+          const [isBriefingLoading, setIsBriefingLoading] = useState(false);
+          const [targetDino, setTargetDino] = useState(DinoType.RAPTOR);
+          const [activeUpgrades, setActiveUpgrades] = useState([]);
+          const [availableUpgrades, setAvailableUpgrades] = useState([]);
+
+          const previewCanvasRef = useRef(null);
+
+          const selectRandomDino = () => {
+            const types = Object.keys(DINO_CONFIGS);
+            return types[Math.floor(Math.random() * Math.min(types.length, 2 + wave))];
+          };
+
+          const getRandomUpgrades = (count) => {
+            const available = WAR_EFFORT_UPGRADES.filter(u => !activeUpgrades.includes(u.id));
+            const shuffled = [...available].sort(() => 0.5 - Math.random());
+            return shuffled.slice(0, count);
+          };
+
+          const startGame = async () => {
+            setScore(0);
+            setWave(1);
+            setActiveUpgrades([]);
+            const firstTarget = selectRandomDino();
+            setTargetDino(firstTarget);
+            setBriefing(INITIAL_BRIEFING);
+            setAvailableUpgrades(getRandomUpgrades(2));
+            setStatus(GameStatus.BRIEFING);
+          };
+
+          const handleWaveComplete = useCallback(async (nextWave) => {
+            setWave(nextWave);
+            const nextTarget = selectRandomDino();
+            setTargetDino(nextTarget);
+            setIsBriefingLoading(true);
+            setStatus(GameStatus.BRIEFING);
+            const newBriefing = await getMissionBriefing(nextWave, score, nextTarget);
+            setBriefing(newBriefing);
+            setAvailableUpgrades(getRandomUpgrades(2));
+            setIsBriefingLoading(false);
+          }, [score, activeUpgrades, wave]);
+
+          const selectUpgrade = (upgradeId) => {
+            setActiveUpgrades(prev => [...prev, upgradeId]);
+            setStatus(GameStatus.PLAYING);
+          };
+
+          useEffect(() => {
+            if (status === GameStatus.BRIEFING && previewCanvasRef.current) {
+              const ctx = previewCanvasRef.current.getContext('2d');
+              if (!ctx) return;
+              const config = DINO_CONFIGS[targetDino];
+              let frame = 0;
+              let active = true;
+              const animate = () => {
+                  if (!active) return;
+                  ctx.clearRect(0,0,200,200);
+                  ctx.save();
+                  ctx.translate(100, 100);
+                  ctx.scale(1.5 + Math.sin(frame*0.1)*0.1, 1.5 + Math.sin(frame*0.1)*0.1);
+                  ctx.fillStyle = config.color;
+                  ctx.fillRect(-25, -12, 50, 25);
+                  ctx.fillStyle = 'white';
+                  ctx.fillRect(15, -10, 5, 5);
+                  ctx.restore();
+                  frame++;
+                  requestAnimationFrame(animate);
+              };
+              animate();
+              return () => { active = false; };
+            }
+          }, [status, targetDino]);
+
+          return (
+            <div className="relative w-full h-screen bg-[#0a150c] overflow-hidden select-none touch-none">
+              {status === GameStatus.MENU && (
+                <div className="absolute inset-0 flex items-center justify-center z-[100] bg-black/80 backdrop-blur-xl">
+                   <div className="text-center p-10 md:p-16 border-4 border-green-500/40 bg-green-950/20 rounded-[3rem] shadow-[0_0_80px_rgba(0,255,102,0.15)]">
+                      <h1 className="text-5xl md:text-8xl font-black italic text-transparent bg-clip-text bg-gradient-to-b from-green-300 to-green-800 header-font mb-4">
+                        TANK VS DINOS
+                      </h1>
+                      <p className="text-green-400 font-mono tracking-[0.5em] text-xs md:text-sm uppercase mb-12">Simulação de Combate Bio-Mecânico</p>
+                      <button onClick={startGame} className="px-12 md:px-20 py-6 md:py-8 bg-green-500 hover:bg-green-400 text-black font-black text-xl md:text-3xl uppercase rounded-2xl shadow-[0_0_40px_rgba(0,255,0,0.3)] transition-all active:scale-95 header-font">
+                        Iniciar Missão
+                      </button>
+                   </div>
+                </div>
+              )}
+
+              {status === GameStatus.BRIEFING && (
+                <div className="absolute inset-0 flex items-center justify-center z-[100] bg-black/95 p-6 md:p-10 overflow-y-auto">
+                   <div className="max-w-6xl w-full grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-10 p-8 md:p-12 futuristic-border rounded-[2rem] bg-gray-900/50">
+                      <div className="space-y-6 md:space-y-8">
+                        <h2 className="text-4xl md:text-6xl font-black italic text-white header-font neon-text uppercase">Onda {wave}</h2>
+                        <div className="p-6 md:p-8 bg-green-900/20 border-l-4 md:border-l-8 border-green-500 rounded-r-2xl italic text-green-50 text-lg md:text-2xl font-mono leading-relaxed">
+                            {isBriefingLoading ? "Buscando dados táticos..." : briefing}
+                        </div>
+                        <div className="space-y-4">
+                            <h3 className="text-green-400 font-bold uppercase tracking-widest text-[10px] md:text-xs">Aprimoramento Disponível:</h3>
+                            <div className="grid gap-3 md:gap-4">
+                                {availableUpgrades.map(up => (
+                                    <button key={up.id} onClick={() => selectUpgrade(up.id)} className="flex items-center gap-4 md:gap-6 p-4 md:p-6 bg-green-900/10 border-2 border-green-500/20 hover:border-green-400 hover:bg-green-500 hover:text-black transition-all rounded-2xl text-left group">
+                                        <span className="text-3xl md:text-5xl group-hover:scale-110 transition-transform">{up.icon}</span>
+                                        <div className="flex-1 overflow-hidden">
+                                            <div className="font-black uppercase text-base md:text-xl truncate">{up.name}</div>
+                                            <div className="text-[10px] md:text-sm opacity-70 font-bold leading-tight">{up.description}</div>
+                                        </div>
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                      </div>
+                      <div className="flex flex-col items-center justify-center bg-black/40 rounded-[2rem] border-2 border-white/5 p-8">
+                         <canvas ref={previewCanvasRef} width="200" height="200" className="w-full h-auto max-w-[250px]" />
+                         <div className="mt-8 text-center">
+                            <div className="text-red-500 font-mono text-xs uppercase tracking-[0.4em] mb-2 font-black">Ameaça Prioritária</div>
+                            <div className="text-3xl md:text-5xl font-black text-white italic header-font neon-text">{targetDino}</div>
+                         </div>
+                      </div>
+                   </div>
+                </div>
+              )}
+
+              {status === GameStatus.GAME_OVER && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center z-[100] bg-red-950/90 backdrop-blur-2xl p-6">
+                   <h1 className="text-6xl md:text-9xl font-black italic text-white header-font mb-4 drop-shadow-[0_0_30px_red] text-center">UNIDADE ABATIDA</h1>
+                   <div className="text-2xl md:text-4xl text-yellow-400 font-mono mb-12 uppercase tracking-widest text-center">Créditos de Guerra: {Math.floor(score).toLocaleString()} PTS</div>
+                   <button onClick={() => window.location.reload()} className="px-12 md:px-24 py-6 md:py-10 bg-white text-red-900 font-black text-2xl md:text-4xl uppercase rounded-2xl hover:bg-red-600 hover:text-white transition-all header-font shadow-2xl">
+                     Reiniciar Unidade
+                   </button>
+                </div>
+              )}
+
+              {status !== GameStatus.MENU && (
+                <GameCanvas 
+                  status={status}
+                  onGameOver={(finalScore) => { setScore(Math.floor(finalScore)); setStatus(GameStatus.GAME_OVER); }}
+                  onWaveComplete={handleWaveComplete}
+                  onScoreUpdate={(s) => setScore(Math.floor(s))}
+                  initialScore={Math.floor(score)}
+                  currentWave={wave}
+                  upgrades={activeUpgrades}
+                />
+              )}
+            </div>
+          );
+        };
+
+        // --- 6. RENDERIZAÇÃO FINAL ---
+        const root = createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
