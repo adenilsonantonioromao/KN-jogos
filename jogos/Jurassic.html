@@ -2,8 +2,8 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Tank vs Dinos</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Tank vs Dinos: Extraction Run</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&family=JetBrains+Mono:wght@400;700&display=swap');
@@ -35,20 +35,28 @@
         .header-font {
             font-family: 'Orbitron', sans-serif;
         }
+        /* Animação para o timer quando estiver acabando */
+        @keyframes pulse-red {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .critical-time {
+            color: #ff0000 !important;
+            text-shadow: 0 0 10px #ff0000;
+            animation: pulse-red 0.5s infinite;
+        }
     </style>
     <script type="importmap">
-{
-  "imports": {
-    "react": "https://esm.sh/react@18.2.0",
-    "react/jsx-runtime": "https://esm.sh/react@18.2.0/jsx-runtime",
-    "react-dom": "https://esm.sh/react-dom@18.2.0",
-    "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
-    "@google/genai": "https://esm.sh/@google/genai@1.34.0",
-    "react-dom/": "https://esm.sh/react-dom@^18.2/",
-    "react/": "https://esm.sh/react@^18.2/"
-  }
-}
-</script>
+    {
+      "imports": {
+        "react": "https://esm.sh/react@18.2.0",
+        "react/jsx-runtime": "https://esm.sh/react@18.2.0/jsx-runtime",
+        "react-dom": "https://esm.sh/react-dom@18.2.0",
+        "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
+        "@google/genai": "https://esm.sh/@google/genai@1.34.0"
+      }
+    }
+    </script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 </head>
 <body>
@@ -58,7 +66,10 @@
         import { createRoot } from 'react-dom/client';
         import { GoogleGenAI } from "@google/genai";
 
-        // --- 1. TYPES / ENUMS (Converted to objects for compatibility) ---
+        // Polyfill para evitar crash no navegador
+        const process = { env: { API_KEY: '' } };
+
+        // --- 1. TYPES / ENUMS ---
         
         const GameStatus = {
           MENU: 'MENU',
@@ -84,25 +95,26 @@
         
         const WORLD_WIDTH = 3500;
         const WORLD_HEIGHT = 3500;
-
         const BASE_TANK_SPEED = 4.7;
         const TANK_ROTATION_SPEED = 0.055;
         const TANK_RADIUS = 28;
         const FIRE_COOLDOWN = 280;
         const OBJECTIVE_RADIUS = 80;
         const VISION_RADIUS = 550;
+        const WAVE_TIME_LIMIT = 60000; // 60 segundos em milissegundos
 
+        // PONTUAÇÃO ATUALIZADA (1/4 do valor original, arredondado)
         const DINO_CONFIGS = {
-          [DinoType.RAPTOR]: { hp: 50, speed: 2.99, damage: 12, radius: 22, color: '#00ff66', accent: '#004400', icon: '🦖', points: 5 },
-          [DinoType.TREX]: { hp: 450, speed: 1.43, damage: 60, radius: 55, color: '#ff0033', accent: '#440000', icon: '🦖', points: 75 },
-          [DinoType.SPINO]: { hp: 220, speed: 2.08, damage: 35, radius: 45, color: '#ffaa00', accent: '#663300', icon: '🐊', points: 45 },
-          [DinoType.DILO]: { hp: 70, speed: 2.47, damage: 20, radius: 25, color: '#cc00ff', accent: '#330044', icon: '🦎', points: 7 },
-          [DinoType.ANKYLO]: { hp: 600, speed: 0.91, damage: 40, radius: 50, color: '#888888', accent: '#333333', icon: '🐢', points: 30 },
-          [DinoType.TRICE]: { hp: 350, speed: 1.82, damage: 45, radius: 48, color: '#3366ff', accent: '#001144', icon: '🦏', points: 20 },
-          [DinoType.PTERO]: { hp: 40, speed: 3.64, damage: 10, radius: 20, color: '#00ffff', accent: '#004444', icon: '🦅', points: 6 },
-          [DinoType.COMPS]: { hp: 20, speed: 4.16, damage: 5, radius: 15, color: '#ffff00', accent: '#444400', icon: '🐁', points: 2 },
-          [DinoType.CARNO]: { hp: 200, speed: 2.73, damage: 30, radius: 35, color: '#ff6600', accent: '#442200', icon: '🐆', points: 18 },
-          [DinoType.STEGO]: { hp: 400, speed: 1.17, damage: 25, radius: 46, color: '#00cc00', accent: '#003300', icon: '🌳', points: 25 }
+          [DinoType.RAPTOR]: { hp: 50, speed: 2.99, damage: 12, radius: 22, color: '#00ff66', accent: '#004400', icon: '🦖', points: 1 }, // era 5
+          [DinoType.TREX]: { hp: 450, speed: 1.43, damage: 60, radius: 55, color: '#ff0033', accent: '#440000', icon: '🦖', points: 18 }, // era 75
+          [DinoType.SPINO]: { hp: 220, speed: 2.08, damage: 35, radius: 45, color: '#ffaa00', accent: '#663300', icon: '🐊', points: 11 }, // era 45
+          [DinoType.DILO]: { hp: 70, speed: 2.47, damage: 20, radius: 25, color: '#cc00ff', accent: '#330044', icon: '🦎', points: 1 }, // era 7
+          [DinoType.ANKYLO]: { hp: 600, speed: 0.91, damage: 40, radius: 50, color: '#888888', accent: '#333333', icon: '🐢', points: 7 }, // era 30
+          [DinoType.TRICE]: { hp: 350, speed: 1.82, damage: 45, radius: 48, color: '#3366ff', accent: '#001144', icon: '🦏', points: 5 }, // era 20
+          [DinoType.PTERO]: { hp: 40, speed: 3.64, damage: 10, radius: 20, color: '#00ffff', accent: '#004444', icon: '🦅', points: 1 }, // era 6
+          [DinoType.COMPS]: { hp: 20, speed: 4.16, damage: 5, radius: 15, color: '#ffff00', accent: '#444400', icon: '🐁', points: 1 }, // era 2 (mantido 1 min)
+          [DinoType.CARNO]: { hp: 200, speed: 2.73, damage: 30, radius: 35, color: '#ff6600', accent: '#442200', icon: '🐆', points: 4 }, // era 18
+          [DinoType.STEGO]: { hp: 400, speed: 1.17, damage: 25, radius: 46, color: '#00cc00', accent: '#003300', icon: '🌳', points: 6 } // era 25
         };
 
         const INITIAL_BRIEFING = "Comandante, os bio-predadores romperam o cerco. O setor está saturado. Mantenha os sistemas de mira ativos e siga para o ponto de extração sinalizado no radar. Boa sorte.";
@@ -126,13 +138,10 @@
           try {
             const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
             const response = await ai.models.generateContent({
-              model: 'gemini-3-flash-preview',
-              contents: `You are a military commander in a sci-fi world. A pilot is at wave ${wave} with score ${score}. 
-                         The primary threat detected is the ${targetDino}. 
-                         Write a 2-sentence mission briefing. 
-                         Be intense, atmospheric, and mention how the ${targetDino} is behaving in the sector.`,
+              model: 'gemini-1.5-flash',
+              contents: [{ role: 'user', parts: [{ text: `You are a military commander in a sci-fi world. A pilot is at wave ${wave} with score ${score}. The primary threat detected is the ${targetDino}. Write a 2-sentence mission briefing. Be intense, atmospheric, and mention how the ${targetDino} is behaving in the sector.` }] }],
             });
-            return response.text || "Hold the line, pilot. They're coming from the brush. Do not let them breach the perimeter.";
+            return response.text ? response.text() : "Hold the line, pilot. They're coming from the brush. Do not let them breach the perimeter.";
           } catch (error) {
             console.error("Gemini briefing failed:", error);
             return `Intelligence reports a massive concentration of ${targetDino} units. Lock and load, it's going to be a long night.`;
@@ -144,11 +153,16 @@
         const GameCanvas = ({ status, onGameOver, onWaveComplete, onScoreUpdate, initialScore, currentWave, upgrades }) => {
           const canvasRef = useRef(null);
           const grassPatternRef = useRef(null);
+          const timerDisplayRef = useRef(null); // Referência para o DOM do timer
+          
           const [keys, setKeys] = useState(new Set());
           const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
           const [isMouseDown, setIsMouseDown] = useState(false);
           const [activeSpecies, setActiveSpecies] = useState(new Set());
 
+          // Refs para lógica de jogo
+          const waveStartTimeRef = useRef(Date.now());
+          
           const upgradeEffects = useMemo(() => ({
             speedBoost: upgrades.includes('engine') ? 1.25 : 1.0,
             damageBoost: upgrades.includes('damage') ? 1.4 : 1.0,
@@ -215,6 +229,9 @@
 
           useEffect(() => {
             if (status === GameStatus.PLAYING) {
+              // Resetar timer da onda
+              waveStartTimeRef.current = Date.now();
+
               const tank = tankRef.current;
               tank.maxHp = 100 + upgradeEffects.armorBoost;
               tank.hp = tank.maxHp;
@@ -292,6 +309,29 @@
           const update = useCallback(() => {
             if (status !== GameStatus.PLAYING) return;
             const tank = tankRef.current;
+
+            // --- LÓGICA DO TIMER ---
+            const timeElapsed = Date.now() - waveStartTimeRef.current;
+            const timeLeft = Math.max(0, WAVE_TIME_LIMIT - timeElapsed);
+            
+            // Atualizar UI do Timer diretamente para performance
+            if (timerDisplayRef.current) {
+                const seconds = Math.ceil(timeLeft / 1000);
+                timerDisplayRef.current.innerText = `EXTRAÇÃO: ${seconds}s`;
+                if (seconds <= 10) {
+                    timerDisplayRef.current.classList.add('critical-time');
+                } else {
+                    timerDisplayRef.current.classList.remove('critical-time');
+                }
+            }
+
+            // Game Over por tempo
+            if (timeLeft <= 0) {
+                onGameOver(tank.score);
+                return;
+            }
+            // -----------------------
+
             if (upgradeEffects.autoRepair > 0) tank.hp = Math.min(tank.maxHp, tank.hp + upgradeEffects.autoRepair);
 
             const curSpeed = tank.speed * speedModifier;
@@ -343,7 +383,7 @@
                   d.hp -= p.damage; d.isActive = true;
                   if (!upgrades.includes('piercing')) p.life = 0;
                   if (d.hp <= 0) {
-                    const dinoPoints = DINO_CONFIGS[d.type]?.points || 3;
+                    const dinoPoints = DINO_CONFIGS[d.type]?.points || 1;
                     tank.score += Math.floor(dinoPoints);
                     onScoreUpdate(tank.score);
                     const particleCount = 10 + Math.floor(Math.random() * 8);
@@ -491,6 +531,14 @@
           return (
             <div className="relative w-full h-full overflow-hidden" style={{ cursor: 'none' }}>
               <canvas ref={canvasRef} className="block" />
+              
+              {/* TIMER DISPLAY */}
+              <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50 pointer-events-none">
+                  <div ref={timerDisplayRef} className="text-3xl md:text-4xl font-black header-font text-white drop-shadow-[0_0_10px_rgba(0,0,0,0.8)] tracking-widest">
+                      EXTRAÇÃO: 60s
+                  </div>
+              </div>
+
               <div className="absolute top-3 left-3 z-50 pointer-events-none flex flex-col gap-3">
                 <div className="p-3 bg-black/70 border border-green-500/40 rounded-xl backdrop-blur-md min-w-[200px]">
                   <div className="flex justify-between items-end mb-1">
@@ -512,7 +560,7 @@
                   })}
                 </div>
               </div>
-              <div className="absolute top-3 left-1/2 -translate-x-1/2 z-50 pointer-events-none">
+              <div className="absolute top-16 left-1/2 -translate-x-1/2 z-50 pointer-events-none">
                 <div className="grid grid-cols-5 grid-rows-2 gap-1.5 p-2 bg-black/70 border border-red-500/30 rounded-xl backdrop-blur-md shadow-lg">
                   {Object.keys(DINO_CONFIGS).map((type) => {
                     const config = DINO_CONFIGS[type];
