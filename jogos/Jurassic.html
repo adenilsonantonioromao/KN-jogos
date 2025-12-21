@@ -1,55 +1,282 @@
-
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Tank vs. Dino: Jurassic Conflict</title>
-    <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body {
-            margin: 0;
-            padding: 0;
-            overflow: hidden;
-            background-color: #1a1a1a;
-            color: #ffffff;
-            font-family: 'Inter', sans-serif;
-            user-select: none;
-            -webkit-user-select: none;
-            touch-action: none;
-        }
-        canvas {
-            display: block;
-            touch-action: none;
-        }
-        @keyframes scanline {
-            0% { transform: translateY(-100%); }
-            100% { transform: translateY(100%); }
-        }
-        .scanline {
-            width: 100%;
-            height: 2px;
-            background: rgba(255, 255, 255, 0.1);
-            position: absolute;
-            top: 0;
-            left: 0;
-            pointer-events: none;
-            animation: scanline 4s linear infinite;
-            z-index: 100;
-        }
+        body { margin: 0; overflow: hidden; background: #1a1a1a; font-family: 'Courier New', Courier, monospace; }
+        #root { width: 100vw; height: 100vh; }
+        /* UI Overlay */
+        .ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; display: flex; flex-direction: column; justify-content: space-between; padding: 20px; box-sizing: border-box; }
+        .score { color: #0f0; font-size: 24px; font-weight: bold; text-shadow: 0 0 5px #0f0; }
+        .game-over { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: auto; z-index: 10; }
+        .game-over h1 { color: #ff4444; font-size: 40px; margin-bottom: 10px; text-transform: uppercase; }
+        .game-over p { color: #fff; font-size: 20px; margin-bottom: 30px; }
+        .btn { background: #0f0; color: #000; border: none; padding: 15px 30px; font-size: 20px; font-weight: bold; cursor: pointer; text-transform: uppercase; border-radius: 5px; box-shadow: 0 0 15px #0f0; transition: transform 0.1s; }
+        .btn:active { transform: scale(0.95); }
+        .controls-hint { color: rgba(255,255,255,0.5); text-align: center; font-size: 14px; margin-bottom: 20px; }
     </style>
-<script type="importmap">
-{
-  "imports": {
-    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
-    "react/": "https://esm.sh/react@^19.2.3/",
-    "react": "https://esm.sh/react@^19.2.3",
-    "@google/genai": "https://esm.sh/@google/genai@^1.34.0"
-  }
-}
-</script>
+
+    <!-- 1. IMPORTMAP OBRIGATÓRIO (React 18 + Three.js) -->
+    <script type="importmap">
+    {
+      "imports": {
+        "react": "https://esm.sh/react@18.2.0",
+        "react/jsx-runtime": "https://esm.sh/react@18.2.0/jsx-runtime",
+        "react-dom": "https://esm.sh/react-dom@18.2.0",
+        "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
+        "three": "https://esm.sh/three@0.160.0",
+        "@react-three/fiber": "https://esm.sh/@react-three/fiber@8.15.16?external=react,react-dom,three",
+        "@react-three/drei": "https://esm.sh/@react-three/drei@9.99.0?external=react,react-dom,three,@react-three/fiber"
+      }
+    }
+    </script>
+    <!-- 2. BABEL PARA COMPILAR JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 </head>
 <body>
     <div id="root"></div>
+
+    <!-- 3. LÓGICA DO JOGO -->
+    <script type="text/babel" data-type="module">
+        import React, { useState, useRef, useEffect, useMemo } from 'react';
+        import { createRoot } from 'react-dom/client';
+        import { Canvas, useFrame, useThree } from '@react-three/fiber';
+        import { OrbitControls, Stars, Text } from '@react-three/drei';
+        import * as THREE from 'three';
+
+        // --- COMPONENTES DO JOGO ---
+
+        // O Tanque do Jogador
+        function Tank({ position, rotation }) {
+            return (
+                <group position={position} rotation={[0, rotation, 0]}>
+                    {/* Corpo */}
+                    <mesh position={[0, 0.5, 0]} castShadow>
+                        <boxGeometry args={[1, 0.5, 1.5]} />
+                        <meshStandardMaterial color="#4a5d23" />
+                    </mesh>
+                    {/* Torre */}
+                    <mesh position={[0, 1, -0.2]}>
+                        <boxGeometry args={[0.6, 0.4, 0.8]} />
+                        <meshStandardMaterial color="#3a4d13" />
+                    </mesh>
+                    {/* Cano */}
+                    <mesh position={[0, 1, 0.5]} rotation={[Math.PI / 2, 0, 0]}>
+                        <cylinderGeometry args={[0.1, 0.1, 1.5]} />
+                        <meshStandardMaterial color="#1a1a1a" />
+                    </mesh>
+                </group>
+            );
+        }
+
+        // Inimigo (Dino - representado por um cone verde agressivo)
+        function Enemy({ position }) {
+            return (
+                <mesh position={position}>
+                    <coneGeometry args={[0.5, 1.5, 8]} />
+                    <meshStandardMaterial color="#ff0055" />
+                </mesh>
+            );
+        }
+
+        // Projétil
+        function Bullet({ position }) {
+            return (
+                <mesh position={position}>
+                    <sphereGeometry args={[0.15]} />
+                    <meshStandardMaterial color="yellow" emissive="yellow" emissiveIntensity={2} />
+                </mesh>
+            );
+        }
+
+        // Chão
+        function Ground() {
+            return (
+                <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} receiveShadow>
+                    <planeGeometry args={[100, 100]} />
+                    <meshStandardMaterial color="#222" />
+                    <gridHelper args={[100, 50, 0x444444, 0x222222]} rotation={[-Math.PI/2, 0, 0]} />
+                </mesh>
+            );
+        }
+
+        // --- LÓGICA PRINCIPAL (GAME MANAGER) ---
+        function GameScene({ setScore, setGameOver }) {
+            const [bullets, setBullets] = useState([]);
+            const [enemies, setEnemies] = useState([]);
+            const tankRef = useRef({ rotation: 0 });
+            const lastShot = useRef(0);
+            const spawnRate = useRef(2000);
+            const lastSpawn = useRef(0);
+            
+            const { camera, mouse } = useThree();
+
+            // Controles (Mouse/Touch para mirar e atirar)
+            useFrame((state) => {
+                const time = state.clock.getElapsedTime() * 1000;
+
+                // 1. Rotacionar Tanque para olhar pro mouse
+                // Raycaster simples para achar ponto no chão
+                const raycaster = new THREE.Raycaster();
+                raycaster.setFromCamera(mouse, camera);
+                const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+                const target = new THREE.Vector3();
+                raycaster.ray.intersectPlane(plane, target);
+                
+                if (target) {
+                    const angle = Math.atan2(target.x, target.z);
+                    tankRef.current.rotation = angle;
+                }
+
+                // 2. Atirar (Automático se segurar ou clicar rápido - aqui simplificado para clique)
+                // Lógica movida para evento de clique global no Canvas wrapper
+                
+                // 3. Mover Balas
+                setBullets(prev => prev.map(b => ({
+                    ...b,
+                    pos: [
+                        b.pos[0] + Math.sin(b.angle) * 0.4,
+                        1,
+                        b.pos[2] + Math.cos(b.angle) * 0.4
+                    ]
+                })).filter(b => Math.abs(b.pos[0]) < 30 && Math.abs(b.pos[2]) < 30)); // Remove se for longe
+
+                // 4. Spawner de Inimigos
+                if (time - lastSpawn.current > spawnRate.current) {
+                    const angle = Math.random() * Math.PI * 2;
+                    const radius = 20;
+                    const x = Math.sin(angle) * radius;
+                    const z = Math.cos(angle) * radius;
+                    setEnemies(prev => [...prev, { id: Math.random(), pos: [x, 0.75, z] }]);
+                    lastSpawn.current = time;
+                    if (spawnRate.current > 500) spawnRate.current -= 50; // Dificuldade aumenta
+                }
+
+                // 5. Mover Inimigos e Colisão
+                setEnemies(prev => {
+                    let nextEnemies = [];
+                    let gameOverTriggered = false;
+
+                    prev.forEach(enemy => {
+                        // Mover em direção ao centro (0,0,0)
+                        const dx = 0 - enemy.pos[0];
+                        const dz = 0 - enemy.pos[2];
+                        const dist = Math.sqrt(dx*dx + dz*dz);
+                        
+                        // Game Over se tocar no tanque
+                        if (dist < 1.5) {
+                            gameOverTriggered = true;
+                        }
+
+                        const speed = 0.08;
+                        const vx = (dx / dist) * speed;
+                        const vz = (dz / dist) * speed;
+
+                        // Checar colisão com balas
+                        let hit = false;
+                        setBullets(currentBullets => {
+                            const survivingBullets = currentBullets.filter(b => {
+                                const bdx = b.pos[0] - enemy.pos[0];
+                                const bdz = b.pos[2] - enemy.pos[2];
+                                const bDist = Math.sqrt(bdx*bdx + bdz*bdz);
+                                if (bDist < 1) {
+                                    hit = true;
+                                    return false; // Bala destruída
+                                }
+                                return true;
+                            });
+                            // Hack feio para atualizar estado dentro de loop, mas funcional para protótipo
+                            if(hit) setTimeout(() => setBullets(survivingBullets), 0);
+                            return currentBullets;
+                        });
+
+                        if (hit) {
+                            setScore(s => s + 10);
+                        } else {
+                            nextEnemies.push({ ...enemy, pos: [enemy.pos[0] + vx, 0.75, enemy.pos[2] + vz] });
+                        }
+                    });
+
+                    if (gameOverTriggered) setGameOver(true);
+                    return nextEnemies;
+                });
+            });
+
+            // Handler de Tiro
+            useEffect(() => {
+                const handlePointerDown = () => {
+                    setBullets(prev => [...prev, { 
+                        id: Math.random(), 
+                        pos: [0, 1, 0], 
+                        angle: tankRef.current.rotation 
+                    }]);
+                };
+                window.addEventListener('pointerdown', handlePointerDown);
+                return () => window.removeEventListener('pointerdown', handlePointerDown);
+            }, []);
+
+            return (
+                <>
+                    <ambientLight intensity={0.5} />
+                    <pointLight position={[10, 10, 10]} intensity={1} castShadow />
+                    <Tank position={[0, 0, 0]} rotation={tankRef.current.rotation} />
+                    
+                    {bullets.map(b => <Bullet key={b.id} position={b.pos} />)}
+                    {enemies.map(e => <Enemy key={e.id} position={e.pos} />)}
+                    
+                    <Ground />
+                    <Stars />
+                </>
+            );
+        }
+
+        // --- APP PRINCIPAL ---
+        function App() {
+            const [score, setScore] = useState(0);
+            const [gameOver, setGameOver] = useState(false);
+            const [gameStarted, setGameStarted] = useState(true);
+
+            // Efeito Game Over (Comunicação com o Site Pai)
+            useEffect(() => {
+                if (gameOver) {
+                    // 1. Enviar mensagem de Game Over
+                    window.parent.postMessage({ type: 'GAME_OVER', score: score }, '*');
+                }
+            }, [gameOver, score]);
+
+            const handleRestart = () => {
+                // 2. Pedir para reiniciar (gastar ficha)
+                window.parent.postMessage({ type: 'RESTART_REQUEST' }, '*');
+            };
+
+            return (
+                <>
+                    <Canvas shadows camera={{ position: [0, 15, 10], fov: 50 }}>
+                        {!gameOver && <GameScene setScore={setScore} setGameOver={setGameOver} />}
+                    </Canvas>
+
+                    <div className="ui-layer">
+                        <div className="score">SCORE: {score}</div>
+                        <div className="controls-hint">Toque/Clique para atirar • Mova para mirar</div>
+                    </div>
+
+                    {gameOver && (
+                        <div className="game-over">
+                            <h1>GAME OVER</h1>
+                            <p>Pontuação Final: {score}</p>
+                            <button className="btn" onClick={handleRestart}>
+                                JOGAR NOVAMENTE (1 Ficha)
+                            </button>
+                        </div>
+                    )}
+                </>
+            );
+        }
+
+        const root = createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
 </body>
 </html>
