@@ -3,47 +3,79 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Tank vs Dinos: Extraction Run</title>
+    <title>Tank vs Dinos: Elite Warfare</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&family=JetBrains+Mono:wght@400;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap');
         
         body { 
             margin: 0; 
             overflow: hidden; 
-            background-color: #0f2d1a; 
+            background-color: #051a0f; 
             touch-action: none; 
             color: #ffffff;
-            font-family: 'JetBrains Mono', monospace;
+            font-family: 'Share Tech Mono', monospace;
             user-select: none;
             -webkit-user-select: none;
         }
         canvas {
             display: block;
-            image-rendering: pixelated;
+            /* Remove pixelated para permitir vetores suaves, mas mantemos nitidez */
+            image-rendering: high-quality; 
         }
-        .futuristic-border {
-            border: 2px solid #00ff66;
-            box-shadow: 0 0 20px rgba(0, 255, 102, 0.5), inset 0 0 10px rgba(0, 255, 102, 0.3);
-            background: rgba(0, 30, 15, 0.9);
-            backdrop-filter: blur(4px);
+        
+        /* Efeito de Monitor CRT Militar */
+        .scanlines {
+            background: linear-gradient(
+                to bottom,
+                rgba(255,255,255,0),
+                rgba(255,255,255,0) 50%,
+                rgba(0,0,0,0.2) 50%,
+                rgba(0,0,0,0.2)
+            );
+            background-size: 100% 4px;
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            pointer-events: none;
+            z-index: 40;
         }
-        .neon-text {
-            color: #00ff66;
-            text-shadow: 0 0 12px rgba(0, 255, 102, 0.9);
+        .vignette {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: radial-gradient(circle, rgba(0,0,0,0) 60%, rgba(0,20,10,0.8) 100%);
+            pointer-events: none;
+            z-index: 41;
         }
-        .header-font {
+
+        .futuristic-panel {
+            background: rgba(6, 20, 10, 0.95);
+            border: 1px solid #34d399;
+            box-shadow: 0 0 15px rgba(52, 211, 153, 0.2), inset 0 0 20px rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(8px);
+        }
+        
+        .digital-clock {
             font-family: 'Orbitron', sans-serif;
+            background-color: #001100;
+            border: 2px solid #1a4d2e;
+            color: #33ff33;
+            text-shadow: 0 0 5px #33ff33;
+            letter-spacing: 2px;
         }
-        /* Animação para o timer quando estiver acabando */
-        @keyframes pulse-red {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
+
+        .header-font { font-family: 'Orbitron', sans-serif; }
+        
+        /* Scrollbar customizada para o menu */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #001100; }
+        ::-webkit-scrollbar-thumb { background: #34d399; border-radius: 3px; }
+
+        @keyframes alert-pulse {
+            0%, 100% { color: #33ff33; text-shadow: 0 0 5px #33ff33; border-color: #1a4d2e; }
+            50% { color: #ff3333; text-shadow: 0 0 10px #ff0000; border-color: #ff0000; }
         }
         .critical-time {
-            color: #ff0000 !important;
-            text-shadow: 0 0 10px #ff0000;
-            animation: pulse-red 0.5s infinite;
+            animation: alert-pulse 0.8s infinite;
         }
     </style>
     <script type="importmap">
@@ -66,33 +98,18 @@
         import { createRoot } from 'react-dom/client';
         import { GoogleGenAI } from "@google/genai";
 
-        // Polyfill para evitar crash no navegador
         const process = { env: { API_KEY: '' } };
 
-        // --- 1. TYPES / ENUMS ---
+        // --- 1. TYPES & CONSTANTS ---
         
-        const GameStatus = {
-          MENU: 'MENU',
-          BRIEFING: 'BRIEFING',
-          PLAYING: 'PLAYING',
-          GAME_OVER: 'GAME_OVER'
-        };
+        const GameStatus = { MENU: 'MENU', BRIEFING: 'BRIEFING', PLAYING: 'PLAYING', GAME_OVER: 'GAME_OVER' };
 
         const DinoType = {
-          RAPTOR: 'RAPTOR',
-          TREX: 'TREX',
-          SPINO: 'SPINO',
-          DILO: 'DILOPHOSAURUS',
-          ANKYLO: 'ANKYLOSAURUS',
-          TRICE: 'TRICERATOPS',
-          PTERO: 'PTERODACTYL',
-          COMPS: 'COMPSOGNATHUS',
-          CARNO: 'CARNOTAURUS',
-          STEGO: 'STEGOSAURUS'
+          RAPTOR: 'RAPTOR', TREX: 'TREX', SPINO: 'SPINO', DILO: 'DILOPHOSAURUS',
+          ANKYLO: 'ANKYLOSAURUS', TRICE: 'TRICERATOPS', PTERO: 'PTERODACTYL',
+          COMPS: 'COMPSOGNATHUS', CARNO: 'CARNOTAURUS', STEGO: 'STEGOSAURUS'
         };
 
-        // --- 2. CONSTANTS ---
-        
         const WORLD_WIDTH = 3500;
         const WORLD_HEIGHT = 3500;
         const BASE_TANK_SPEED = 4.7;
@@ -101,20 +118,20 @@
         const FIRE_COOLDOWN = 280;
         const OBJECTIVE_RADIUS = 80;
         const VISION_RADIUS = 550;
-        const WAVE_TIME_LIMIT = 60000; // 60 segundos em milissegundos
+        const WAVE_TIME_LIMIT = 60000;
 
-        // PONTUAÇÃO ATUALIZADA (1/4 do valor original, arredondado)
+        // Configuração visual aprimorada para renderização vetorial
         const DINO_CONFIGS = {
-          [DinoType.RAPTOR]: { hp: 50, speed: 2.99, damage: 12, radius: 22, color: '#00ff66', accent: '#004400', icon: '🦖', points: 1 }, // era 5
-          [DinoType.TREX]: { hp: 450, speed: 1.43, damage: 60, radius: 55, color: '#ff0033', accent: '#440000', icon: '🦖', points: 18 }, // era 75
-          [DinoType.SPINO]: { hp: 220, speed: 2.08, damage: 35, radius: 45, color: '#ffaa00', accent: '#663300', icon: '🐊', points: 11 }, // era 45
-          [DinoType.DILO]: { hp: 70, speed: 2.47, damage: 20, radius: 25, color: '#cc00ff', accent: '#330044', icon: '🦎', points: 1 }, // era 7
-          [DinoType.ANKYLO]: { hp: 600, speed: 0.91, damage: 40, radius: 50, color: '#888888', accent: '#333333', icon: '🐢', points: 7 }, // era 30
-          [DinoType.TRICE]: { hp: 350, speed: 1.82, damage: 45, radius: 48, color: '#3366ff', accent: '#001144', icon: '🦏', points: 5 }, // era 20
-          [DinoType.PTERO]: { hp: 40, speed: 3.64, damage: 10, radius: 20, color: '#00ffff', accent: '#004444', icon: '🦅', points: 1 }, // era 6
-          [DinoType.COMPS]: { hp: 20, speed: 4.16, damage: 5, radius: 15, color: '#ffff00', accent: '#444400', icon: '🐁', points: 1 }, // era 2 (mantido 1 min)
-          [DinoType.CARNO]: { hp: 200, speed: 2.73, damage: 30, radius: 35, color: '#ff6600', accent: '#442200', icon: '🐆', points: 4 }, // era 18
-          [DinoType.STEGO]: { hp: 400, speed: 1.17, damage: 25, radius: 46, color: '#00cc00', accent: '#003300', icon: '🌳', points: 6 } // era 25
+          [DinoType.RAPTOR]: { hp: 50, speed: 2.99, damage: 12, radius: 22, color: '#22c55e', accent: '#14532d', icon: '🦖', points: 1, scale: 0.8, type: 'theropod' },
+          [DinoType.TREX]: { hp: 450, speed: 1.43, damage: 60, radius: 55, color: '#ef4444', accent: '#7f1d1d', icon: '🦖', points: 18, scale: 2.2, type: 'theropod' },
+          [DinoType.SPINO]: { hp: 220, speed: 2.08, damage: 35, radius: 45, color: '#f97316', accent: '#7c2d12', icon: '🐊', points: 11, scale: 1.8, type: 'spino' },
+          [DinoType.DILO]: { hp: 70, speed: 2.47, damage: 20, radius: 25, color: '#a855f7', accent: '#581c87', icon: '🦎', points: 1, scale: 0.9, type: 'theropod_frill' },
+          [DinoType.ANKYLO]: { hp: 600, speed: 0.91, damage: 40, radius: 50, color: '#64748b', accent: '#1e293b', icon: '🐢', points: 7, scale: 1.6, type: 'ankylo' },
+          [DinoType.TRICE]: { hp: 350, speed: 1.82, damage: 45, radius: 48, color: '#3b82f6', accent: '#1e3a8a', icon: '🦏', points: 5, scale: 1.7, type: 'trice' },
+          [DinoType.PTERO]: { hp: 40, speed: 3.64, damage: 10, radius: 20, color: '#06b6d4', accent: '#164e63', icon: '🦅', points: 1, scale: 1.0, type: 'ptero' },
+          [DinoType.COMPS]: { hp: 20, speed: 4.16, damage: 5, radius: 15, color: '#eab308', accent: '#713f12', icon: '🐁', points: 1, scale: 0.5, type: 'theropod' },
+          [DinoType.CARNO]: { hp: 200, speed: 2.73, damage: 30, radius: 35, color: '#f43f5e', accent: '#881337', icon: '🐆', points: 4, scale: 1.4, type: 'theropod_horns' },
+          [DinoType.STEGO]: { hp: 400, speed: 1.17, damage: 25, radius: 46, color: '#22c55e', accent: '#064e3b', icon: '🌳', points: 6, scale: 1.7, type: 'stego' }
         };
 
         const INITIAL_BRIEFING = "Comandante, os bio-predadores romperam o cerco. O setor está saturado. Mantenha os sistemas de mira ativos e siga para o ponto de extração sinalizado no radar. Boa sorte.";
@@ -122,46 +139,205 @@
         const WAR_EFFORT_UPGRADES = [
           { id: 'armor', name: 'Blindagem de Titânio', description: '+35 HP Máximo', icon: '🛡️' },
           { id: 'engine', name: 'Propulsores de Íons', description: '+25% Velocidade Tática', icon: '⚙️' },
-          { id: 'fire_rate', name: 'Sincronizador de Disparo', description: '-30% Tempo de Recarga', icon: '⚡' },
+          { id: 'fire_rate', name: 'Sincronizador', description: '-30% Tempo de Recarga', icon: '⚡' },
           { id: 'damage', name: 'Cargas de Plasma', description: '+40% Poder de Fogo', icon: '💥' },
           { id: 'vision', name: 'Sensor de Calor', description: '+30% Alcance de Visão', icon: '👁️' },
-          { id: 'radar', name: 'Radar de Longa Distância', description: 'Minimapa Ampliado', icon: '📡' },
-          { id: 'shield', name: 'Campo de Força', description: 'Redução de Dano Recebido', icon: '💠' },
-          { id: 'auto_repair', name: 'Nanobots de Reparo', description: 'Recuperação Gradual de Vida', icon: '🔧' },
-          { id: 'piercing', name: 'Munição Atravessante', description: 'Tiros Perfuram Inimigos', icon: '🎯' },
-          { id: 'multishot', name: 'Canhão Duplo', description: 'Chance de Disparo Duplo', icon: '☄️' }
+          { id: 'radar', name: 'Radar Ampliado', description: 'Minimapa Tático', icon: '📡' },
+          { id: 'shield', name: 'Campo de Força', description: 'Redução de Dano', icon: '💠' },
+          { id: 'auto_repair', name: 'Nanobots', description: 'Regeneração de Hull', icon: '🔧' },
+          { id: 'piercing', name: 'Munição AP', description: 'Tiros Perfurantes', icon: '🎯' },
+          { id: 'multishot', name: 'Canhão Duplo', description: 'Disparo Simultâneo', icon: '☄️' }
         ];
 
-        // --- 3. SERVICES ---
-        
+        // --- 2. SERVICES ---
         async function getMissionBriefing(wave, score, targetDino) {
           try {
             const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
             const response = await ai.models.generateContent({
               model: 'gemini-1.5-flash',
-              contents: [{ role: 'user', parts: [{ text: `You are a military commander in a sci-fi world. A pilot is at wave ${wave} with score ${score}. The primary threat detected is the ${targetDino}. Write a 2-sentence mission briefing. Be intense, atmospheric, and mention how the ${targetDino} is behaving in the sector.` }] }],
+              contents: [{ role: 'user', parts: [{ text: `Sci-fi military briefing. Wave ${wave}. Threat: ${targetDino}. 2 sentences. Intense.` }] }],
             });
-            return response.text ? response.text() : "Hold the line, pilot. They're coming from the brush. Do not let them breach the perimeter.";
+            return response.text ? response.text() : "Mantenha a posição. Eles estão vindo de todas as direções.";
           } catch (error) {
-            console.error("Gemini briefing failed:", error);
-            return `Intelligence reports a massive concentration of ${targetDino} units. Lock and load, it's going to be a long night.`;
+            return `Relatórios indicam concentração massiva de ${targetDino}. Prepare-se para combate intenso.`;
           }
         }
+
+        // --- 3. GRAPHICS ENGINE (NEW) ---
+        
+        // Função auxiliar para desenhar dinossauros complexos
+        const drawComplexDino = (ctx, dino, config, frame) => {
+            const scale = config.scale;
+            const walkCycle = Math.sin(frame * 0.2) * 5;
+            
+            ctx.save();
+            ctx.scale(scale, scale);
+            
+            // Sombra
+            ctx.shadowColor = 'rgba(0,0,0,0.5)';
+            ctx.shadowBlur = 10;
+
+            // Corpo base
+            ctx.fillStyle = config.color;
+            
+            if (config.type.includes('theropod') || config.type === 'spino') {
+                // Bípede (T-Rex, Raptor, etc)
+                
+                // Cauda
+                ctx.beginPath();
+                ctx.moveTo(-10, 0);
+                ctx.quadraticCurveTo(-25 + walkCycle, 5, -40, 0);
+                ctx.quadraticCurveTo(-25 + walkCycle, -5, -10, 0);
+                ctx.fill();
+
+                // Patas (animadas)
+                ctx.fillStyle = config.accent;
+                ctx.beginPath(); ctx.ellipse(5, 8 + walkCycle, 4, 8, 0, 0, Math.PI*2); ctx.fill(); // Dir
+                ctx.beginPath(); ctx.ellipse(5, -8 - walkCycle, 4, 8, 0, 0, Math.PI*2); ctx.fill(); // Esq
+                
+                // Corpo
+                ctx.fillStyle = config.color;
+                ctx.beginPath();
+                ctx.ellipse(0, 0, 18, 10, 0, 0, Math.PI*2);
+                ctx.fill();
+
+                // Espinha (Spino)
+                if (config.type === 'spino') {
+                    ctx.fillStyle = config.accent;
+                    ctx.beginPath();
+                    ctx.arc(0, 0, 14, Math.PI, 0);
+                    ctx.fill();
+                }
+
+                // Cabeça
+                ctx.fillStyle = config.color;
+                ctx.save();
+                ctx.translate(18, 0);
+                ctx.beginPath();
+                ctx.ellipse(0, 0, 10, 7, 0, 0, Math.PI*2);
+                ctx.fill();
+                
+                // Detalhes da cabeça
+                if (config.type === 'theropod_horns') { // Carno
+                    ctx.fillStyle = config.accent;
+                    ctx.beginPath(); ctx.moveTo(2, -5); ctx.lineTo(8, -10); ctx.lineTo(6, -4); ctx.fill();
+                    ctx.beginPath(); ctx.moveTo(2, 5); ctx.lineTo(8, 10); ctx.lineTo(6, 4); ctx.fill();
+                }
+                if (config.type === 'theropod_frill') { // Dilo
+                    ctx.fillStyle = config.accent;
+                    ctx.beginPath(); ctx.arc(-2, 0, 10, -Math.PI/2, Math.PI/2); ctx.fill();
+                }
+
+                // Olhos
+                ctx.fillStyle = '#fff';
+                ctx.fillRect(4, -3, 2, 2);
+                ctx.fillRect(4, 3, 2, 2);
+                ctx.restore();
+
+            } else if (config.type === 'trice' || config.type === 'stego' || config.type === 'ankylo') {
+                // Quadrúpede
+                
+                // Patas
+                ctx.fillStyle = config.accent;
+                ctx.beginPath(); ctx.rect(-10 + walkCycle, -12, 6, 6); ctx.fill();
+                ctx.beginPath(); ctx.rect(10 - walkCycle, -12, 6, 6); ctx.fill();
+                ctx.beginPath(); ctx.rect(-10 - walkCycle, 6, 6, 6); ctx.fill();
+                ctx.beginPath(); ctx.rect(10 + walkCycle, 6, 6, 6); ctx.fill();
+
+                // Cauda
+                ctx.fillStyle = config.color;
+                ctx.beginPath();
+                ctx.moveTo(-15, 0);
+                ctx.lineTo(-40 + walkCycle, 0);
+                ctx.lineWidth = 6;
+                ctx.strokeStyle = config.color;
+                ctx.stroke();
+                
+                // Clava (Ankylo) ou Espinhos (Stego) na cauda
+                if (config.type === 'ankylo') {
+                    ctx.fillStyle = config.accent;
+                    ctx.beginPath(); ctx.arc(-42 + walkCycle, 0, 6, 0, Math.PI*2); ctx.fill();
+                }
+
+                // Corpo
+                ctx.fillStyle = config.color;
+                ctx.beginPath();
+                ctx.ellipse(0, 0, 22, 14, 0, 0, Math.PI*2);
+                ctx.fill();
+
+                // Placas (Stego) ou Carapaça (Ankylo)
+                if (config.type === 'stego') {
+                    ctx.fillStyle = config.accent;
+                    for(let i=-15; i<15; i+=8) {
+                        ctx.beginPath(); ctx.moveTo(i, -10); ctx.lineTo(i+4, -22); ctx.lineTo(i+8, -10); ctx.fill();
+                        ctx.beginPath(); ctx.moveTo(i, 10); ctx.lineTo(i+4, 22); ctx.lineTo(i+8, 10); ctx.fill();
+                    }
+                }
+                if (config.type === 'ankylo') {
+                    ctx.fillStyle = config.accent;
+                    ctx.beginPath(); ctx.rect(-10, -8, 20, 16); ctx.fill();
+                }
+
+                // Cabeça
+                ctx.fillStyle = config.color;
+                ctx.save();
+                ctx.translate(24, 0);
+                
+                if (config.type === 'trice') {
+                    // Escudo
+                    ctx.fillStyle = config.accent;
+                    ctx.beginPath(); ctx.arc(-2, 0, 12, -Math.PI/2, Math.PI/2); ctx.fill();
+                    // Chifres
+                    ctx.fillStyle = '#eee';
+                    ctx.beginPath(); ctx.moveTo(4, -4); ctx.lineTo(18, -8); ctx.lineTo(6, -2); ctx.fill();
+                    ctx.beginPath(); ctx.moveTo(4, 4); ctx.lineTo(18, 8); ctx.lineTo(6, 2); ctx.fill();
+                }
+                
+                ctx.fillStyle = config.color;
+                ctx.beginPath(); ctx.ellipse(0, 0, 10, 8, 0, 0, Math.PI*2); ctx.fill();
+                ctx.restore();
+
+            } else if (config.type === 'ptero') {
+                // Voador
+                const wingFlap = Math.sin(frame * 0.5) * 10;
+                ctx.fillStyle = config.color;
+                
+                // Asas
+                ctx.beginPath();
+                ctx.moveTo(0, 0);
+                ctx.lineTo(-10, -30 + wingFlap);
+                ctx.lineTo(20, -10);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.moveTo(0, 0);
+                ctx.lineTo(-10, 30 - wingFlap);
+                ctx.lineTo(20, 10);
+                ctx.fill();
+
+                // Corpo
+                ctx.beginPath(); ctx.ellipse(0, 0, 10, 4, 0, 0, Math.PI*2); ctx.fill();
+                
+                // Cabeça
+                ctx.beginPath(); ctx.moveTo(10, 0); ctx.lineTo(25, 0); ctx.lineWidth = 3; ctx.strokeStyle = config.accent; ctx.stroke();
+            }
+
+            ctx.restore();
+        };
 
         // --- 4. GAME CANVAS ---
         
         const GameCanvas = ({ status, onGameOver, onWaveComplete, onScoreUpdate, initialScore, currentWave, upgrades }) => {
           const canvasRef = useRef(null);
           const grassPatternRef = useRef(null);
-          const timerDisplayRef = useRef(null); // Referência para o DOM do timer
+          const timerDisplayRef = useRef(null);
           
           const [keys, setKeys] = useState(new Set());
           const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
           const [isMouseDown, setIsMouseDown] = useState(false);
           const [activeSpecies, setActiveSpecies] = useState(new Set());
 
-          // Refs para lógica de jogo
           const waveStartTimeRef = useRef(Date.now());
+          const frameCountRef = useRef(0);
           
           const upgradeEffects = useMemo(() => ({
             speedBoost: upgrades.includes('engine') ? 1.25 : 1.0,
@@ -200,16 +376,32 @@
           const minimapSize = 160;
           const minimapScale = minimapSize / WORLD_WIDTH;
 
+          // Textura de chão melhorada
           useEffect(() => {
             const patternCanvas = document.createElement('canvas');
-            patternCanvas.width = 128; patternCanvas.height = 128;
+            patternCanvas.width = 256; patternCanvas.height = 256;
             const pctx = patternCanvas.getContext('2d');
             if (pctx) {
-              pctx.fillStyle = '#7de69d';
-              pctx.fillRect(0, 0, 128, 128);
-              for (let i = 0; i < 300; i++) {
-                pctx.fillStyle = ['#bbf7d0', '#4ade80', '#22c55e'][Math.floor(Math.random() * 3)];
-                pctx.fillRect(Math.random() * 128, Math.random() * 128, 2, 2);
+              // Base escura
+              pctx.fillStyle = '#0f2d1a';
+              pctx.fillRect(0, 0, 256, 256);
+              
+              // Ruído de terra
+              for (let i = 0; i < 800; i++) {
+                  pctx.fillStyle = Math.random() > 0.5 ? '#1a3d26' : '#0a1f12';
+                  const s = Math.random() * 4;
+                  pctx.fillRect(Math.random() * 256, Math.random() * 256, s, s);
+              }
+              // Grama
+              for (let i = 0; i < 400; i++) {
+                pctx.fillStyle = ['#225533', '#2d6640', '#1e442a'][Math.floor(Math.random() * 3)];
+                pctx.beginPath();
+                const x = Math.random() * 256;
+                const y = Math.random() * 256;
+                pctx.moveTo(x, y);
+                pctx.lineTo(x + 2, y - 4);
+                pctx.lineTo(x + 4, y);
+                pctx.fill();
               }
               const ctx = document.createElement('canvas').getContext('2d');
               if (ctx) grassPatternRef.current = ctx.createPattern(patternCanvas, 'repeat');
@@ -229,25 +421,23 @@
 
           useEffect(() => {
             if (status === GameStatus.PLAYING) {
-              // Resetar timer da onda
               waveStartTimeRef.current = Date.now();
-
               const tank = tankRef.current;
               tank.maxHp = 100 + upgradeEffects.armorBoost;
               tank.hp = tank.maxHp;
               tank.pos = { x: WORLD_WIDTH / 2, y: WORLD_HEIGHT / 2 };
               
               const obstacles = [];
-              for (let i = 0; i < 10; i++) {
-                const w = 150 + Math.random() * 200, h = 150 + Math.random() * 200;
+              for (let i = 0; i < 12; i++) {
+                const w = 150 + Math.random() * 250, h = 150 + Math.random() * 250;
                 const pos = { x: 500 + Math.random() * (WORLD_WIDTH - 1000), y: 500 + Math.random() * (WORLD_HEIGHT - 1000) };
-                if (Math.hypot(pos.x - WORLD_WIDTH/2, pos.y - WORLD_HEIGHT/2) > 500) {
+                if (Math.hypot(pos.x - WORLD_WIDTH/2, pos.y - WORLD_HEIGHT/2) > 600) {
                   obstacles.push({ pos, width: w, height: h, type: 'WALL', isDiscovered: true });
                 }
               }
               obstaclesRef.current = obstacles;
 
-              const margin = 200;
+              const margin = 250;
               const cornerPositions = [
                 { x: margin, y: margin },
                 { x: WORLD_WIDTH - margin, y: margin },
@@ -263,7 +453,6 @@
               while (remainingDinos > 0) {
                 const type = types[Math.floor(Math.random() * Math.min(types.length, 2 + currentWave))];
                 const config = DINO_CONFIGS[type];
-                
                 const isPackDino = config.hp <= 70;
                 const packSize = isPackDino ? Math.min(remainingDinos, 2 + Math.floor(Math.random() * 4)) : 1;
                 
@@ -273,7 +462,7 @@
 
                 while (!validSpot && attempts < 50) {
                   const angle = Math.random() * Math.PI * 2;
-                  const dist = 800 + Math.random() * 2200;
+                  const dist = 900 + Math.random() * 2200;
                   centerPos = { 
                     x: Math.max(100, Math.min(WORLD_WIDTH - 100, tank.pos.x + Math.cos(angle) * dist)),
                     y: Math.max(100, Math.min(WORLD_HEIGHT - 100, tank.pos.y + Math.sin(angle) * dist))
@@ -290,7 +479,6 @@
                       x: centerPos.x + Math.cos(offsetAngle) * offsetDist,
                       y: centerPos.y + Math.sin(offsetAngle) * offsetDist
                     };
-                    
                     newDinos.push({
                       id: Math.random().toString(36), type, pos: dPos, radius: config.radius, rotation: 0,
                       hp: config.hp + currentWave * 15, maxHp: config.hp + currentWave * 15,
@@ -308,29 +496,22 @@
 
           const update = useCallback(() => {
             if (status !== GameStatus.PLAYING) return;
+            frameCountRef.current++;
             const tank = tankRef.current;
 
-            // --- LÓGICA DO TIMER ---
+            // Timer Logic
             const timeElapsed = Date.now() - waveStartTimeRef.current;
             const timeLeft = Math.max(0, WAVE_TIME_LIMIT - timeElapsed);
             
-            // Atualizar UI do Timer diretamente para performance
             if (timerDisplayRef.current) {
                 const seconds = Math.ceil(timeLeft / 1000);
-                timerDisplayRef.current.innerText = `EXTRAÇÃO: ${seconds}s`;
-                if (seconds <= 10) {
-                    timerDisplayRef.current.classList.add('critical-time');
-                } else {
-                    timerDisplayRef.current.classList.remove('critical-time');
-                }
+                const ms = Math.floor((timeLeft % 1000) / 10);
+                timerDisplayRef.current.innerText = `${seconds.toString().padStart(2, '0')}:${ms.toString().padStart(2, '0')}`;
+                if (seconds <= 10) timerDisplayRef.current.parentElement.classList.add('critical-time');
+                else timerDisplayRef.current.parentElement.classList.remove('critical-time');
             }
 
-            // Game Over por tempo
-            if (timeLeft <= 0) {
-                onGameOver(tank.score);
-                return;
-            }
-            // -----------------------
+            if (timeLeft <= 0) { onGameOver(tank.score); return; }
 
             if (upgradeEffects.autoRepair > 0) tank.hp = Math.min(tank.maxHp, tank.hp + upgradeEffects.autoRepair);
 
@@ -386,8 +567,7 @@
                     const dinoPoints = DINO_CONFIGS[d.type]?.points || 1;
                     tank.score += Math.floor(dinoPoints);
                     onScoreUpdate(tank.score);
-                    const particleCount = 10 + Math.floor(Math.random() * 8);
-                    for (let i = 0; i < particleCount; i++) {
+                    for (let i = 0; i < 8; i++) {
                       bloodParticlesRef.current.push({
                         pos: { ...d.pos },
                         velocity: { x: (Math.random() - 0.5) * 8, y: (Math.random() - 0.5) * 8 },
@@ -430,327 +610,83 @@
               ctx.restore();
             }
 
+            // World Border
             ctx.save();
             ctx.strokeStyle = '#ff0000';
-            ctx.lineWidth = 6;
-            ctx.shadowBlur = 15;
+            ctx.lineWidth = 8;
+            ctx.shadowBlur = 20;
             ctx.shadowColor = '#ff0000';
             ctx.strokeRect(0 - cam.x, 0 - cam.y, WORLD_WIDTH, WORLD_HEIGHT);
             ctx.restore();
 
+            // Particles
             bloodParticlesRef.current.forEach(p => {
               ctx.fillStyle = p.color; ctx.globalAlpha = p.life / p.maxLife;
-              ctx.fillRect(p.pos.x - cam.x - p.size/2, p.pos.y - cam.y - p.size/2, p.size, p.size);
+              ctx.beginPath(); ctx.arc(p.pos.x - cam.x, p.pos.y - cam.y, p.size/2, 0, Math.PI*2); ctx.fill();
             });
             ctx.globalAlpha = 1.0;
 
+            // Obstacles
             obstaclesRef.current.forEach(ob => {
-              ctx.fillStyle = '#4b5563'; ctx.fillRect(ob.pos.x - cam.x, ob.pos.y - cam.y, ob.width, ob.height);
-              ctx.strokeStyle = '#34d39944'; ctx.strokeRect(ob.pos.x - cam.x, ob.pos.y - cam.y, ob.width, ob.height);
+              ctx.save();
+              ctx.translate(ob.pos.x - cam.x, ob.pos.y - cam.y);
+              ctx.fillStyle = '#1f2937';
+              ctx.shadowColor = 'rgba(0,0,0,0.8)'; ctx.shadowBlur = 15;
+              ctx.fillRect(0, 0, ob.width, ob.height);
+              
+              // Detalhes do topo
+              ctx.fillStyle = '#374151';
+              ctx.fillRect(10, 10, ob.width-20, ob.height-20);
+              
+              ctx.strokeStyle = '#4b5563';
+              ctx.lineWidth = 2;
+              ctx.strokeRect(0, 0, ob.width, ob.height);
+              ctx.restore();
             });
 
+            // Objective
             const obj = objectivePosRef.current;
             ctx.save();
             ctx.translate(obj.x - cam.x, obj.y - cam.y);
             ctx.beginPath(); ctx.arc(0, 0, OBJECTIVE_RADIUS, 0, Math.PI * 2);
-            ctx.fillStyle = 'rgba(52, 211, 153, 0.15)'; ctx.fill();
+            ctx.fillStyle = 'rgba(52, 211, 153, 0.2)'; ctx.fill();
             ctx.strokeStyle = '#34d399'; ctx.lineWidth = 4; ctx.setLineDash([15, 8]); ctx.stroke();
+            // Portal effect
+            ctx.beginPath(); ctx.arc(0, 0, OBJECTIVE_RADIUS * Math.abs(Math.sin(Date.now()/500)), 0, Math.PI*2);
+            ctx.strokeStyle = 'rgba(52, 211, 153, 0.5)'; ctx.lineWidth = 2; ctx.stroke();
             ctx.restore();
 
+            // Dinos (New Render)
             dinosRef.current.forEach(d => {
-              const config = DINO_CONFIGS[d.type];
               ctx.save();
               ctx.translate(d.pos.x - cam.x, d.pos.y - cam.y);
               ctx.rotate(d.rotation);
-              ctx.fillStyle = config.color; ctx.fillRect(-d.radius, -d.radius/2, d.radius*2, d.radius);
-              ctx.fillStyle = 'white'; ctx.fillRect(d.radius*0.6, -d.radius*0.4, 4, 4);
+              drawComplexDino(ctx, d, DINO_CONFIGS[d.type], frameCountRef.current);
               ctx.restore();
             });
 
+            // Tank (Enhanced)
             ctx.save();
             ctx.translate(tank.pos.x - cam.x, tank.pos.y - cam.y);
+            
+            // Sombra do tanque
+            ctx.shadowColor = 'rgba(0,0,0,0.8)'; ctx.shadowBlur = 15;
+
+            // Esteiras
             ctx.save(); ctx.rotate(tank.rotation);
-            ctx.fillStyle = '#34d399'; ctx.fillRect(tank.radius * 0.9, -tank.radius * 0.45, 8, 4); ctx.fillRect(tank.radius * 0.9, tank.radius * 0.25, 8, 4);
-            ctx.restore();
-            ctx.save(); ctx.rotate(tank.rotation + Math.PI/2);
-            ctx.fillStyle = '#0f172a'; ctx.fillRect(-tank.radius*0.9, -tank.radius*1.2, tank.radius*1.8, tank.radius*2.4);
-            ctx.restore();
-            ctx.save(); ctx.rotate(tank.turretRotation);
-            ctx.fillStyle = '#334155'; ctx.fillRect(-tank.radius*0.7, -tank.radius*0.7, tank.radius*1.4, tank.radius*1.4);
-            ctx.fillStyle = '#94a3b8'; ctx.fillRect(0, -tank.radius*0.2, tank.radius*2.8, tank.radius*0.4);
-            ctx.restore();
-            ctx.restore();
-
-            ctx.save();
-            ctx.strokeStyle = '#34d399'; ctx.lineWidth = 2; ctx.shadowBlur = 8; ctx.shadowColor = '#34d399';
-            ctx.beginPath(); ctx.arc(mousePos.x, mousePos.y, 20, 0, Math.PI*2);
-            ctx.moveTo(mousePos.x - 30, mousePos.y); ctx.lineTo(mousePos.x - 10, mousePos.y);
-            ctx.moveTo(mousePos.x + 30, mousePos.y); ctx.lineTo(mousePos.x + 10, mousePos.y);
-            ctx.moveTo(mousePos.x, mousePos.y - 30); ctx.lineTo(mousePos.x, mousePos.y - 10);
-            ctx.moveTo(mousePos.x, mousePos.y + 30); ctx.lineTo(mousePos.x, mousePos.y + 10);
-            ctx.stroke();
-            ctx.restore();
-
-            ctx.fillStyle = '#fbbf24';
-            projectilesRef.current.forEach(p => {
-              ctx.beginPath(); ctx.arc(p.pos.x - cam.x, p.pos.y - cam.y, 6, 0, Math.PI*2); ctx.fill();
-            });
-          }, [mousePos]);
-
-          useEffect(() => {
-            const handleMove = (e) => {
-              if (!canvasRef.current) return;
-              const r = canvasRef.current.getBoundingClientRect();
-              setMousePos({ x: e.clientX - r.left, y: e.clientY - r.top });
-            };
-            const handleDown = () => setIsMouseDown(true);
-            const handleUp = () => setIsMouseDown(false);
-            const handleKeyDown = (e) => setKeys(p => new Set(p).add(e.code));
-            const handleKeyUp = (e) => setKeys(p => { const n = new Set(p); n.delete(e.code); return n; });
-
-            window.addEventListener('mousemove', handleMove);
-            window.addEventListener('mousedown', handleDown);
-            window.addEventListener('mouseup', handleUp);
-            window.addEventListener('keydown', handleKeyDown);
-            window.addEventListener('keyup', handleKeyUp);
-            const loop = () => { update(); if (canvasRef.current) { const ctx = canvasRef.current.getContext('2d'); if (ctx) draw(ctx); } frameIdRef.current = requestAnimationFrame(loop); };
-            frameIdRef.current = requestAnimationFrame(loop);
-            return () => {
-              window.removeEventListener('mousemove', handleMove); window.removeEventListener('mousedown', handleDown);
-              window.removeEventListener('mouseup', handleUp); window.removeEventListener('keydown', handleKeyDown);
-              window.removeEventListener('keyup', handleKeyUp); cancelAnimationFrame(frameIdRef.current);
-            };
-          }, [update, draw]);
-
-          useEffect(() => {
-            const resize = () => { if (canvasRef.current) { canvasRef.current.width = window.innerWidth; canvasRef.current.height = window.innerHeight; } };
-            window.addEventListener('resize', resize); resize();
-            return () => window.removeEventListener('resize', resize);
-          }, []);
-
-          return (
-            <div className="relative w-full h-full overflow-hidden" style={{ cursor: 'none' }}>
-              <canvas ref={canvasRef} className="block" />
-              
-              {/* TIMER DISPLAY */}
-              <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50 pointer-events-none">
-                  <div ref={timerDisplayRef} className="text-3xl md:text-4xl font-black header-font text-white drop-shadow-[0_0_10px_rgba(0,0,0,0.8)] tracking-widest">
-                      EXTRAÇÃO: 60s
-                  </div>
-              </div>
-
-              <div className="absolute top-3 left-3 z-50 pointer-events-none flex flex-col gap-3">
-                <div className="p-3 bg-black/70 border border-green-500/40 rounded-xl backdrop-blur-md min-w-[200px]">
-                  <div className="flex justify-between items-end mb-1">
-                    <span className="text-[10px] text-green-400 font-bold uppercase tracking-tighter">Integridade Hull</span>
-                    <span className="text-white font-bold text-sm">{Math.floor(tankRef.current.hp)}%</span>
-                  </div>
-                  <div className="w-full h-3 bg-gray-900 rounded-full border border-white/10 p-[2px]">
-                    <div className="h-full bg-gradient-to-r from-red-600 to-green-500 rounded-full transition-all duration-300" style={{ width: `${(tankRef.current.hp / tankRef.current.maxHp) * 100}%` }} />
-                  </div>
-                </div>
-                <div className="p-2 bg-black/50 border border-green-500/20 rounded-xl flex gap-1 backdrop-blur-sm scale-90 origin-top-left">
-                  {WAR_EFFORT_UPGRADES.map(up => {
-                    const hasIt = upgrades.includes(up.id);
-                    return (
-                      <div key={up.id} className={`w-8 h-8 flex items-center justify-center rounded border transition-all duration-500 ${hasIt ? 'bg-green-500/20 border-green-400 shadow-[0_0_8px_green]' : 'bg-gray-950 border-white/5 opacity-20 grayscale'}`}>
-                        <span className="text-sm">{up.icon}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-              <div className="absolute top-16 left-1/2 -translate-x-1/2 z-50 pointer-events-none">
-                <div className="grid grid-cols-5 grid-rows-2 gap-1.5 p-2 bg-black/70 border border-red-500/30 rounded-xl backdrop-blur-md shadow-lg">
-                  {Object.keys(DINO_CONFIGS).map((type) => {
-                    const config = DINO_CONFIGS[type];
-                    const isActive = activeSpecies.has(type);
-                    return (
-                      <div key={type} className={`w-9 h-10 flex flex-col items-center justify-center rounded border transition-all duration-300 ${isActive ? 'bg-red-600/20 border-red-500 shadow-[0_0_10px_red] scale-105' : 'bg-gray-950 border-white/5 opacity-20'}`}>
-                        <span className="text-lg">{config.icon}</span>
-                        <div className={`w-1 h-1 rounded-full mt-0.5 ${isActive ? 'bg-red-400 animate-pulse' : 'bg-gray-700'}`} />
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-              <div className="absolute top-3 right-3 z-50 pointer-events-none flex flex-col gap-3 items-end">
-                <div className="p-2 bg-black/70 border border-green-500/40 rounded-xl backdrop-blur-md">
-                   <div className="relative bg-gray-950/80 border border-green-500/20 overflow-hidden" style={{ width: minimapSize, height: minimapSize }}>
-                      {obstaclesRef.current.map((ob, i) => (
-                        <div key={i} className="absolute bg-gray-700/50" style={{ left: ob.pos.x * minimapScale, top: ob.pos.y * minimapScale, width: ob.width * minimapScale, height: ob.height * minimapScale }} />
-                      ))}
-                      <div className="absolute w-2 h-2 bg-green-400 rounded-full animate-ping" style={{ left: objectivePosRef.current.x * minimapScale - 4, top: objectivePosRef.current.y * minimapScale - 4 }} />
-                      <div className="absolute w-2 h-2 bg-white border border-green-500" style={{ left: tankRef.current.pos.x * minimapScale - 4, top: tankRef.current.pos.y * minimapScale - 4, transform: `rotate(${tankRef.current.rotation}rad)` }} />
-                   </div>
-                   <div className="text-[8px] text-green-400 font-mono text-center mt-1 uppercase tracking-widest font-bold">Bio-Scan Active</div>
-                </div>
-                <div className="p-3 bg-black/80 border border-green-500/40 rounded-xl text-center shadow-lg min-w-[120px]">
-                  <div className="text-green-400 font-mono text-[9px] uppercase tracking-widest mb-0.5">Créditos de Guerra</div>
-                  <div className="text-white text-xl font-black">{Math.floor(initialScore).toLocaleString()}</div>
-                </div>
-              </div>
-            </div>
-          );
-        };
-
-        // --- 5. APP COMPONENT ---
-        
-        const App = () => {
-          const [status, setStatus] = useState(GameStatus.MENU);
-          const [score, setScore] = useState(0);
-          const [wave, setWave] = useState(1);
-          const [briefing, setBriefing] = useState(INITIAL_BRIEFING);
-          const [isBriefingLoading, setIsBriefingLoading] = useState(false);
-          const [targetDino, setTargetDino] = useState(DinoType.RAPTOR);
-          const [activeUpgrades, setActiveUpgrades] = useState([]);
-          const [availableUpgrades, setAvailableUpgrades] = useState([]);
-
-          const previewCanvasRef = useRef(null);
-
-          const selectRandomDino = () => {
-            const types = Object.keys(DINO_CONFIGS);
-            return types[Math.floor(Math.random() * Math.min(types.length, 2 + wave))];
-          };
-
-          const getRandomUpgrades = (count) => {
-            const available = WAR_EFFORT_UPGRADES.filter(u => !activeUpgrades.includes(u.id));
-            const shuffled = [...available].sort(() => 0.5 - Math.random());
-            return shuffled.slice(0, count);
-          };
-
-          const startGame = async () => {
-            setScore(0);
-            setWave(1);
-            setActiveUpgrades([]);
-            const firstTarget = selectRandomDino();
-            setTargetDino(firstTarget);
-            setBriefing(INITIAL_BRIEFING);
-            setAvailableUpgrades(getRandomUpgrades(2));
-            setStatus(GameStatus.BRIEFING);
-          };
-
-          const handleWaveComplete = useCallback(async (nextWave) => {
-            setWave(nextWave);
-            const nextTarget = selectRandomDino();
-            setTargetDino(nextTarget);
-            setIsBriefingLoading(true);
-            setStatus(GameStatus.BRIEFING);
-            const newBriefing = await getMissionBriefing(nextWave, score, nextTarget);
-            setBriefing(newBriefing);
-            setAvailableUpgrades(getRandomUpgrades(2));
-            setIsBriefingLoading(false);
-          }, [score, activeUpgrades, wave]);
-
-          const selectUpgrade = (upgradeId) => {
-            setActiveUpgrades(prev => [...prev, upgradeId]);
-            setStatus(GameStatus.PLAYING);
-          };
-
-          useEffect(() => {
-            if (status === GameStatus.BRIEFING && previewCanvasRef.current) {
-              const ctx = previewCanvasRef.current.getContext('2d');
-              if (!ctx) return;
-              const config = DINO_CONFIGS[targetDino];
-              let frame = 0;
-              let active = true;
-              const animate = () => {
-                  if (!active) return;
-                  ctx.clearRect(0,0,200,200);
-                  ctx.save();
-                  ctx.translate(100, 100);
-                  ctx.scale(1.5 + Math.sin(frame*0.1)*0.1, 1.5 + Math.sin(frame*0.1)*0.1);
-                  ctx.fillStyle = config.color;
-                  ctx.fillRect(-25, -12, 50, 25);
-                  ctx.fillStyle = 'white';
-                  ctx.fillRect(15, -10, 5, 5);
-                  ctx.restore();
-                  frame++;
-                  requestAnimationFrame(animate);
-              };
-              animate();
-              return () => { active = false; };
+            ctx.fillStyle = '#111'; 
+            ctx.fillRect(-tank.radius, -tank.radius*1.1, tank.radius*2.2, tank.radius*0.6); // Esq
+            ctx.fillRect(-tank.radius, tank.radius*0.5, tank.radius*2.2, tank.radius*0.6); // Dir
+            // Detalhes esteira
+            ctx.fillStyle = '#333';
+            for(let i=-tank.radius; i<tank.radius; i+=8) {
+                ctx.fillRect(i, -tank.radius*1.1, 4, tank.radius*0.6);
+                ctx.fillRect(i, tank.radius*0.5, 4, tank.radius*0.6);
             }
-          }, [status, targetDino]);
-
-          return (
-            <div className="relative w-full h-screen bg-[#0a150c] overflow-hidden select-none touch-none">
-              {status === GameStatus.MENU && (
-                <div className="absolute inset-0 flex items-center justify-center z-[100] bg-black/80 backdrop-blur-xl">
-                   <div className="text-center p-10 md:p-16 border-4 border-green-500/40 bg-green-950/20 rounded-[3rem] shadow-[0_0_80px_rgba(0,255,102,0.15)]">
-                      <h1 className="text-5xl md:text-8xl font-black italic text-transparent bg-clip-text bg-gradient-to-b from-green-300 to-green-800 header-font mb-4">
-                        TANK VS DINOS
-                      </h1>
-                      <p className="text-green-400 font-mono tracking-[0.5em] text-xs md:text-sm uppercase mb-12">Simulação de Combate Bio-Mecânico</p>
-                      <button onClick={startGame} className="px-12 md:px-20 py-6 md:py-8 bg-green-500 hover:bg-green-400 text-black font-black text-xl md:text-3xl uppercase rounded-2xl shadow-[0_0_40px_rgba(0,255,0,0.3)] transition-all active:scale-95 header-font">
-                        Iniciar Missão
-                      </button>
-                   </div>
-                </div>
-              )}
-
-              {status === GameStatus.BRIEFING && (
-                <div className="absolute inset-0 flex items-center justify-center z-[100] bg-black/95 p-6 md:p-10 overflow-y-auto">
-                   <div className="max-w-6xl w-full grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-10 p-8 md:p-12 futuristic-border rounded-[2rem] bg-gray-900/50">
-                      <div className="space-y-6 md:space-y-8">
-                        <h2 className="text-4xl md:text-6xl font-black italic text-white header-font neon-text uppercase">Onda {wave}</h2>
-                        <div className="p-6 md:p-8 bg-green-900/20 border-l-4 md:border-l-8 border-green-500 rounded-r-2xl italic text-green-50 text-lg md:text-2xl font-mono leading-relaxed">
-                            {isBriefingLoading ? "Buscando dados táticos..." : briefing}
-                        </div>
-                        <div className="space-y-4">
-                            <h3 className="text-green-400 font-bold uppercase tracking-widest text-[10px] md:text-xs">Aprimoramento Disponível:</h3>
-                            <div className="grid gap-3 md:gap-4">
-                                {availableUpgrades.map(up => (
-                                    <button key={up.id} onClick={() => selectUpgrade(up.id)} className="flex items-center gap-4 md:gap-6 p-4 md:p-6 bg-green-900/10 border-2 border-green-500/20 hover:border-green-400 hover:bg-green-500 hover:text-black transition-all rounded-2xl text-left group">
-                                        <span className="text-3xl md:text-5xl group-hover:scale-110 transition-transform">{up.icon}</span>
-                                        <div className="flex-1 overflow-hidden">
-                                            <div className="font-black uppercase text-base md:text-xl truncate">{up.name}</div>
-                                            <div className="text-[10px] md:text-sm opacity-70 font-bold leading-tight">{up.description}</div>
-                                        </div>
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-                      </div>
-                      <div className="flex flex-col items-center justify-center bg-black/40 rounded-[2rem] border-2 border-white/5 p-8">
-                         <canvas ref={previewCanvasRef} width="200" height="200" className="w-full h-auto max-w-[250px]" />
-                         <div className="mt-8 text-center">
-                            <div className="text-red-500 font-mono text-xs uppercase tracking-[0.4em] mb-2 font-black">Ameaça Prioritária</div>
-                            <div className="text-3xl md:text-5xl font-black text-white italic header-font neon-text">{targetDino}</div>
-                         </div>
-                      </div>
-                   </div>
-                </div>
-              )}
-
-              {status === GameStatus.GAME_OVER && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center z-[100] bg-red-950/90 backdrop-blur-2xl p-6">
-                   <h1 className="text-6xl md:text-9xl font-black italic text-white header-font mb-4 drop-shadow-[0_0_30px_red] text-center">UNIDADE ABATIDA</h1>
-                   <div className="text-2xl md:text-4xl text-yellow-400 font-mono mb-12 uppercase tracking-widest text-center">Créditos de Guerra: {Math.floor(score).toLocaleString()} PTS</div>
-                   <button onClick={() => window.location.reload()} className="px-12 md:px-24 py-6 md:py-10 bg-white text-red-900 font-black text-2xl md:text-4xl uppercase rounded-2xl hover:bg-red-600 hover:text-white transition-all header-font shadow-2xl">
-                     Reiniciar Unidade
-                   </button>
-                </div>
-              )}
-
-              {status !== GameStatus.MENU && (
-                <GameCanvas 
-                  status={status}
-                  onGameOver={(finalScore) => { setScore(Math.floor(finalScore)); setStatus(GameStatus.GAME_OVER); }}
-                  onWaveComplete={handleWaveComplete}
-                  onScoreUpdate={(s) => setScore(Math.floor(s))}
-                  initialScore={Math.floor(score)}
-                  currentWave={wave}
-                  upgrades={activeUpgrades}
-                />
-              )}
-            </div>
-          );
-        };
-
-        // --- 6. RENDERIZAÇÃO FINAL ---
-        const root = createRoot(document.getElementById('root'));
-        root.render(<App />);
-    </script>
-</body>
-</html>
+            
+            // Corpo Principal
+            ctx.fillStyle = '#064e3b'; // Verde escuro
+            ctx.fillRect(-tank.radius*0.9, -tank.radius*0.8, tank.radius*1.8, tank.radius*1.6);
+            ctx.strokeStyle = '#34d399'; ctx.lineWidth = 1;
+            ctx.strokeRect(-tank.radius*0.9, -tank.radius*0.8, tank.radius*1.8, tank.radius*1.6);
+            ctx.restore();
