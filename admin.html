@@ -13,6 +13,17 @@
         .login-btn { background: #FF5722; color: white; padding: 15px 30px; font-size: 1.2rem; border: none; border-radius: 50px; cursor: pointer; font-weight: bold; margin-top: 20px; transition: 0.3s; }
         
         #admin-content { display: none; }
+        
+        /* ABAS DE NAVEGAÇÃO */
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; }
+        .tab-btn { flex: 1; padding: 15px; background: #ddd; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 1rem; color: #666; }
+        .tab-btn.active { background: #FF5722; color: white; box-shadow: 0 4px 10px rgba(255, 87, 34, 0.3); }
+
+        .tab-content { display: none; animation: fadeIn 0.3s; }
+        .tab-content.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* EDITOR */
         .editor-card { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border-left: 5px solid #FF5722; }
         label { font-weight: bold; font-size: 0.85rem; display: block; margin-top: 15px; color: #555; text-transform: uppercase; }
         input, textarea { width: 100%; padding: 12px; margin-top: 5px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 1rem; background: #fafafa; }
@@ -21,16 +32,16 @@
         button { flex: 1; padding: 15px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 1rem; transition: 0.2s; }
         .btn-save { background: #2196F3; color: white; }
         .btn-clear { background: #9E9E9E; color: white; }
+        .btn-delete { background: #ff4444; color: white; flex: 0.3; }
 
-        /* LISTA COM DATAS VISÍVEIS */
+        /* LISTAS */
         .list-container { margin-top: 40px; }
-        .game-item { background: white; padding: 15px; border-radius: 10px; margin-bottom: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; cursor: pointer; border: 1px solid transparent; }
-        .game-item:hover { border-color: #2196F3; transform: translateX(5px); }
-        .game-info-col { display: flex; flex-direction: column; }
-        .game-id { font-family: monospace; color: #D81B60; background: #FCE4EC; padding: 2px 6px; border-radius: 4px; font-size: 0.8rem; width: fit-content; }
-        
-        /* ESTILO DAS DATAS NO ADMIN */
+        .item-list { background: white; padding: 15px; border-radius: 10px; margin-bottom: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; cursor: pointer; border: 1px solid transparent; }
+        .item-list:hover { border-color: #2196F3; transform: translateX(5px); }
         .date-badge { font-size: 0.75rem; color: #666; background: #eee; padding: 2px 8px; border-radius: 10px; margin-top: 4px; display: inline-block; }
+        
+        /* Banner Preview */
+        .banner-preview { width: 100px; height: 40px; background: #333; object-fit: cover; border-radius: 5px; margin-right: 10px; }
     </style>
 </head>
 <body>
@@ -44,40 +55,72 @@
     </div>
 
     <div id="admin-content">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+            <h2>⚙️ Painel de Controle</h2>
+            <button onclick="sair()" style="width:auto; background:#333; font-size:0.8rem; padding:5px 15px; margin:0; color:white;">Sair</button>
+        </div>
+
+        <!-- ABAS -->
+        <div class="tabs">
+            <button class="tab-btn active" onclick="mudarAba('jogos')">🎮 Gerenciar Jogos</button>
+            <button class="tab-btn" onclick="mudarAba('banners')">🖼️ Gerenciar Banners</button>
+        </div>
+
         <div id="status" style="text-align:center; padding:10px; margin-bottom:10px; font-weight:bold; display:none;"></div>
 
-        <div class="editor-card" id="topo">
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-                <h2>✏️ Painel de Controle</h2>
-                <button onclick="sair()" style="width:auto; background:#333; font-size:0.8rem; padding:5px 15px; margin:0; color:white;">Sair</button>
+        <!-- CONTEÚDO: JOGOS -->
+        <div id="tab-jogos" class="tab-content active">
+            <div class="editor-card">
+                <h3>Novo/Editar Jogo</h3>
+                <label>ID do Jogo (Único)</label>
+                <input type="text" id="idJogo" placeholder="ex: neonrunner">
+                <label>Nome Visível</label>
+                <input type="text" id="nome" placeholder="ex: Neon Runner 3D">
+                <label>Descrição</label>
+                <input type="text" id="desc" placeholder="ex: Desvie dos obstáculos...">
+                <div style="display:flex; gap:10px;">
+                    <div style="flex:1;"><label>Arquivo (/jogos)</label><input type="text" id="arquivo" placeholder="ex: neon.html"></div>
+                    <div style="flex:1;"><label>Imagem (/capas)</label><input type="text" id="img" placeholder="ex: neon.jpg"></div>
+                </div>
+                <div class="btn-row">
+                    <button class="btn-clear" onclick="limparFormulario()">🧹 Limpar</button>
+                    <button class="btn-save" onclick="salvarJogo()">💾 SALVAR JOGO</button>
+                </div>
             </div>
-            
-            <label>ID do Jogo (Único)</label>
-            <input type="text" id="idJogo" placeholder="ex: neonrunner">
-            <label>Nome Visível</label>
-            <input type="text" id="nome" placeholder="ex: Neon Runner 3D">
-            <label>Descrição</label>
-            <input type="text" id="desc" placeholder="ex: Desvie dos obstáculos...">
-            <div style="display:flex; gap:10px;">
-                <div style="flex:1;"><label>Arquivo (/jogos)</label><input type="text" id="arquivo" placeholder="ex: neon.html"></div>
-                <div style="flex:1;"><label>Imagem (/capas)</label><input type="text" id="img" placeholder="ex: neon.jpg"></div>
-            </div>
-            <div class="btn-row">
-                <button class="btn-clear" onclick="limparFormulario()">🧹 Novo</button>
-                <button class="btn-save" onclick="salvarJogo()">💾 SALVAR NO SITE</button>
+            <div class="list-container">
+                <h3>📂 Jogos Cadastrados</h3>
+                <div id="lista-jogos">Carregando...</div>
             </div>
         </div>
 
-        <div class="list-container">
-            <h3>📂 Jogos no Banco de Dados</h3>
-            <div id="lista-jogos">Carregando...</div>
+        <!-- CONTEÚDO: BANNERS -->
+        <div id="tab-banners" class="tab-content">
+            <div class="editor-card" style="border-left-color: #9C27B0;">
+                <h3>Novo/Editar Banner</h3>
+                <label>ID do Banner (Automático ou Manual)</label>
+                <input type="text" id="idBanner" placeholder="ex: banner_natal">
+                <div style="display:flex; gap:10px;">
+                    <div style="flex:2;"><label>Arquivo de Imagem (/banners)</label><input type="text" id="arquivoBanner" placeholder="ex: promo1.jpg"></div>
+                    <div style="flex:1;"><label>Ordem (1, 2, 3...)</label><input type="number" id="ordemBanner" placeholder="1"></div>
+                </div>
+                <div class="btn-row">
+                    <button class="btn-clear" onclick="limparFormularioBanner()">🧹 Limpar</button>
+                    <button class="btn-delete" onclick="deletarBanner()">🗑️ Deletar</button>
+                    <button class="btn-save" style="background: #9C27B0;" onclick="salvarBanner()">💾 SALVAR BANNER</button>
+                </div>
+            </div>
+            <div class="list-container">
+                <h3>🖼️ Banners Ativos</h3>
+                <div id="lista-banners">Carregando...</div>
+            </div>
         </div>
+
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc, setDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, setDoc, deleteDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyBIR7CqYYvMZVQxtO67JCQoJ3OLT1cvAx8",
@@ -95,69 +138,62 @@
         const provider = new GoogleAuthProvider();
         const ADMIN_EMAIL = "adenilsonantonioromao@gmail.com";
 
+        // --- AUTH ---
         document.getElementById('btn-login').addEventListener('click', () => { signInWithPopup(auth, provider).catch(alert); });
-
         onAuthStateChanged(auth, (user) => {
             if (user && user.email === ADMIN_EMAIL) {
                 document.getElementById('lock-screen').style.display = 'none';
                 document.getElementById('admin-content').style.display = 'block';
-                carregarLista();
+                carregarListaJogos();
+                carregarListaBanners();
             } else if (user) {
                 document.getElementById('error-msg').style.display = 'block';
                 document.getElementById('error-msg').innerText = "Acesso Negado.";
                 signOut(auth);
             }
         });
-
         window.sair = () => signOut(auth).then(() => location.reload());
 
-        // --- CARREGAR LISTA COM DATAS ---
-        window.carregarLista = async function() {
+        // --- NAVEGAÇÃO DE ABAS ---
+        window.mudarAba = function(aba) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById('tab-' + aba).classList.add('active');
+            // Adiciona classe active no botão clicado (lógica simples via event não funciona bem aqui, então buscamos pelo texto ou índice, mas vamos simplificar)
+            const btns = document.querySelectorAll('.tab-btn');
+            if(aba === 'jogos') btns[0].classList.add('active');
+            else btns[1].classList.add('active');
+        }
+
+        // --- GERENCIAMENTO DE JOGOS ---
+        window.carregarListaJogos = async function() {
             const divLista = document.getElementById('lista-jogos');
-            divLista.innerHTML = "Lendo banco de dados...";
-            
+            divLista.innerHTML = "Lendo...";
             try {
                 const querySnapshot = await getDocs(collection(db, "listaJogos"));
                 divLista.innerHTML = "";
-                
-                if (querySnapshot.empty) { divLista.innerHTML = "<p>Nenhum jogo.</p>"; return; }
-
                 querySnapshot.forEach((doc) => {
                     const data = doc.data();
                     const item = document.createElement('div');
-                    item.className = 'game-item';
-                    
-                    // Lógica para exibir data ou aviso
-                    const dataInc = data.dataInclusao ? new Date(data.dataInclusao).toLocaleDateString('pt-BR') : 'Sem registro';
-                    const dataUpd = data.dataAtualizacao ? new Date(data.dataAtualizacao).toLocaleDateString('pt-BR') : '-';
-
+                    item.className = 'item-list';
+                    const dataInc = data.dataInclusao ? new Date(data.dataInclusao).toLocaleDateString('pt-BR') : 'Sem data';
                     item.innerHTML = `
-                        <div class="game-info-col">
-                            <span class="game-id">${data.id}</span>
-                            <strong style="font-size:1.1rem">${data.nome}</strong>
-                            <div>
-                                <span class="date-badge">📅 Criado: ${dataInc}</span>
-                                <span class="date-badge">🔄 Atualizado: ${dataUpd}</span>
-                            </div>
-                        </div>
-                        <span style="font-size:1.5rem">✏️</span>
+                        <div><span style="font-family:monospace; background:#eee; padding:2px;">${data.id}</span> <strong>${data.nome}</strong><br><span class="date-badge">${dataInc}</span></div>
+                        <span>✏️</span>
                     `;
-                    item.onclick = () => preencherEditor(data);
+                    item.onclick = () => preencherEditorJogo(data);
                     divLista.appendChild(item);
                 });
-            } catch (e) { divLista.innerHTML = `<p style="color:red">Erro: ${e.message}</p>`; }
+            } catch (e) { divLista.innerHTML = "Erro."; }
         }
 
-        function preencherEditor(data) {
+        function preencherEditorJogo(data) {
             document.getElementById('idJogo').value = data.id;
             document.getElementById('nome').value = data.nome;
             document.getElementById('desc').value = data.desc;
             document.getElementById('arquivo').value = data.arquivo;
             document.getElementById('img').value = data.img;
-            document.getElementById('topo').scrollIntoView({ behavior: 'smooth' });
-            document.getElementById('status').style.display = 'block';
-            document.getElementById('status').innerText = `Editando: ${data.nome}`;
-            document.getElementById('status').style.background = '#fff3cd';
+            mostrarStatus(`Editando Jogo: ${data.nome}`);
         }
 
         window.salvarJogo = async function() {
@@ -166,34 +202,88 @@
             const desc = document.getElementById('desc').value;
             const arquivo = document.getElementById('arquivo').value;
             const img = document.getElementById('img').value;
+            if(!id) return alert("ID obrigatório");
 
-            if(!id || !arquivo) { alert("ID e Arquivo obrigatórios!"); return; }
+            const docRef = doc(db, "listaJogos", id);
+            const docSnap = await getDoc(docRef);
+            const agora = new Date().toISOString();
+            let dados = { id, nome, desc, arquivo, img, dataAtualizacao: agora };
+            if (!docSnap.exists()) dados.dataInclusao = agora;
 
+            await setDoc(docRef, dados, { merge: true });
+            await setDoc(doc(db, "config", "gameStats"), { [id]: 0 }, { merge: true });
+            mostrarStatus("✅ Jogo Salvo!");
+            carregarListaJogos();
+        }
+
+        // --- GERENCIAMENTO DE BANNERS ---
+        window.carregarListaBanners = async function() {
+            const divLista = document.getElementById('lista-banners');
+            divLista.innerHTML = "Lendo...";
             try {
-                const docRef = doc(db, "listaJogos", id);
-                const docSnap = await getDoc(docRef);
-                const agora = new Date().toISOString();
+                const querySnapshot = await getDocs(collection(db, "listaBanners"));
+                divLista.innerHTML = "";
+                let banners = [];
+                querySnapshot.forEach((doc) => banners.push(doc.data()));
+                banners.sort((a, b) => a.ordem - b.ordem); // Ordena por ordem
 
-                let dados = { id, nome, desc, arquivo, img, dataAtualizacao: agora };
-                
-                // Se não existe, cria a data de inclusão. Se existe, mantém a antiga.
-                if (!docSnap.exists()) {
-                    dados.dataInclusao = agora;
-                }
-
-                await setDoc(docRef, dados, { merge: true });
-                await setDoc(doc(db, "config", "gameStats"), { [id]: 0 }, { merge: true });
-
-                document.getElementById('status').innerText = "✅ Jogo Salvo! Data Atualizada.";
-                document.getElementById('status').style.background = '#d4edda';
-                carregarLista();
-            } catch (e) { alert("Erro: " + e.message); }
+                banners.forEach((data) => {
+                    const item = document.createElement('div');
+                    item.className = 'item-list';
+                    item.innerHTML = `
+                        <div style="display:flex; align-items:center;">
+                            <span style="font-weight:bold; font-size:1.2rem; margin-right:15px; color:#9C27B0;">#${data.ordem}</span>
+                            <div><strong>${data.arquivo}</strong><br><span style="font-size:0.8rem; color:#888;">ID: ${data.id}</span></div>
+                        </div>
+                        <span>✏️</span>
+                    `;
+                    item.onclick = () => preencherEditorBanner(data);
+                    divLista.appendChild(item);
+                });
+            } catch (e) { divLista.innerHTML = "Erro."; }
         }
 
-        window.limparFormulario = function() {
-            document.querySelectorAll('input').forEach(i => i.value = '');
-            document.getElementById('status').style.display = 'none';
+        function preencherEditorBanner(data) {
+            document.getElementById('idBanner').value = data.id;
+            document.getElementById('arquivoBanner').value = data.arquivo;
+            document.getElementById('ordemBanner').value = data.ordem;
+            mostrarStatus(`Editando Banner: ${data.id}`);
         }
+
+        window.salvarBanner = async function() {
+            let id = document.getElementById('idBanner').value.trim();
+            const arquivo = document.getElementById('arquivoBanner').value;
+            const ordem = parseInt(document.getElementById('ordemBanner').value) || 99;
+            
+            if(!arquivo) return alert("Nome do arquivo é obrigatório");
+            if(!id) id = "banner_" + Date.now(); // Gera ID se vazio
+
+            await setDoc(doc(db, "listaBanners", id), { id, arquivo, ordem }, { merge: true });
+            mostrarStatus("✅ Banner Salvo!");
+            carregarListaBanners();
+            limparFormularioBanner();
+        }
+
+        window.deletarBanner = async function() {
+            const id = document.getElementById('idBanner').value.trim();
+            if(!id) return;
+            if(confirm("Tem certeza que quer apagar este banner?")) {
+                await deleteDoc(doc(db, "listaBanners", id));
+                mostrarStatus("🗑️ Banner Removido.");
+                carregarListaBanners();
+                limparFormularioBanner();
+            }
+        }
+
+        // --- UTILITÁRIOS ---
+        function mostrarStatus(msg) {
+            const s = document.getElementById('status');
+            s.style.display = 'block'; s.innerText = msg; s.style.background = '#d4edda';
+            setTimeout(() => s.style.display = 'none', 3000);
+        }
+        window.limparFormulario = () => { document.querySelectorAll('#tab-jogos input').forEach(i => i.value = ''); }
+        window.limparFormularioBanner = () => { document.querySelectorAll('#tab-banners input').forEach(i => i.value = ''); }
+
     </script>
 </body>
 </html>
