@@ -14,11 +14,10 @@
         
         #admin-content { display: none; }
         
-        /* ABAS DE NAVEGAÇÃO */
+        /* ABAS */
         .tabs { display: flex; gap: 10px; margin-bottom: 20px; }
         .tab-btn { flex: 1; padding: 15px; background: #ddd; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 1rem; color: #666; }
         .tab-btn.active { background: #FF5722; color: white; box-shadow: 0 4px 10px rgba(255, 87, 34, 0.3); }
-
         .tab-content { display: none; animation: fadeIn 0.3s; }
         .tab-content.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
@@ -39,9 +38,6 @@
         .item-list { background: white; padding: 15px; border-radius: 10px; margin-bottom: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; cursor: pointer; border: 1px solid transparent; }
         .item-list:hover { border-color: #2196F3; transform: translateX(5px); }
         .date-badge { font-size: 0.75rem; color: #666; background: #eee; padding: 2px 8px; border-radius: 10px; margin-top: 4px; display: inline-block; }
-        
-        /* Banner Preview */
-        .banner-preview { width: 100px; height: 40px; background: #333; object-fit: cover; border-radius: 5px; margin-right: 10px; }
     </style>
 </head>
 <body>
@@ -60,7 +56,6 @@
             <button onclick="sair()" style="width:auto; background:#333; font-size:0.8rem; padding:5px 15px; margin:0; color:white;">Sair</button>
         </div>
 
-        <!-- ABAS -->
         <div class="tabs">
             <button class="tab-btn active" onclick="mudarAba('jogos')">🎮 Gerenciar Jogos</button>
             <button class="tab-btn" onclick="mudarAba('banners')">🖼️ Gerenciar Banners</button>
@@ -99,10 +94,17 @@
                 <h3>Novo/Editar Banner</h3>
                 <label>ID do Banner (Automático ou Manual)</label>
                 <input type="text" id="idBanner" placeholder="ex: banner_natal">
+                
                 <div style="display:flex; gap:10px;">
                     <div style="flex:2;"><label>Arquivo de Imagem (/banners)</label><input type="text" id="arquivoBanner" placeholder="ex: promo1.jpg"></div>
-                    <div style="flex:1;"><label>Ordem (1, 2, 3...)</label><input type="number" id="ordemBanner" placeholder="1"></div>
+                    <div style="flex:1;"><label>Ordem</label><input type="number" id="ordemBanner" placeholder="1"></div>
                 </div>
+
+                <!-- NOVO CAMPO DE LINK -->
+                <label>Link de Destino (Opcional)</label>
+                <input type="text" id="linkBanner" placeholder="ex: #tab-rank ou https://google.com">
+                <p style="font-size:0.8rem; color:#666; margin-top:5px;">Dica: Use <b>#tab-rank</b>, <b>#tab-populares</b> ou ID de jogo.</p>
+
                 <div class="btn-row">
                     <button class="btn-clear" onclick="limparFormularioBanner()">🧹 Limpar</button>
                     <button class="btn-delete" onclick="deletarBanner()">🗑️ Deletar</button>
@@ -138,7 +140,6 @@
         const provider = new GoogleAuthProvider();
         const ADMIN_EMAIL = "adenilsonantonioromao@gmail.com";
 
-        // --- AUTH ---
         document.getElementById('btn-login').addEventListener('click', () => { signInWithPopup(auth, provider).catch(alert); });
         onAuthStateChanged(auth, (user) => {
             if (user && user.email === ADMIN_EMAIL) {
@@ -154,18 +155,15 @@
         });
         window.sair = () => signOut(auth).then(() => location.reload());
 
-        // --- NAVEGAÇÃO DE ABAS ---
         window.mudarAba = function(aba) {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
             document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
             document.getElementById('tab-' + aba).classList.add('active');
-            // Adiciona classe active no botão clicado (lógica simples via event não funciona bem aqui, então buscamos pelo texto ou índice, mas vamos simplificar)
             const btns = document.querySelectorAll('.tab-btn');
-            if(aba === 'jogos') btns[0].classList.add('active');
-            else btns[1].classList.add('active');
+            if(aba === 'jogos') btns[0].classList.add('active'); else btns[1].classList.add('active');
         }
 
-        // --- GERENCIAMENTO DE JOGOS ---
+        // --- JOGOS ---
         window.carregarListaJogos = async function() {
             const divLista = document.getElementById('lista-jogos');
             divLista.innerHTML = "Lendo...";
@@ -177,10 +175,7 @@
                     const item = document.createElement('div');
                     item.className = 'item-list';
                     const dataInc = data.dataInclusao ? new Date(data.dataInclusao).toLocaleDateString('pt-BR') : 'Sem data';
-                    item.innerHTML = `
-                        <div><span style="font-family:monospace; background:#eee; padding:2px;">${data.id}</span> <strong>${data.nome}</strong><br><span class="date-badge">${dataInc}</span></div>
-                        <span>✏️</span>
-                    `;
+                    item.innerHTML = `<div><span style="font-family:monospace; background:#eee; padding:2px;">${data.id}</span> <strong>${data.nome}</strong><br><span class="date-badge">${dataInc}</span></div><span>✏️</span>`;
                     item.onclick = () => preencherEditorJogo(data);
                     divLista.appendChild(item);
                 });
@@ -203,20 +198,18 @@
             const arquivo = document.getElementById('arquivo').value;
             const img = document.getElementById('img').value;
             if(!id) return alert("ID obrigatório");
-
             const docRef = doc(db, "listaJogos", id);
             const docSnap = await getDoc(docRef);
             const agora = new Date().toISOString();
             let dados = { id, nome, desc, arquivo, img, dataAtualizacao: agora };
             if (!docSnap.exists()) dados.dataInclusao = agora;
-
             await setDoc(docRef, dados, { merge: true });
             await setDoc(doc(db, "config", "gameStats"), { [id]: 0 }, { merge: true });
             mostrarStatus("✅ Jogo Salvo!");
             carregarListaJogos();
         }
 
-        // --- GERENCIAMENTO DE BANNERS ---
+        // --- BANNERS ---
         window.carregarListaBanners = async function() {
             const divLista = document.getElementById('lista-banners');
             divLista.innerHTML = "Lendo...";
@@ -225,15 +218,16 @@
                 divLista.innerHTML = "";
                 let banners = [];
                 querySnapshot.forEach((doc) => banners.push(doc.data()));
-                banners.sort((a, b) => a.ordem - b.ordem); // Ordena por ordem
+                banners.sort((a, b) => a.ordem - b.ordem);
 
                 banners.forEach((data) => {
                     const item = document.createElement('div');
                     item.className = 'item-list';
+                    const linkInfo = data.link ? `<br><span style="font-size:0.75rem; color:blue;">🔗 ${data.link}</span>` : '';
                     item.innerHTML = `
                         <div style="display:flex; align-items:center;">
                             <span style="font-weight:bold; font-size:1.2rem; margin-right:15px; color:#9C27B0;">#${data.ordem}</span>
-                            <div><strong>${data.arquivo}</strong><br><span style="font-size:0.8rem; color:#888;">ID: ${data.id}</span></div>
+                            <div><strong>${data.arquivo}</strong>${linkInfo}</div>
                         </div>
                         <span>✏️</span>
                     `;
@@ -247,6 +241,7 @@
             document.getElementById('idBanner').value = data.id;
             document.getElementById('arquivoBanner').value = data.arquivo;
             document.getElementById('ordemBanner').value = data.ordem;
+            document.getElementById('linkBanner').value = data.link || ""; // Carrega o link
             mostrarStatus(`Editando Banner: ${data.id}`);
         }
 
@@ -254,11 +249,12 @@
             let id = document.getElementById('idBanner').value.trim();
             const arquivo = document.getElementById('arquivoBanner').value;
             const ordem = parseInt(document.getElementById('ordemBanner').value) || 99;
+            const link = document.getElementById('linkBanner').value.trim(); // Pega o link
             
             if(!arquivo) return alert("Nome do arquivo é obrigatório");
-            if(!id) id = "banner_" + Date.now(); // Gera ID se vazio
+            if(!id) id = "banner_" + Date.now();
 
-            await setDoc(doc(db, "listaBanners", id), { id, arquivo, ordem }, { merge: true });
+            await setDoc(doc(db, "listaBanners", id), { id, arquivo, ordem, link }, { merge: true });
             mostrarStatus("✅ Banner Salvo!");
             carregarListaBanners();
             limparFormularioBanner();
@@ -275,7 +271,6 @@
             }
         }
 
-        // --- UTILITÁRIOS ---
         function mostrarStatus(msg) {
             const s = document.getElementById('status');
             s.style.display = 'block'; s.innerText = msg; s.style.background = '#d4edda';
