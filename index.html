@@ -139,7 +139,7 @@
         </div>
     </div>
 
-    <!-- MODAL DE APELIDO (NOVO) -->
+    <!-- MODAL DE APELIDO -->
     <div id="nickname-modal" class="modal-overlay">
         <div class="modal-box">
             <span id="close-nick-modal" class="close-modal" style="display:none;" onclick="fecharModalApelido()">×</span>
@@ -206,7 +206,13 @@
         </div>
 
         <div id="tab-rank" class="tab-content">
-            <h2>Ranking Global 🌍</h2>
+            <h2>🏆 Temporada Mensal</h2>
+            <p style="font-size:0.8rem; color:#666; margin-bottom:15px;">Reseta todo dia 01. Acumule pontos!</p>
+            
+            <button class="btn-control btn-fullscreen" style="margin: 0 auto 15px auto; background: #9C27B0; width: 100%;" onclick="window.open('ranking.html', '_blank')">
+                📊 VER RANKING COMPLETO & CAMPEÕES
+            </button>
+
             <button class="btn-control btn-fullscreen" style="margin: 0 auto 15px auto; font-size: 0.8rem; background: var(--primary);" onclick="rolarAteMim()">📍 Onde eu estou?</button>
             <div id="loading-rank">Carregando...</div>
             <ul id="lista-rank" class="rank-list"></ul>
@@ -283,7 +289,6 @@
             
             // --- LÓGICA DE APELIDO ---
             if (!data.apelido) {
-                // Se não tem apelido, força abrir o modal (sem botão fechar)
                 abrirModalApelido(true);
             } else {
                 document.getElementById('user-name').innerText = data.apelido;
@@ -298,33 +303,25 @@
             const modal = document.getElementById('nickname-modal');
             const closeBtn = document.getElementById('close-nick-modal');
             modal.style.display = 'flex';
-            
             if (obrigatorio) {
-                closeBtn.style.display = 'none'; // Não pode fechar se for o primeiro acesso
+                closeBtn.style.display = 'none';
             } else {
-                closeBtn.style.display = 'block'; // Pode fechar se for edição
+                closeBtn.style.display = 'block';
                 document.getElementById('input-apelido').value = document.getElementById('user-name').innerText;
             }
         }
 
-        window.fecharModalApelido = function() {
-            document.getElementById('nickname-modal').style.display = 'none';
-        }
+        window.fecharModalApelido = function() { document.getElementById('nickname-modal').style.display = 'none'; }
 
         window.salvarApelido = async function() {
             const novoApelido = document.getElementById('input-apelido').value.trim();
-            if (novoApelido.length < 3 || novoApelido.length > 12) {
-                alert("O apelido deve ter entre 3 e 12 letras.");
-                return;
-            }
-
+            if (novoApelido.length < 3 || novoApelido.length > 12) { alert("O apelido deve ter entre 3 e 12 letras."); return; }
             if (currentUser) {
                 const userRef = doc(db, "users", currentUser.uid);
                 await updateDoc(userRef, { apelido: novoApelido });
                 document.getElementById('user-name').innerText = novoApelido;
                 mostrarNotificacao("Apelido salvo com sucesso! ✅");
                 fecharModalApelido();
-                // Recarrega o ranking se estiver aberto para atualizar o nome
                 if(document.getElementById('tab-rank').classList.contains('active')) carregarRanking();
             }
         }
@@ -347,10 +344,7 @@
                 if (data.ultimoResgateShare === hoje) {
                     mostrarNotificacao("Link copiado! (Já resgatou hoje) ✅");
                 } else {
-                    await updateDoc(userRef, { 
-                        fichas: increment(10), // AGORA SÃO 10 FICHAS
-                        ultimoResgateShare: hoje 
-                    });
+                    await updateDoc(userRef, { fichas: increment(10), ultimoResgateShare: hoje });
                     document.getElementById('user-fichas').innerText = data.fichas + 10;
                     mostrarNotificacao("Link copiado! +10 Fichas! 🎉");
                 }
@@ -491,16 +485,20 @@
             list.innerHTML = "";
             document.getElementById('loading-rank').style.display = 'block';
             try {
-                const q = query(collection(db, "users"), orderBy("pontuacaoTotal", "desc"), limit(50));
+                // RANKING MENSAL (PADRÃO NA HOME)
+                const q = query(collection(db, "users"), orderBy("scoreMensal", "desc"), limit(50));
                 const querySnapshot = await getDocs(q);
                 document.getElementById('loading-rank').style.display = 'none';
                 let rank = 1;
                 querySnapshot.forEach((docSnap) => {
                     const u = docSnap.data();
                     const isMe = docSnap.id === currentUser.uid;
-                    // USA O APELIDO SE TIVER, SENÃO O NOME
                     const nomeExibicao = u.apelido || u.nome.split(' ')[0];
-                    const html = `<li id="${isMe ? 'meu-rank' : ''}" class="rank-item ${isMe ? 'me' : ''}"><div class="rank-pos">#${rank}</div><div class="rank-user"><img src="${u.foto}"><div><strong>${nomeExibicao}</strong></div></div><div class="rank-score">${u.pontuacaoTotal}</div></li>`;
+                    // Verifica se o score é do mês atual, senão mostra 0
+                    const mesAtual = getMonthKey();
+                    const pontos = (u.dataUltimoMensal === mesAtual) ? (u.scoreMensal || 0) : 0;
+
+                    const html = `<li id="${isMe ? 'meu-rank' : ''}" class="rank-item ${isMe ? 'me' : ''}"><div class="rank-pos">#${rank}</div><div class="rank-user"><img src="${u.foto}"><div><strong>${nomeExibicao}</strong></div></div><div class="rank-score">${pontos}</div></li>`;
                     list.innerHTML += html;
                     rank++;
                 });
@@ -558,18 +556,57 @@
             else if (iframe.webkitRequestFullscreen) iframe.webkitRequestFullscreen();
         }
 
+        // --- FUNÇÕES DE DATA ---
+        function getDayKey() { return new Date().toLocaleDateString('pt-BR'); }
+        function getMonthKey() { const d = new Date(); return `${d.getMonth()+1}/${d.getFullYear()}`; }
+        function getWeekKey() {
+            const d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() + 3 - (d.getDay() + 6) % 7);
+            const week1 = new Date(d.getFullYear(), 0, 4);
+            return 1 + Math.round(((d.getTime() - week1.getTime()) / 86400000 - 3 + (week1.getDay() + 6) % 7) / 7);
+        }
+
+        // --- LÓGICA DE PONTUAÇÃO (TEMPORADAS) ---
         window.addEventListener('message', async function(event) {
             if (event.data.type === 'GAME_OVER') {
-                const pontos = event.data.score;
+                const pontos = parseInt(event.data.score) || 0;
                 mostrarNotificacao(`Fim! Pontos: ${pontos}`);
+                
+                if (!currentUser) return;
                 const userRef = doc(db, "users", currentUser.uid);
-                const snap = await getDoc(userRef);
-                let recordes = snap.data().recordes || {};
-                if (pontos > (recordes[window.jogoAtualID] || 0)) {
-                    recordes[window.jogoAtualID] = pontos;
-                    await updateDoc(userRef, { recordes: recordes, pontuacaoTotal: increment(pontos) });
-                    mostrarNotificacao(`🏆 NOVO RECORDE: ${pontos}!`);
-                }
+                
+                try {
+                    const docSnap = await getDoc(userRef);
+                    const data = docSnap.data();
+                    
+                    const hoje = getDayKey();
+                    const semanaAtual = getWeekKey();
+                    const mesAtual = getMonthKey();
+
+                    let updates = { pontuacaoTotal: increment(pontos) };
+
+                    // Diario
+                    if (data.dataUltimoDiario === hoje) updates.scoreDiario = increment(pontos);
+                    else { updates.scoreDiario = pontos; updates.dataUltimoDiario = hoje; }
+
+                    // Semanal
+                    if (data.dataUltimoSemanal === semanaAtual) updates.scoreSemanal = increment(pontos);
+                    else { updates.scoreSemanal = pontos; updates.dataUltimoSemanal = semanaAtual; }
+
+                    // Mensal
+                    if (data.dataUltimoMensal === mesAtual) updates.scoreMensal = increment(pontos);
+                    else { updates.scoreMensal = pontos; updates.dataUltimoMensal = mesAtual; }
+
+                    // Recordes
+                    let recordes = data.recordes || {};
+                    if (pontos > (recordes[window.jogoAtualID] || 0)) {
+                        recordes[window.jogoAtualID] = pontos;
+                        updates.recordes = recordes;
+                        mostrarNotificacao(`🏆 NOVO RECORDE NO JOGO!`);
+                    }
+
+                    await updateDoc(userRef, updates);
+
+                } catch (e) { console.error("Erro ao salvar pontos:", e); }
             }
             if (event.data.type === 'RESTART_REQUEST') reiniciarJogo();
         });
