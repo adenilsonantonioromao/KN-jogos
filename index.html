@@ -12,46 +12,24 @@
         body { font-family: 'Nunito', sans-serif; background-color: var(--bg); margin: 0; padding: 0; text-align: center; color: var(--dark); padding-bottom: 80px; }
         h1, h2, h3 { font-family: 'Fredoka One', cursive; color: var(--primary); margin: 10px 0; }
         
-        /* --- CARROSSEL DE BANNERS (NOVO) --- */
+        /* --- CARROSSEL --- */
         .carousel-container {
-            width: 100%;
-            max-width: 600px;
-            height: 200px; /* Altura do banner */
-            margin: 10px auto 20px auto;
-            border-radius: 15px;
-            overflow: hidden;
-            position: relative;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-            background: #ddd;
+            width: 100%; max-width: 600px; height: 200px; margin: 10px auto 20px auto;
+            border-radius: 15px; overflow: hidden; position: relative;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2); background: #ddd;
         }
         .carousel-slide {
-            width: 100%;
-            height: 100%;
-            background-size: cover;
-            background-position: center;
-            position: absolute;
-            top: 0; left: 0;
-            opacity: 0;
-            transition: opacity 1s ease-in-out;
+            width: 100%; height: 100%; background-size: cover; background-position: center;
+            position: absolute; top: 0; left: 0; opacity: 0; transition: opacity 1s ease-in-out;
         }
         .carousel-slide.active { opacity: 1; }
+        .carousel-slide.clickable { cursor: pointer; } /* Cursor de mãozinha se tiver link */
         
-        /* Bolinhas de navegação */
         .carousel-dots {
-            position: absolute;
-            bottom: 10px;
-            left: 50%;
-            transform: translateX(-50%);
-            display: flex;
-            gap: 8px;
-            z-index: 10;
+            position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%);
+            display: flex; gap: 8px; z-index: 10;
         }
-        .dot {
-            width: 10px; height: 10px;
-            background: rgba(255,255,255,0.5);
-            border-radius: 50%;
-            cursor: pointer;
-        }
+        .dot { width: 10px; height: 10px; background: rgba(255,255,255,0.5); border-radius: 50%; cursor: pointer; }
         .dot.active { background: white; transform: scale(1.2); }
 
         /* --- LOGIN --- */
@@ -78,7 +56,7 @@
         .close-modal { position: absolute; top: 10px; right: 15px; font-size: 1.5rem; cursor: pointer; color: #999; }
         @keyframes popIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 
-        /* --- CARDS DE JOGO --- */
+        /* --- CARDS --- */
         .game-card { background: white; border-radius: 15px; overflow: hidden; box-shadow: 0 4px 0 #CFD8DC; margin-bottom: 20px; text-align: left; transition: transform 0.1s; position: relative; }
         .game-card:active { transform: scale(0.99); }
         .game-thumb { width: 100%; aspect-ratio: 16 / 11; background-color: #111; background-size: cover; background-position: center; }
@@ -183,7 +161,6 @@
         <div id="tab-novos" class="tab-content active">
             <!-- CARROSSEL DE BANNERS -->
             <div id="carousel-container" class="carousel-container" style="display:none;">
-                <!-- Slides injetados via JS -->
                 <div class="carousel-dots" id="carousel-dots"></div>
             </div>
 
@@ -258,7 +235,7 @@
 
                 await carregarUsuario(user);
                 await carregarListaDeJogos(); 
-                await carregarBanners(); // NOVO: Carrega os banners
+                await carregarBanners(); 
                 await carregarStatsGlobais();
                 renderizarTodosJogos();
             }
@@ -282,16 +259,14 @@
             document.getElementById('user-fichas').innerText = data.fichas;
         }
 
-        // --- LÓGICA DE BANNERS (CARROSSEL) ---
+        // --- BANNERS COM LINK ---
         async function carregarBanners() {
             try {
                 const querySnapshot = await getDocs(collection(db, "listaBanners"));
                 let banners = [];
                 querySnapshot.forEach((doc) => banners.push(doc.data()));
-                
                 if(banners.length === 0) return;
 
-                // Ordena por ordem definida no admin
                 banners.sort((a, b) => a.ordem - b.ordem);
 
                 const container = document.getElementById('carousel-container');
@@ -299,13 +274,28 @@
                 container.style.display = 'block';
 
                 banners.forEach((b, index) => {
-                    // Cria Slide
                     const slide = document.createElement('div');
                     slide.className = `carousel-slide ${index === 0 ? 'active' : ''}`;
                     slide.style.backgroundImage = `url('banners/${b.arquivo}')`;
+                    
+                    // Lógica de Clique
+                    if (b.link) {
+                        slide.classList.add('clickable');
+                        slide.onclick = () => {
+                            if (b.link.startsWith('#')) {
+                                // Link Interno (Abas)
+                                const aba = b.link.replace('#tab-', '');
+                                const btn = document.querySelector(`.nav-btn[onclick*="${aba}"]`);
+                                if (btn) btn.click();
+                            } else {
+                                // Link Externo
+                                window.open(b.link, '_blank');
+                            }
+                        };
+                    }
+
                     container.appendChild(slide);
 
-                    // Cria Bolinha
                     const dot = document.createElement('div');
                     dot.className = `dot ${index === 0 ? 'active' : ''}`;
                     dot.onclick = () => mudarSlide(index);
@@ -313,7 +303,6 @@
                 });
 
                 iniciarRotacaoBanners(banners.length);
-
             } catch (e) { console.error("Erro banners:", e); }
         }
 
@@ -326,18 +315,15 @@
                 let next = currentSlide + 1;
                 if(next >= total) next = 0;
                 mudarSlide(next);
-            }, 5000); // 5 Segundos
+            }, 5000);
         }
 
         function mudarSlide(index) {
             const slides = document.querySelectorAll('.carousel-slide');
             const dots = document.querySelectorAll('.dot');
-            
             slides[currentSlide].classList.remove('active');
             dots[currentSlide].classList.remove('active');
-            
             currentSlide = index;
-            
             slides[currentSlide].classList.add('active');
             dots[currentSlide].classList.add('active');
         }
