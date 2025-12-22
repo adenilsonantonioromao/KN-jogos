@@ -21,7 +21,25 @@
         header { background: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 10px rgba(0,0,0,0.05); position: sticky; top: 0; z-index: 100; }
         .user-info { display: flex; align-items: center; gap: 10px; }
         .user-info img { width: 45px; height: 45px; border-radius: 50%; border: 2px solid var(--secondary); }
-        .chips-display { background: var(--secondary); padding: 5px 15px; border-radius: 20px; font-weight: bold; color: #3E2723; }
+        
+        /* ÁREA DE FICHAS E SHARE */
+        .header-actions { display: flex; align-items: center; gap: 8px; }
+        .chips-display { background: var(--secondary); padding: 5px 15px; border-radius: 20px; font-weight: bold; color: #3E2723; display: flex; align-items: center; gap: 5px; }
+        .btn-share-header { background: #25D366; color: white; border: none; width: 35px; height: 35px; border-radius: 50%; cursor: pointer; font-size: 1.2rem; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.2); transition: transform 0.1s; }
+        .btn-share-header:active { transform: scale(0.9); }
+
+        /* --- MODAL DE COMPARTILHAMENTO --- */
+        #share-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 5000; justify-content: center; align-items: center; padding: 20px; }
+        .share-box { background: white; padding: 25px; border-radius: 20px; max-width: 400px; width: 100%; text-align: center; position: relative; animation: popIn 0.3s; }
+        .share-box h2 { color: #25D366; margin-top: 0; }
+        .share-info { background: #f0fdf4; padding: 15px; border-radius: 10px; margin: 15px 0; text-align: left; font-size: 0.9rem; border: 1px solid #bbf7d0; }
+        .share-info p { margin: 5px 0; display: flex; align-items: center; gap: 8px; }
+        .share-link-box { display: flex; gap: 5px; margin-top: 15px; }
+        .share-link-input { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 8px; background: #eee; color: #555; font-size: 0.8rem; }
+        .btn-copy { background: #25D366; color: white; border: none; padding: 0 20px; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        .close-modal { position: absolute; top: 10px; right: 15px; font-size: 1.5rem; cursor: pointer; color: #999; }
+
+        @keyframes popIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 
         /* --- CARDS DE JOGO --- */
         .game-card { background: white; border-radius: 15px; overflow: hidden; box-shadow: 0 4px 0 #CFD8DC; margin-bottom: 20px; text-align: left; transition: transform 0.1s; position: relative; }
@@ -29,7 +47,6 @@
         .game-thumb { width: 100%; aspect-ratio: 16 / 11; background-color: #111; background-size: cover; background-position: center; }
         .game-info { padding: 15px; display: flex; justify-content: space-between; align-items: center; }
         
-        /* --- DATAS (NOVO) --- */
         .game-dates { font-size: 0.7rem; color: #888; margin-top: 8px; border-top: 1px solid #f0f0f0; padding-top: 5px; display: flex; flex-direction: column; gap: 2px; }
         .game-dates span { display: flex; align-items: center; gap: 5px; }
 
@@ -85,6 +102,27 @@
 <body>
 
     <div id="notificacao" class="notification"></div>
+    
+    <!-- MODAL DE COMPARTILHAMENTO -->
+    <div id="share-modal">
+        <div class="share-box">
+            <span class="close-modal" onclick="fecharModalShare()">×</span>
+            <h2>📢 Ganhe Fichas!</h2>
+            <p>Convide amigos e ganhe recompensas.</p>
+            
+            <div class="share-info">
+                <p>🔗 <strong>+3 Fichas:</strong> Por cada link enviado/copiado.</p>
+                <p>👥 <strong>+25 Fichas:</strong> Por cada amigo que se cadastrar.</p>
+            </div>
+
+            <div class="share-link-box">
+                <input type="text" id="share-link-input" class="share-link-input" readonly value="Carregando...">
+                <button class="btn-copy" onclick="copiarLinkGanharFichas()">COPIAR</button>
+            </div>
+            <p style="font-size:0.75rem; color:#999; margin-top:10px;">Envie no WhatsApp, Discord ou Telegram!</p>
+        </div>
+    </div>
+
     <div id="login-screen">
         <div class="login-box">
             <h1>KN Jogos 🎮</h1>
@@ -110,7 +148,10 @@
                 <img id="user-photo" src="" alt="Foto">
                 <div><div id="user-name" style="font-weight:bold; font-size:0.9rem;">...</div></div>
             </div>
-            <div class="chips-display">🪙 <span id="user-fichas">0</span></div>
+            <div class="header-actions">
+                <div class="chips-display">🪙 <span id="user-fichas">0</span></div>
+                <button class="btn-share-header" onclick="abrirModalShare()">📢</button>
+            </div>
         </header>
 
         <div id="tab-novos" class="tab-content active">
@@ -168,6 +209,14 @@
         let userStats = {}; 
         let JOGOS_CONFIG = []; 
 
+        // --- LÓGICA DE INDICAÇÃO (CAPTURA O REF NA URL) ---
+        const urlParams = new URLSearchParams(window.location.search);
+        const refID = urlParams.get('ref');
+        if (refID) {
+            console.log("Usuário indicado por:", refID);
+            sessionStorage.setItem('kn_referrer', refID);
+        }
+
         document.getElementById('btn-login').addEventListener('click', () => { signInWithPopup(auth, provider).catch(alert); });
 
         onAuthStateChanged(auth, async (user) => {
@@ -175,6 +224,11 @@
                 currentUser = user;
                 document.getElementById('login-screen').style.display = 'none';
                 document.getElementById('app-container').style.display = 'block';
+                
+                // Gera o link de indicação do usuário
+                const meuLink = `${window.location.origin}${window.location.pathname}?ref=${user.uid}`;
+                document.getElementById('share-link-input').value = meuLink;
+
                 await carregarUsuario(user);
                 await carregarListaDeJogos(); 
                 await carregarStatsGlobais();
@@ -182,13 +236,82 @@
             }
         });
 
+        async function carregarUsuario(user) {
+            const userRef = doc(db, "users", user.uid);
+            let snap = await getDoc(userRef);
+            
+            // --- LÓGICA DE NOVO USUÁRIO + RECOMPENSA DE INDICAÇÃO ---
+            if (!snap.exists()) {
+                // Cria o usuário novo
+                await setDoc(userRef, { 
+                    nome: user.displayName, 
+                    email: user.email, 
+                    foto: user.photoURL, 
+                    fichas: 5, 
+                    pontuacaoTotal: 0, 
+                    recordes: {}, 
+                    jogosJogados: {},
+                    dataInscricao: new Date().toISOString()
+                });
+                
+                // Verifica se veio por indicação
+                const referrerID = sessionStorage.getItem('kn_referrer');
+                if (referrerID && referrerID !== user.uid) {
+                    try {
+                        // Dá 25 fichas para quem indicou
+                        const refRef = doc(db, "users", referrerID);
+                        await updateDoc(refRef, { fichas: increment(25) });
+                        console.log("Recompensa de 25 fichas enviada para:", referrerID);
+                    } catch (e) {
+                        console.error("Erro ao recompensar indicador:", e);
+                    }
+                }
+
+                snap = await getDoc(userRef);
+            }
+            // ---------------------------------------------------------
+
+            const data = snap.data();
+            userStats = data.jogosJogados || {};
+            document.getElementById('user-name').innerText = user.displayName.split(' ')[0];
+            document.getElementById('user-photo').src = user.photoURL;
+            document.getElementById('user-fichas').innerText = data.fichas;
+        }
+
+        // --- SISTEMA DE COMPARTILHAMENTO ---
+        window.abrirModalShare = function() {
+            document.getElementById('share-modal').style.display = 'flex';
+        }
+        window.fecharModalShare = function() {
+            document.getElementById('share-modal').style.display = 'none';
+        }
+        
+        window.copiarLinkGanharFichas = async function() {
+            const input = document.getElementById('share-link-input');
+            input.select();
+            input.setSelectionRange(0, 99999); // Mobile
+            navigator.clipboard.writeText(input.value);
+            
+            mostrarNotificacao("Link copiado! +3 Fichas 🪙");
+            
+            // Adiciona 3 fichas ao usuário atual
+            if (currentUser) {
+                const userRef = doc(db, "users", currentUser.uid);
+                await updateDoc(userRef, { fichas: increment(3) });
+                // Atualiza visualmente
+                const currentFichas = parseInt(document.getElementById('user-fichas').innerText);
+                document.getElementById('user-fichas').innerText = currentFichas + 3;
+            }
+            
+            setTimeout(fecharModalShare, 1500);
+        }
+
+        // --- RESTO DO CÓDIGO (JOGOS, RANKING, ETC) ---
         async function carregarListaDeJogos() {
             try {
                 const querySnapshot = await getDocs(collection(db, "listaJogos"));
                 JOGOS_CONFIG = [];
                 querySnapshot.forEach((doc) => { JOGOS_CONFIG.push(doc.data()); });
-                
-                // Ordena: Jogos com data primeiro, depois os sem data
                 JOGOS_CONFIG.sort((a, b) => {
                     const dateA = a.dataInclusao ? new Date(a.dataInclusao) : new Date(0);
                     const dateB = b.dataInclusao ? new Date(b.dataInclusao) : new Date(0);
@@ -199,20 +322,6 @@
                 console.error(e);
                 document.getElementById('loading-games').innerText = "Erro ao carregar jogos.";
             }
-        }
-
-        async function carregarUsuario(user) {
-            const userRef = doc(db, "users", user.uid);
-            let snap = await getDoc(userRef);
-            if (!snap.exists()) {
-                await setDoc(userRef, { nome: user.displayName, email: user.email, foto: user.photoURL, fichas: 5, pontuacaoTotal: 0, recordes: {}, jogosJogados: {} });
-                snap = await getDoc(userRef);
-            }
-            const data = snap.data();
-            userStats = data.jogosJogados || {};
-            document.getElementById('user-name').innerText = user.displayName.split(' ')[0];
-            document.getElementById('user-photo').src = user.photoURL;
-            document.getElementById('user-fichas').innerText = data.fichas;
         }
 
         async function carregarStatsGlobais() {
@@ -229,21 +338,13 @@
         function criarCardHTML(jogo) {
             const caminhoImg = `capas/${jogo.img}`;
             const caminhoArquivo = `jogos/${jogo.arquivo}`;
-            
-            // Lógica de exibição de data
             const dataCriacao = formatarData(jogo.dataInclusao);
             const dataUpdate = formatarData(jogo.dataAtualizacao);
             
             let htmlDatas = '<div class="game-dates">';
-            if (dataCriacao) {
-                htmlDatas += `<span>📅 Lançamento: ${dataCriacao}</span>`;
-            } else {
-                htmlDatas += `<span>📅 Clássico (Sem data)</span>`;
-            }
-            
-            if (dataUpdate && dataUpdate !== dataCriacao) {
-                htmlDatas += `<span>🔄 Atualizado: ${dataUpdate}</span>`;
-            }
+            if (dataCriacao) htmlDatas += `<span>📅 Lançamento: ${dataCriacao}</span>`;
+            else htmlDatas += `<span>📅 Clássico (Sem data)</span>`;
+            if (dataUpdate && dataUpdate !== dataCriacao) htmlDatas += `<span>🔄 Atualizado: ${dataUpdate}</span>`;
             htmlDatas += '</div>';
 
             return `
