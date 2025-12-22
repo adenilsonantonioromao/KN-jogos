@@ -41,18 +41,29 @@
         header { background: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 10px rgba(0,0,0,0.05); position: sticky; top: 0; z-index: 100; }
         .user-info { display: flex; align-items: center; gap: 10px; }
         .user-info img { width: 45px; height: 45px; border-radius: 50%; border: 2px solid var(--secondary); }
+        .user-details { text-align: left; display: flex; align-items: center; gap: 5px; }
+        .btn-edit-nick { background: none; border: none; cursor: pointer; font-size: 0.9rem; color: #999; padding: 0; }
+        .btn-edit-nick:hover { color: var(--primary); }
+
         .header-actions { display: flex; align-items: center; gap: 8px; }
         .chips-display { background: var(--secondary); padding: 5px 15px; border-radius: 20px; font-weight: bold; color: #3E2723; display: flex; align-items: center; gap: 5px; }
         .btn-share-header { background: #25D366; color: white; border: none; width: 35px; height: 35px; border-radius: 50%; cursor: pointer; font-size: 1.2rem; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.2); transition: transform 0.1s; }
         .btn-share-header:active { transform: scale(0.9); }
 
-        /* --- MODAL SHARE --- */
-        #share-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 5000; justify-content: center; align-items: center; padding: 20px; }
-        .share-box { background: white; padding: 25px; border-radius: 20px; max-width: 400px; width: 100%; text-align: center; position: relative; animation: popIn 0.3s; }
+        /* --- MODAIS (SHARE E APELIDO) --- */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 5000; justify-content: center; align-items: center; padding: 20px; }
+        .modal-box { background: white; padding: 25px; border-radius: 20px; max-width: 400px; width: 100%; text-align: center; position: relative; animation: popIn 0.3s; }
+        
+        /* Share Específico */
         .share-info { background: #f0fdf4; padding: 15px; border-radius: 10px; margin: 15px 0; text-align: left; font-size: 0.9rem; border: 1px solid #bbf7d0; }
         .share-link-box { display: flex; gap: 5px; margin-top: 15px; }
         .share-link-input { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 8px; background: #eee; color: #555; font-size: 0.8rem; }
         .btn-copy { background: #25D366; color: white; border: none; padding: 0 20px; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        
+        /* Apelido Específico */
+        .nick-input { width: 100%; padding: 12px; font-size: 1.1rem; border: 2px solid #ddd; border-radius: 10px; margin: 15px 0; text-align: center; font-weight: bold; color: var(--dark); }
+        .btn-save-nick { background: var(--primary); color: white; border: none; padding: 12px 30px; border-radius: 30px; font-weight: bold; font-size: 1rem; cursor: pointer; width: 100%; }
+
         .close-modal { position: absolute; top: 10px; right: 15px; font-size: 1.5rem; cursor: pointer; color: #999; }
         @keyframes popIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 
@@ -111,19 +122,31 @@
 
     <div id="notificacao" class="notification"></div>
     
-    <div id="share-modal">
-        <div class="share-box">
+    <!-- MODAL DE COMPARTILHAMENTO -->
+    <div id="share-modal" class="modal-overlay">
+        <div class="modal-box">
             <span class="close-modal" onclick="fecharModalShare()">×</span>
             <h2>📢 Ganhe Fichas!</h2>
             <p>Convide amigos e ganhe recompensas.</p>
             <div class="share-info">
-                <p>🔗 <strong>+3 Fichas:</strong> Por cada link enviado/copiado.</p>
+                <p>🔗 <strong>+10 Fichas:</strong> Por cada link enviado/copiado (1x/dia).</p>
                 <p>👥 <strong>+25 Fichas:</strong> Por cada amigo que se cadastrar.</p>
             </div>
             <div class="share-link-box">
                 <input type="text" id="share-link-input" class="share-link-input" readonly value="Carregando...">
                 <button class="btn-copy" onclick="copiarLinkGanharFichas()">COPIAR</button>
             </div>
+        </div>
+    </div>
+
+    <!-- MODAL DE APELIDO (NOVO) -->
+    <div id="nickname-modal" class="modal-overlay">
+        <div class="modal-box">
+            <span id="close-nick-modal" class="close-modal" style="display:none;" onclick="fecharModalApelido()">×</span>
+            <h2>👤 Como quer ser chamado?</h2>
+            <p>Escolha um apelido único para o Ranking.</p>
+            <input type="text" id="input-apelido" class="nick-input" placeholder="Ex: MestreDosGames" maxlength="12">
+            <button class="btn-save-nick" onclick="salvarApelido()">SALVAR APELIDO</button>
         </div>
     </div>
 
@@ -150,7 +173,10 @@
         <header>
             <div class="user-info">
                 <img id="user-photo" src="" alt="Foto">
-                <div><div id="user-name" style="font-weight:bold; font-size:0.9rem;">...</div></div>
+                <div class="user-details">
+                    <div id="user-name" style="font-weight:bold; font-size:0.9rem;">...</div>
+                    <button class="btn-edit-nick" onclick="abrirModalApelido(false)">✏️</button>
+                </div>
             </div>
             <div class="header-actions">
                 <div class="chips-display">🪙 <span id="user-fichas">0</span></div>
@@ -254,61 +280,122 @@
             }
             const data = snap.data();
             userStats = data.jogosJogados || {};
-            document.getElementById('user-name').innerText = user.displayName.split(' ')[0];
+            
+            // --- LÓGICA DE APELIDO ---
+            if (!data.apelido) {
+                // Se não tem apelido, força abrir o modal (sem botão fechar)
+                abrirModalApelido(true);
+            } else {
+                document.getElementById('user-name').innerText = data.apelido;
+            }
+
             document.getElementById('user-photo').src = user.photoURL;
             document.getElementById('user-fichas').innerText = data.fichas;
         }
 
-        // --- BANNERS COM LINK ---
+        // --- SISTEMA DE APELIDO ---
+        window.abrirModalApelido = function(obrigatorio) {
+            const modal = document.getElementById('nickname-modal');
+            const closeBtn = document.getElementById('close-nick-modal');
+            modal.style.display = 'flex';
+            
+            if (obrigatorio) {
+                closeBtn.style.display = 'none'; // Não pode fechar se for o primeiro acesso
+            } else {
+                closeBtn.style.display = 'block'; // Pode fechar se for edição
+                document.getElementById('input-apelido').value = document.getElementById('user-name').innerText;
+            }
+        }
+
+        window.fecharModalApelido = function() {
+            document.getElementById('nickname-modal').style.display = 'none';
+        }
+
+        window.salvarApelido = async function() {
+            const novoApelido = document.getElementById('input-apelido').value.trim();
+            if (novoApelido.length < 3 || novoApelido.length > 12) {
+                alert("O apelido deve ter entre 3 e 12 letras.");
+                return;
+            }
+
+            if (currentUser) {
+                const userRef = doc(db, "users", currentUser.uid);
+                await updateDoc(userRef, { apelido: novoApelido });
+                document.getElementById('user-name').innerText = novoApelido;
+                mostrarNotificacao("Apelido salvo com sucesso! ✅");
+                fecharModalApelido();
+                // Recarrega o ranking se estiver aberto para atualizar o nome
+                if(document.getElementById('tab-rank').classList.contains('active')) carregarRanking();
+            }
+        }
+
+        // --- SISTEMA DE SHARE (10 FICHAS) ---
+        window.abrirModalShare = function() { document.getElementById('share-modal').style.display = 'flex'; }
+        window.fecharModalShare = function() { document.getElementById('share-modal').style.display = 'none'; }
+        
+        window.copiarLinkGanharFichas = async function() {
+            const input = document.getElementById('share-link-input');
+            input.select(); input.setSelectionRange(0, 99999);
+            navigator.clipboard.writeText(input.value);
+            
+            if (currentUser) {
+                const userRef = doc(db, "users", currentUser.uid);
+                const snap = await getDoc(userRef);
+                const data = snap.data();
+                const hoje = new Date().toLocaleDateString('pt-BR');
+
+                if (data.ultimoResgateShare === hoje) {
+                    mostrarNotificacao("Link copiado! (Já resgatou hoje) ✅");
+                } else {
+                    await updateDoc(userRef, { 
+                        fichas: increment(10), // AGORA SÃO 10 FICHAS
+                        ultimoResgateShare: hoje 
+                    });
+                    document.getElementById('user-fichas').innerText = data.fichas + 10;
+                    mostrarNotificacao("Link copiado! +10 Fichas! 🎉");
+                }
+            }
+            setTimeout(fecharModalShare, 2000);
+        }
+
+        // --- BANNERS ---
         async function carregarBanners() {
             try {
                 const querySnapshot = await getDocs(collection(db, "listaBanners"));
                 let banners = [];
                 querySnapshot.forEach((doc) => banners.push(doc.data()));
                 if(banners.length === 0) return;
-
                 banners.sort((a, b) => a.ordem - b.ordem);
-
                 const container = document.getElementById('carousel-container');
                 const dotsContainer = document.getElementById('carousel-dots');
                 container.style.display = 'block';
-
                 banners.forEach((b, index) => {
                     const slide = document.createElement('div');
                     slide.className = `carousel-slide ${index === 0 ? 'active' : ''}`;
                     slide.style.backgroundImage = `url('banners/${b.arquivo}')`;
-                    
-                    // LÓGICA DE CLIQUE (AQUI ESTÁ A MÁGICA)
                     if (b.link) {
                         slide.classList.add('clickable');
                         slide.onclick = () => {
-                            if (b.link === '#share') {
-                                abrirModalShare(); // COMANDO MÁGICO
-                            } else if (b.link.startsWith('#')) {
+                            if (b.link === '#share') abrirModalShare();
+                            else if (b.link.startsWith('#')) {
                                 const aba = b.link.replace('#tab-', '');
                                 const btn = document.querySelector(`.nav-btn[onclick*="${aba}"]`);
                                 if (btn) btn.click();
-                            } else {
-                                window.open(b.link, '_blank');
-                            }
+                            } else window.open(b.link, '_blank');
                         };
                     }
-
                     container.appendChild(slide);
-
                     const dot = document.createElement('div');
                     dot.className = `dot ${index === 0 ? 'active' : ''}`;
                     dot.onclick = () => mudarSlide(index);
                     dotsContainer.appendChild(dot);
                 });
-
                 iniciarRotacaoBanners(banners.length);
             } catch (e) { console.error("Erro banners:", e); }
         }
 
         let currentSlide = 0;
         let slideInterval;
-
         function iniciarRotacaoBanners(total) {
             if(total <= 1) return;
             slideInterval = setInterval(() => {
@@ -317,7 +404,6 @@
                 mudarSlide(next);
             }, 5000);
         }
-
         function mudarSlide(index) {
             const slides = document.querySelectorAll('.carousel-slide');
             const dots = document.querySelectorAll('.dot');
@@ -328,49 +414,7 @@
             dots[currentSlide].classList.add('active');
         }
 
-        // --- RESTO DO CÓDIGO ---
-        window.abrirModalShare = function() { document.getElementById('share-modal').style.display = 'flex'; }
-        window.fecharModalShare = function() { document.getElementById('share-modal').style.display = 'none'; }
-       window.copiarLinkGanharFichas = async function() {
-            // 1. Copia o link para a área de transferência (Isso sempre acontece)
-            const input = document.getElementById('share-link-input');
-            input.select();
-            input.setSelectionRange(0, 99999); // Para celulares
-            navigator.clipboard.writeText(input.value);
-            
-            // 2. Verifica a Recompensa Diária
-            if (currentUser) {
-                const userRef = doc(db, "users", currentUser.uid);
-                
-                // Pega os dados atuais do usuário no banco
-                const snap = await getDoc(userRef);
-                const data = snap.data();
-
-                // Gera a data de hoje em formato texto (ex: "22/12/2025")
-                const hoje = new Date().toLocaleDateString('pt-BR');
-
-                // Verifica se já resgatou hoje
-                if (data.ultimoResgateShare === hoje) {
-                    // Já pegou hoje
-                    mostrarNotificacao("Link copiado! (Recompensa diária já coletada) ✅");
-                } else {
-                    // Ainda não pegou hoje: Dá 10 Fichas e Salva a Data
-                    await updateDoc(userRef, { 
-                        fichas: increment(10),
-                        ultimoResgateShare: hoje 
-                    });
-                    
-                    // Atualiza o visual
-                    document.getElementById('user-fichas').innerText = data.fichas + 10;
-                    mostrarNotificacao("Link copiado! Ganhou +10 Fichas! 🎉");
-                }
-            } else {
-                mostrarNotificacao("Link copiado! Faça login para ganhar fichas.");
-            }
-            
-            setTimeout(fecharModalShare, 2000);
-        }
-
+        // --- JOGOS E RANKING ---
         async function carregarListaDeJogos() {
             try {
                 const querySnapshot = await getDocs(collection(db, "listaJogos"));
@@ -454,7 +498,9 @@
                 querySnapshot.forEach((docSnap) => {
                     const u = docSnap.data();
                     const isMe = docSnap.id === currentUser.uid;
-                    const html = `<li id="${isMe ? 'meu-rank' : ''}" class="rank-item ${isMe ? 'me' : ''}"><div class="rank-pos">#${rank}</div><div class="rank-user"><img src="${u.foto}"><div><strong>${u.nome.split(' ')[0]}</strong></div></div><div class="rank-score">${u.pontuacaoTotal}</div></li>`;
+                    // USA O APELIDO SE TIVER, SENÃO O NOME
+                    const nomeExibicao = u.apelido || u.nome.split(' ')[0];
+                    const html = `<li id="${isMe ? 'meu-rank' : ''}" class="rank-item ${isMe ? 'me' : ''}"><div class="rank-pos">#${rank}</div><div class="rank-user"><img src="${u.foto}"><div><strong>${nomeExibicao}</strong></div></div><div class="rank-score">${u.pontuacaoTotal}</div></li>`;
                     list.innerHTML += html;
                     rank++;
                 });
@@ -529,12 +575,4 @@
         });
 
         function mostrarNotificacao(msg) {
-            const el = document.getElementById('notificacao');
-            el.innerText = msg;
-            el.style.display = 'block';
-            setTimeout(() => el.style.display = 'none', 4000);
-        }
-    </script>
-</body>
-</html>
-
+            const
