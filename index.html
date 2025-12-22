@@ -234,4 +234,238 @@
             <p style="font-size:0.8rem; color:#666; margin-bottom:15px;">Reseta todo dia 01. Acumule pontos!</p>
             
             <button class="btn-control btn-fullscreen" style="margin: 0 auto 15px auto; background: #9C27B0; width: 100%;" onclick="window.location.href='ranking.html'">
-                📊 VER RANK
+                📊 VER RANKING COMPLETO & CAMPEÕES
+            </button>
+
+            <button class="btn-control btn-fullscreen" style="margin: 0 auto 15px auto; font-size: 0.8rem; background: var(--primary);" onclick="rolarAteMim()">📍 Onde eu estou?</button>
+            <div id="loading-rank">Carregando...</div>
+            <ul id="lista-rank" class="rank-list"></ul>
+        </div>
+        <nav class="bottom-nav">
+            <button class="nav-btn active" onclick="mudarAba('novos', this)"><span>🔥</span>Novos</button>
+            <button class="nav-btn" onclick="mudarAba('populares', this)"><span>⭐</span>Top</button>
+            <button class="nav-btn" onclick="mudarAba('favoritos', this)"><span>❤️</span>Favs</button>
+            <button class="nav-btn" onclick="mudarAba('rank', this)"><span>📊</span>Rank</button>
+        </nav>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, getDocs, setDoc, updateDoc, increment, collection, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBIR7CqYYvMZVQxtO67JCQoJ3OLT1cvAx8",
+            authDomain: "kn-jogos.firebaseapp.com",
+            projectId: "kn-jogos",
+            storageBucket: "kn-jogos.firebasestorage.app",
+            messagingSenderId: "273132829744",
+            appId: "1:273132829744:web:a03e85b80ffabfa24101f5",
+            measurementId: "G-CX4Z8R1S6F"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const provider = new GoogleAuthProvider();
+        
+        let currentUser = null;
+        let globalStats = {}; 
+        let userStats = {}; 
+        let JOGOS_CONFIG = []; 
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const refID = urlParams.get('ref');
+        if (refID) sessionStorage.setItem('kn_referrer', refID);
+
+        document.getElementById('btn-login').addEventListener('click', () => { signInWithPopup(auth, provider).catch(alert); });
+
+        // --- LÓGICA DE AUTH COM SPLASH SCREEN ---
+        onAuthStateChanged(auth, async (user) => {
+            const splash = document.getElementById('splash-screen');
+            const loginScreen = document.getElementById('login-screen');
+            const appContainer = document.getElementById('app-container');
+
+            if (user) {
+                // USUÁRIO LOGADO: MOSTRA APP
+                currentUser = user;
+                loginScreen.style.display = 'none';
+                appContainer.style.display = 'block';
+                
+                const meuLink = `${window.location.origin}${window.location.pathname}?ref=${user.uid}`;
+                document.getElementById('share-link-input').value = meuLink;
+
+                await carregarUsuario(user);
+                await carregarListaDeJogos(); 
+                await carregarBanners(); 
+                await carregarStatsGlobais();
+                renderizarTodosJogos();
+            } else {
+                // USUÁRIO NÃO LOGADO: MOSTRA LOGIN
+                loginScreen.style.display = 'flex';
+                appContainer.style.display = 'none';
+            }
+
+            // Remove o Splash Screen suavemente
+            splash.style.opacity = '0';
+            setTimeout(() => { splash.style.display = 'none'; }, 500);
+        });
+
+        async function carregarUsuario(user) {
+            const userRef = doc(db, "users", user.uid);
+            let snap = await getDoc(userRef);
+            if (!snap.exists()) {
+                await setDoc(userRef, { nome: user.displayName, email: user.email, foto: user.photoURL, fichas: 5, pontuacaoTotal: 0, recordes: {}, jogosJogados: {}, dataInscricao: new Date().toISOString() });
+                const referrerID = sessionStorage.getItem('kn_referrer');
+                if (referrerID && referrerID !== user.uid) {
+                    try { await updateDoc(doc(db, "users", referrerID), { fichas: increment(25) }); } catch (e) {}
+                }
+                snap = await getDoc(userRef);
+            }
+            const data = snap.data();
+            userStats = data.jogosJogados || {};
+            
+            if (!data.apelido) {
+                abrirModalApelido(true);
+            } else {
+                document.getElementById('user-name').innerText = data.apelido;
+            }
+
+            document.getElementById('user-photo').src = user.photoURL;
+            document.getElementById('user-fichas').innerText = data.fichas;
+        }
+
+        // --- SISTEMA DE APELIDO ---
+        window.abrirModalApelido = function(obrigatorio) {
+            const modal = document.getElementById('nickname-modal');
+            const closeBtn = document.getElementById('close-nick-modal');
+            modal.style.display = 'flex';
+            if (obrigatorio) {
+                closeBtn.style.display = 'none';
+            } else {
+                closeBtn.style.display = 'block';
+                document.getElementById('input-apelido').value = document.getElementById('user-name').innerText;
+            }
+        }
+
+        window.fecharModalApelido = function() { document.getElementById('nickname-modal').style.display = 'none'; }
+
+        window.salvarApelido = async function() {
+            const novoApelido = document.getElementById('input-apelido').value.trim();
+            if (novoApelido.length < 3 || novoApelido.length > 12) { alert("O apelido deve ter entre 3 e 12 letras."); return; }
+            if (currentUser) {
+                const userRef = doc(db, "users", currentUser.uid);
+                await updateDoc(userRef, { apelido: novoApelido });
+                document.getElementById('user-name').innerText = novoApelido;
+                mostrarNotificacao("Apelido salvo com sucesso! ✅");
+                fecharModalApelido();
+                if(document.getElementById('tab-rank').classList.contains('active')) carregarRanking();
+            }
+        }
+
+        // --- SISTEMA DE SHARE (10 FICHAS) ---
+        window.abrirModalShare = function() { document.getElementById('share-modal').style.display = 'flex'; }
+        window.fecharModalShare = function() { document.getElementById('share-modal').style.display = 'none'; }
+        
+        window.copiarLinkGanharFichas = async function() {
+            const input = document.getElementById('share-link-input');
+            input.select(); input.setSelectionRange(0, 99999);
+            navigator.clipboard.writeText(input.value);
+            
+            if (currentUser) {
+                const userRef = doc(db, "users", currentUser.uid);
+                const snap = await getDoc(userRef);
+                const data = snap.data();
+                const hoje = new Date().toLocaleDateString('pt-BR');
+
+                if (data.ultimoResgateShare === hoje) {
+                    mostrarNotificacao("Link copiado! (Já resgatou hoje) ✅");
+                } else {
+                    await updateDoc(userRef, { fichas: increment(10), ultimoResgateShare: hoje });
+                    document.getElementById('user-fichas').innerText = data.fichas + 10;
+                    mostrarNotificacao("Link copiado! +10 Fichas! 🎉");
+                }
+            }
+            setTimeout(fecharModalShare, 2000);
+        }
+
+        // --- BANNERS ---
+        async function carregarBanners() {
+            try {
+                const querySnapshot = await getDocs(collection(db, "listaBanners"));
+                let banners = [];
+                querySnapshot.forEach((doc) => banners.push(doc.data()));
+                if(banners.length === 0) return;
+                banners.sort((a, b) => a.ordem - b.ordem);
+                const container = document.getElementById('carousel-container');
+                const dotsContainer = document.getElementById('carousel-dots');
+                container.style.display = 'block';
+                banners.forEach((b, index) => {
+                    const slide = document.createElement('div');
+                    slide.className = `carousel-slide ${index === 0 ? 'active' : ''}`;
+                    slide.style.backgroundImage = `url('banners/${b.arquivo}')`;
+                    if (b.link) {
+                        slide.classList.add('clickable');
+                        slide.onclick = () => {
+                            if (b.link === '#share') abrirModalShare();
+                            else if (b.link.startsWith('#')) {
+                                const aba = b.link.replace('#tab-', '');
+                                const btn = document.querySelector(`.nav-btn[onclick*="${aba}"]`);
+                                if (btn) btn.click();
+                            } else window.open(b.link, '_blank');
+                        };
+                    }
+                    container.appendChild(slide);
+                    const dot = document.createElement('div');
+                    dot.className = `dot ${index === 0 ? 'active' : ''}`;
+                    dot.onclick = () => mudarSlide(index);
+                    dotsContainer.appendChild(dot);
+                });
+                iniciarRotacaoBanners(banners.length);
+            } catch (e) { console.error("Erro banners:", e); }
+        }
+
+        let currentSlide = 0;
+        let slideInterval;
+        function iniciarRotacaoBanners(total) {
+            if(total <= 1) return;
+            slideInterval = setInterval(() => {
+                let next = currentSlide + 1;
+                if(next >= total) next = 0;
+                mudarSlide(next);
+            }, 5000);
+        }
+        function mudarSlide(index) {
+            const slides = document.querySelectorAll('.carousel-slide');
+            const dots = document.querySelectorAll('.dot');
+            slides[currentSlide].classList.remove('active');
+            dots[currentSlide].classList.remove('active');
+            currentSlide = index;
+            slides[currentSlide].classList.add('active');
+            dots[currentSlide].classList.add('active');
+        }
+
+        // --- JOGOS E RANKING ---
+        async function carregarListaDeJogos() {
+            try {
+                const querySnapshot = await getDocs(collection(db, "listaJogos"));
+                JOGOS_CONFIG = [];
+                querySnapshot.forEach((doc) => { JOGOS_CONFIG.push(doc.data()); });
+                JOGOS_CONFIG.sort((a, b) => {
+                    const dateA = a.dataInclusao ? new Date(a.dataInclusao) : new Date(0);
+                    const dateB = b.dataInclusao ? new Date(b.dataInclusao) : new Date(0);
+                    return dateB - dateA;
+                });
+                document.getElementById('loading-games').style.display = 'none';
+            } catch (e) { console.error(e); }
+        }
+
+        async function carregarStatsGlobais() {
+            const snap = await getDoc(doc(db, "config", "gameStats"));
+            if(snap.exists()) globalStats = snap.data();
+        }
+
+        function formatarData(isoString) {
+            if (!isoString) return null;
+            const d = new Date(isoString);
+            return d.toLocaleDateString('pt-BR');
