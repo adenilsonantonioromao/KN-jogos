@@ -23,7 +23,7 @@
             position: absolute; top: 0; left: 0; opacity: 0; transition: opacity 1s ease-in-out;
         }
         .carousel-slide.active { opacity: 1; }
-        .carousel-slide.clickable { cursor: pointer; } /* Cursor de mãozinha se tiver link */
+        .carousel-slide.clickable { cursor: pointer; } 
         
         .carousel-dots {
             position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%);
@@ -278,17 +278,17 @@
                     slide.className = `carousel-slide ${index === 0 ? 'active' : ''}`;
                     slide.style.backgroundImage = `url('banners/${b.arquivo}')`;
                     
-                    // Lógica de Clique
+                    // LÓGICA DE CLIQUE (AQUI ESTÁ A MÁGICA)
                     if (b.link) {
                         slide.classList.add('clickable');
                         slide.onclick = () => {
-                            if (b.link.startsWith('#')) {
-                                // Link Interno (Abas)
+                            if (b.link === '#share') {
+                                abrirModalShare(); // COMANDO MÁGICO
+                            } else if (b.link.startsWith('#')) {
                                 const aba = b.link.replace('#tab-', '');
                                 const btn = document.querySelector(`.nav-btn[onclick*="${aba}"]`);
                                 if (btn) btn.click();
                             } else {
-                                // Link Externo
                                 window.open(b.link, '_blank');
                             }
                         };
