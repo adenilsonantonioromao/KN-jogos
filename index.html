@@ -280,35 +280,50 @@
 
         document.getElementById('btn-login').addEventListener('click', () => { signInWithPopup(auth, provider).catch(alert); });
 
-        // --- LÓGICA DE AUTH COM SPLASH SCREEN ---
+    // --- LÓGICA DE AUTH COM SPLASH SCREEN BLINDADA ---
         onAuthStateChanged(auth, async (user) => {
             const splash = document.getElementById('splash-screen');
             const loginScreen = document.getElementById('login-screen');
             const appContainer = document.getElementById('app-container');
 
-            if (user) {
-                // USUÁRIO LOGADO: MOSTRA APP
-                currentUser = user;
-                loginScreen.style.display = 'none';
-                appContainer.style.display = 'block';
-                
-                const meuLink = `${window.location.origin}${window.location.pathname}?ref=${user.uid}`;
-                document.getElementById('share-link-input').value = meuLink;
+            try {
+                if (user) {
+                    // USUÁRIO LOGADO
+                    currentUser = user;
+                    
+                    // 1. Prepara a UI
+                    loginScreen.style.display = 'none';
+                    appContainer.style.display = 'block';
+                    
+                    // 2. Link de Indicação
+                    const meuLink = `${window.location.origin}${window.location.pathname}?ref=${user.uid}`;
+                    const inputLink = document.getElementById('share-link-input');
+                    if(inputLink) inputLink.value = meuLink;
 
-                await carregarUsuario(user);
-                await carregarListaDeJogos(); 
-                await carregarBanners(); 
-                await carregarStatsGlobais();
-                renderizarTodosJogos();
-            } else {
-                // USUÁRIO NÃO LOGADO: MOSTRA LOGIN
+                    // 3. Carrega dados (Se der erro aqui, o catch pega)
+                    await carregarUsuario(user);
+                    await carregarListaDeJogos(); 
+                    await carregarBanners(); 
+                    await carregarStatsGlobais();
+                    renderizarTodosJogos();
+                } else {
+                    // USUÁRIO NÃO LOGADO
+                    loginScreen.style.display = 'flex';
+                    appContainer.style.display = 'none';
+                }
+            } catch (error) {
+                console.error("Erro crítico ao carregar:", error);
+                alert("Ocorreu um erro ao carregar seus dados. Tente recarregar a página.");
+                // Em caso de erro, joga para o login para não travar
                 loginScreen.style.display = 'flex';
                 appContainer.style.display = 'none';
+            } finally {
+                // --- ISSO SEMPRE VAI RODAR, INDEPENDENTE DE ERROS ---
+                if(splash) {
+                    splash.style.opacity = '0';
+                    setTimeout(() => { splash.style.display = 'none'; }, 500);
+                }
             }
-
-            // Remove o Splash Screen suavemente
-            splash.style.opacity = '0';
-            setTimeout(() => { splash.style.display = 'none'; }, 500);
         });
 
         async function carregarUsuario(user) {
@@ -469,3 +484,4 @@
             if (!isoString) return null;
             const d = new Date(isoString);
             return d.toLocaleDateString('pt-BR');
+
