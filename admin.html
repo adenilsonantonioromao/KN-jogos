@@ -7,81 +7,61 @@
     <style>
         body { font-family: 'Segoe UI', sans-serif; background: #f4f4f9; padding: 20px; max-width: 800px; margin: 0 auto; color: #333; }
         
-        /* TELA DE BLOQUEIO (LOGIN) */
-        #lock-screen {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: linear-gradient(135deg, #111, #333); z-index: 999;
-            display: flex; flex-direction: column; justify-content: center; align-items: center; color: white;
-        }
+        /* TELA DE BLOQUEIO */
+        #lock-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, #111, #333); z-index: 999; display: flex; flex-direction: column; justify-content: center; align-items: center; color: white; }
         .login-box { background: rgba(255,255,255,0.1); padding: 40px; border-radius: 20px; text-align: center; border: 1px solid rgba(255,255,255,0.2); }
-        .login-btn { background: #FF5722; color: white; padding: 15px 30px; font-size: 1.2rem; border: none; border-radius: 50px; cursor: pointer; font-weight: bold; margin-top: 20px; transition: 0.3s; box-shadow: 0 4px 15px rgba(255, 87, 34, 0.4); }
-        .login-btn:hover { transform: scale(1.05); background: #E64A19; }
+        .login-btn { background: #FF5722; color: white; padding: 15px 30px; font-size: 1.2rem; border: none; border-radius: 50px; cursor: pointer; font-weight: bold; margin-top: 20px; transition: 0.3s; }
         
-        /* CONTEÚDO (ESCONDIDO ATÉ LOGAR) */
         #admin-content { display: none; }
-
-        /* EDITOR */
         .editor-card { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border-left: 5px solid #FF5722; }
-        h2 { margin-top: 0; color: #FF5722; }
         label { font-weight: bold; font-size: 0.85rem; display: block; margin-top: 15px; color: #555; text-transform: uppercase; }
         input, textarea { width: 100%; padding: 12px; margin-top: 5px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 1rem; background: #fafafa; }
         
-        /* BOTÕES */
         .btn-row { display: flex; gap: 10px; margin-top: 20px; }
         button { flex: 1; padding: 15px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 1rem; transition: 0.2s; }
         .btn-save { background: #2196F3; color: white; }
         .btn-clear { background: #9E9E9E; color: white; }
 
-        /* LISTA */
+        /* LISTA COM DATAS VISÍVEIS */
         .list-container { margin-top: 40px; }
         .game-item { background: white; padding: 15px; border-radius: 10px; margin-bottom: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; cursor: pointer; border: 1px solid transparent; }
         .game-item:hover { border-color: #2196F3; transform: translateX(5px); }
-        .game-id { font-family: monospace; color: #D81B60; background: #FCE4EC; padding: 2px 6px; border-radius: 4px; }
-        .game-dates { font-size: 0.75rem; color: #888; text-align: right; }
+        .game-info-col { display: flex; flex-direction: column; }
+        .game-id { font-family: monospace; color: #D81B60; background: #FCE4EC; padding: 2px 6px; border-radius: 4px; font-size: 0.8rem; width: fit-content; }
+        
+        /* ESTILO DAS DATAS NO ADMIN */
+        .date-badge { font-size: 0.75rem; color: #666; background: #eee; padding: 2px 8px; border-radius: 10px; margin-top: 4px; display: inline-block; }
     </style>
 </head>
 <body>
 
-    <!-- 1. TELA DE BLOQUEIO (LOGIN) -->
     <div id="lock-screen">
         <div class="login-box">
             <h1 style="margin:0">🔒 Área Restrita</h1>
-            <p style="color:#ccc;">Apenas o Dono (Adenilson) pode acessar.</p>
             <button class="login-btn" id="btn-login">🔑 ENTRAR COM GOOGLE</button>
             <p id="error-msg" style="color:#ff5252; font-weight:bold; margin-top:15px; display:none;"></p>
         </div>
     </div>
 
-    <!-- 2. CONTEÚDO DO ADMIN -->
     <div id="admin-content">
         <div id="status" style="text-align:center; padding:10px; margin-bottom:10px; font-weight:bold; display:none;"></div>
 
         <div class="editor-card" id="topo">
             <div style="display:flex; justify-content:space-between; align-items:center;">
                 <h2>✏️ Painel de Controle</h2>
-                <button onclick="sair()" style="width:auto; background:#333; font-size:0.8rem; padding:5px 15px; margin:0;">Sair</button>
+                <button onclick="sair()" style="width:auto; background:#333; font-size:0.8rem; padding:5px 15px; margin:0; color:white;">Sair</button>
             </div>
             
             <label>ID do Jogo (Único)</label>
             <input type="text" id="idJogo" placeholder="ex: neonrunner">
-
             <label>Nome Visível</label>
             <input type="text" id="nome" placeholder="ex: Neon Runner 3D">
-
             <label>Descrição</label>
             <input type="text" id="desc" placeholder="ex: Desvie dos obstáculos...">
-
             <div style="display:flex; gap:10px;">
-                <div style="flex:1;">
-                    <label>Arquivo (/jogos)</label>
-                    <input type="text" id="arquivo" placeholder="ex: neon.html">
-                </div>
-                <div style="flex:1;">
-                    <label>Imagem (/capas)</label>
-                    <input type="text" id="img" placeholder="ex: neon.jpg">
-                </div>
+                <div style="flex:1;"><label>Arquivo (/jogos)</label><input type="text" id="arquivo" placeholder="ex: neon.html"></div>
+                <div style="flex:1;"><label>Imagem (/capas)</label><input type="text" id="img" placeholder="ex: neon.jpg"></div>
             </div>
-
             <div class="btn-row">
                 <button class="btn-clear" onclick="limparFormulario()">🧹 Novo</button>
                 <button class="btn-save" onclick="salvarJogo()">💾 SALVAR NO SITE</button>
@@ -99,7 +79,6 @@
         import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
         import { getFirestore, doc, getDoc, setDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-        // --- CONFIGURAÇÃO (SEU PROJETO) ---
         const firebaseConfig = {
             apiKey: "AIzaSyBIR7CqYYvMZVQxtO67JCQoJ3OLT1cvAx8",
             authDomain: "kn-jogos.firebaseapp.com",
@@ -114,36 +93,25 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
         const provider = new GoogleAuthProvider();
-
-        // --- E-MAIL PERMITIDO ---
         const ADMIN_EMAIL = "adenilsonantonioromao@gmail.com";
 
-        // --- LOGIN COM PROTEÇÃO ---
-        document.getElementById('btn-login').addEventListener('click', () => {
-            signInWithPopup(auth, provider).catch(e => alert("Erro: " + e.message));
-        });
+        document.getElementById('btn-login').addEventListener('click', () => { signInWithPopup(auth, provider).catch(alert); });
 
         onAuthStateChanged(auth, (user) => {
-            const errorMsg = document.getElementById('error-msg');
-            
-            if (user) {
-                if (user.email === ADMIN_EMAIL) {
-                    document.getElementById('lock-screen').style.display = 'none';
-                    document.getElementById('admin-content').style.display = 'block';
-                    carregarLista();
-                } else {
-                    errorMsg.style.display = 'block';
-                    errorMsg.innerText = `⛔ ACESSO NEGADO! O e-mail ${user.email} não tem permissão.`;
-                    signOut(auth);
-                }
+            if (user && user.email === ADMIN_EMAIL) {
+                document.getElementById('lock-screen').style.display = 'none';
+                document.getElementById('admin-content').style.display = 'block';
+                carregarLista();
+            } else if (user) {
+                document.getElementById('error-msg').style.display = 'block';
+                document.getElementById('error-msg').innerText = "Acesso Negado.";
+                signOut(auth);
             }
         });
 
-        window.sair = function() {
-            signOut(auth).then(() => { location.reload(); });
-        }
+        window.sair = () => signOut(auth).then(() => location.reload());
 
-        // --- SISTEMA DE CADASTRO ---
+        // --- CARREGAR LISTA COM DATAS ---
         window.carregarLista = async function() {
             const divLista = document.getElementById('lista-jogos');
             divLista.innerHTML = "Lendo banco de dados...";
@@ -152,35 +120,32 @@
                 const querySnapshot = await getDocs(collection(db, "listaJogos"));
                 divLista.innerHTML = "";
                 
-                if (querySnapshot.empty) {
-                    divLista.innerHTML = "<p>Nenhum jogo encontrado.</p>";
-                    return;
-                }
+                if (querySnapshot.empty) { divLista.innerHTML = "<p>Nenhum jogo.</p>"; return; }
 
                 querySnapshot.forEach((doc) => {
                     const data = doc.data();
                     const item = document.createElement('div');
                     item.className = 'game-item';
                     
-                    // Formata data para exibir na lista
-                    const dataInc = data.dataInclusao ? new Date(data.dataInclusao).toLocaleDateString('pt-BR') : '-';
-                    
+                    // Lógica para exibir data ou aviso
+                    const dataInc = data.dataInclusao ? new Date(data.dataInclusao).toLocaleDateString('pt-BR') : 'Sem registro';
+                    const dataUpd = data.dataAtualizacao ? new Date(data.dataAtualizacao).toLocaleDateString('pt-BR') : '-';
+
                     item.innerHTML = `
-                        <div>
+                        <div class="game-info-col">
                             <span class="game-id">${data.id}</span>
-                            <strong>${data.nome}</strong>
+                            <strong style="font-size:1.1rem">${data.nome}</strong>
+                            <div>
+                                <span class="date-badge">📅 Criado: ${dataInc}</span>
+                                <span class="date-badge">🔄 Atualizado: ${dataUpd}</span>
+                            </div>
                         </div>
-                        <div class="game-dates">
-                            Criado em: ${dataInc}<br>
-                            <span style="font-size:1.2rem">✏️</span>
-                        </div>
+                        <span style="font-size:1.5rem">✏️</span>
                     `;
                     item.onclick = () => preencherEditor(data);
                     divLista.appendChild(item);
                 });
-            } catch (e) {
-                divLista.innerHTML = `<p style="color:red">Erro: ${e.message}</p>`;
-            }
+            } catch (e) { divLista.innerHTML = `<p style="color:red">Erro: ${e.message}</p>`; }
         }
 
         function preencherEditor(data) {
@@ -190,11 +155,9 @@
             document.getElementById('arquivo').value = data.arquivo;
             document.getElementById('img').value = data.img;
             document.getElementById('topo').scrollIntoView({ behavior: 'smooth' });
-            
-            const status = document.getElementById('status');
-            status.style.display = 'block';
-            status.style.background = '#fff3cd';
-            status.innerText = `Editando: ${data.nome}`;
+            document.getElementById('status').style.display = 'block';
+            document.getElementById('status').innerText = `Editando: ${data.nome}`;
+            document.getElementById('status').style.background = '#fff3cd';
         }
 
         window.salvarJogo = async function() {
@@ -204,46 +167,31 @@
             const arquivo = document.getElementById('arquivo').value;
             const img = document.getElementById('img').value;
 
-            if(!id || !arquivo) { alert("ID e Arquivo são obrigatórios!"); return; }
+            if(!id || !arquivo) { alert("ID e Arquivo obrigatórios!"); return; }
 
             try {
                 const docRef = doc(db, "listaJogos", id);
                 const docSnap = await getDoc(docRef);
-                const agora = new Date().toISOString(); // Salva como string ISO
+                const agora = new Date().toISOString();
 
-                let dadosParaSalvar = {
-                    id, nome, desc, arquivo, img,
-                    dataAtualizacao: agora
-                };
-
-                // Se o jogo NÃO existe, adiciona a data de inclusão
+                let dados = { id, nome, desc, arquivo, img, dataAtualizacao: agora };
+                
+                // Se não existe, cria a data de inclusão. Se existe, mantém a antiga.
                 if (!docSnap.exists()) {
-                    dadosParaSalvar.dataInclusao = agora;
+                    dados.dataInclusao = agora;
                 }
 
-                // Merge: true garante que não apaga campos antigos (como dataInclusao se já existir)
-                await setDoc(docRef, dadosParaSalvar, { merge: true });
+                await setDoc(docRef, dados, { merge: true });
                 await setDoc(doc(db, "config", "gameStats"), { [id]: 0 }, { merge: true });
 
-                const status = document.getElementById('status');
-                status.style.display = 'block';
-                status.style.background = '#d4edda';
-                status.style.color = '#155724';
-                status.innerText = "✅ Jogo Salvo com Sucesso!";
-                
+                document.getElementById('status').innerText = "✅ Jogo Salvo! Data Atualizada.";
+                document.getElementById('status').style.background = '#d4edda';
                 carregarLista();
-
-            } catch (e) {
-                alert("Erro ao salvar: " + e.message);
-            }
+            } catch (e) { alert("Erro: " + e.message); }
         }
 
         window.limparFormulario = function() {
-            document.getElementById('idJogo').value = "";
-            document.getElementById('nome').value = "";
-            document.getElementById('desc').value = "";
-            document.getElementById('arquivo').value = "";
-            document.getElementById('img').value = "";
+            document.querySelectorAll('input').forEach(i => i.value = '');
             document.getElementById('status').style.display = 'none';
         }
     </script>
