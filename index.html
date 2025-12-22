@@ -23,68 +23,28 @@
         .user-info img { width: 45px; height: 45px; border-radius: 50%; border: 2px solid var(--secondary); }
         .chips-display { background: var(--secondary); padding: 5px 15px; border-radius: 20px; font-weight: bold; color: #3E2723; }
 
-        /* --- CARDS DE JOGO (LISTA PADRÃO) --- */
+        /* --- CARDS DE JOGO --- */
         .game-card { background: white; border-radius: 15px; overflow: hidden; box-shadow: 0 4px 0 #CFD8DC; margin-bottom: 20px; text-align: left; transition: transform 0.1s; position: relative; }
         .game-card:active { transform: scale(0.99); }
-        
-        /* ⚠️ PROPORÇÃO 16:11 EXATA */
         .game-thumb { width: 100%; aspect-ratio: 16 / 11; background-color: #111; background-size: cover; background-position: center; }
-        
         .game-info { padding: 15px; display: flex; justify-content: space-between; align-items: center; }
         
-        /* NOVO ESTILO PARA DATAS */
-        .game-dates { font-size: 0.65rem; color: #999; margin-top: 8px; border-top: 1px solid #eee; padding-top: 5px; }
-        .game-dates span { display: inline-block; margin-right: 10px; }
+        /* --- DATAS (NOVO) --- */
+        .game-dates { font-size: 0.7rem; color: #888; margin-top: 8px; border-top: 1px solid #f0f0f0; padding-top: 5px; display: flex; flex-direction: column; gap: 2px; }
+        .game-dates span { display: flex; align-items: center; gap: 5px; }
 
         .play-btn { background: var(--green); color: white; border: none; padding: 10px 25px; border-radius: 10px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 0 #2E7D32; font-family: 'Fredoka One'; }
         .play-btn:active { transform: translateY(4px); box-shadow: none; }
 
-        /* --- NOVO: GRID DE IMAGENS (TOP E FAV) --- */
-        .grid-games {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr); /* 4 Colunas no PC */
-            gap: 10px;
-            padding: 5px;
-        }
-
-        .card-grid {
-            position: relative;
-            border-radius: 15px;
-            overflow: hidden;
-            aspect-ratio: 16 / 11; /* Proporção Exata */
-            cursor: pointer;
-            box-shadow: 0 4px 5px rgba(0,0,0,0.2);
-            transition: transform 0.2s;
-        }
+        /* --- GRID DE IMAGENS --- */
+        .grid-games { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; padding: 5px; }
+        .card-grid { position: relative; border-radius: 15px; overflow: hidden; aspect-ratio: 16 / 11; cursor: pointer; box-shadow: 0 4px 5px rgba(0,0,0,0.2); transition: transform 0.2s; }
         .card-grid:active { transform: scale(0.95); }
-
-        .card-grid-thumb {
-            width: 100%; height: 100%;
-            background-size: cover;
-            background-position: center;
-        }
-
-        /* Capa transparente com ícone */
-        .card-overlay {
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.3); /* Escurece levemente */
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            opacity: 0.8;
-            transition: 0.3s;
-        }
+        .card-grid-thumb { width: 100%; height: 100%; background-size: cover; background-position: center; }
+        .card-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.3); display: flex; justify-content: center; align-items: center; opacity: 0.8; transition: 0.3s; }
         .card-grid:hover .card-overlay { background: rgba(0, 0, 0, 0.1); opacity: 1; }
+        .play-icon-overlay { font-size: 2.5rem; color: white; text-shadow: 0 0 10px rgba(0,0,0,0.8); filter: drop-shadow(0 4px 2px rgba(0,0,0,0.5)); }
 
-        .play-icon-overlay {
-            font-size: 2.5rem;
-            color: white;
-            text-shadow: 0 0 10px rgba(0,0,0,0.8);
-            filter: drop-shadow(0 4px 2px rgba(0,0,0,0.5));
-        }
-
-        /* Responsividade da Grid no Celular (2 Colunas para não ficar minúsculo) */
         @media (max-width: 600px) {
             .grid-games { grid-template-columns: repeat(2, 1fr); }
             .game-window { height: 75vh; } 
@@ -101,7 +61,7 @@
         .btn-restart { background: var(--secondary); color: #3E2723; }
         .btn-fullscreen { background: #2196F3; }
 
-        /* --- RANKING --- */
+        /* --- RANKING E TABS --- */
         .rank-list { list-style: none; padding: 0; margin: 0; }
         .rank-item { background: white; margin-bottom: 10px; padding: 10px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         .rank-item.me { border: 2px solid var(--primary); background: #FFF3E0; }
@@ -153,20 +113,17 @@
             <div class="chips-display">🪙 <span id="user-fichas">0</span></div>
         </header>
 
-        <!-- ABA 1: NOVOS (Layout Lista Padrão) -->
         <div id="tab-novos" class="tab-content active">
             <h2>Novos Jogos 🔥</h2>
             <div id="loading-games">Carregando jogos...</div>
             <div id="lista-novos"></div>
         </div>
 
-        <!-- ABA 2: MAIS JOGADOS (Layout Grid/Grade) -->
         <div id="tab-populares" class="tab-content">
             <h2>Mais Jogados 🏆</h2>
             <div id="lista-populares" class="grid-games"></div>
         </div>
 
-        <!-- ABA 3: FAVORITOS (Layout Grid/Grade) -->
         <div id="tab-favoritos" class="tab-content">
             <h2>Seus Favoritos ❤️</h2>
             <div id="lista-favoritos" class="grid-games"></div>
@@ -191,7 +148,6 @@
         import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
         import { getFirestore, doc, getDoc, getDocs, setDoc, updateDoc, increment, collection, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-        // CONFIGURAÇÃO FIREBASE
         const firebaseConfig = {
             apiKey: "AIzaSyBIR7CqYYvMZVQxtO67JCQoJ3OLT1cvAx8",
             authDomain: "kn-jogos.firebaseapp.com",
@@ -212,9 +168,7 @@
         let userStats = {}; 
         let JOGOS_CONFIG = []; 
 
-        document.getElementById('btn-login').addEventListener('click', () => {
-            signInWithPopup(auth, provider).catch(alert);
-        });
+        document.getElementById('btn-login').addEventListener('click', () => { signInWithPopup(auth, provider).catch(alert); });
 
         onAuthStateChanged(auth, async (user) => {
             if (user) {
@@ -232,10 +186,9 @@
             try {
                 const querySnapshot = await getDocs(collection(db, "listaJogos"));
                 JOGOS_CONFIG = [];
-                querySnapshot.forEach((doc) => {
-                    JOGOS_CONFIG.push(doc.data());
-                });
-                // Ordena por data de inclusão (mais novos primeiro) se existir
+                querySnapshot.forEach((doc) => { JOGOS_CONFIG.push(doc.data()); });
+                
+                // Ordena: Jogos com data primeiro, depois os sem data
                 JOGOS_CONFIG.sort((a, b) => {
                     const dateA = a.dataInclusao ? new Date(a.dataInclusao) : new Date(0);
                     const dateB = b.dataInclusao ? new Date(b.dataInclusao) : new Date(0);
@@ -267,26 +220,30 @@
             if(snap.exists()) globalStats = snap.data();
         }
 
-        // Função auxiliar para formatar data
         function formatarData(isoString) {
-            if (!isoString) return "";
+            if (!isoString) return null;
             const d = new Date(isoString);
             return d.toLocaleDateString('pt-BR');
         }
 
-        // --- RENDERIZADOR 1: LISTA NORMAL (Para Aba Novos) ---
         function criarCardHTML(jogo) {
             const caminhoImg = `capas/${jogo.img}`;
             const caminhoArquivo = `jogos/${jogo.arquivo}`;
             
-            // Formata as datas
+            // Lógica de exibição de data
             const dataCriacao = formatarData(jogo.dataInclusao);
             const dataUpdate = formatarData(jogo.dataAtualizacao);
             
-            // Monta o HTML das datas (só exibe se existir)
             let htmlDatas = '<div class="game-dates">';
-            if(dataCriacao) htmlDatas += `<span>📅 Criado: ${dataCriacao}</span>`;
-            if(dataUpdate && dataUpdate !== dataCriacao) htmlDatas += `<span>🔄 Atualizado: ${dataUpdate}</span>`;
+            if (dataCriacao) {
+                htmlDatas += `<span>📅 Lançamento: ${dataCriacao}</span>`;
+            } else {
+                htmlDatas += `<span>📅 Clássico (Sem data)</span>`;
+            }
+            
+            if (dataUpdate && dataUpdate !== dataCriacao) {
+                htmlDatas += `<span>🔄 Atualizado: ${dataUpdate}</span>`;
+            }
             htmlDatas += '</div>';
 
             return `
@@ -303,7 +260,6 @@
             </div>`;
         }
 
-        // --- RENDERIZADOR 2: GRADE SÓ IMAGEM (Para Abas Top e Fav) ---
         function criarCardGridHTML(jogo) {
             const caminhoImg = `capas/${jogo.img}`;
             const caminhoArquivo = `jogos/${jogo.arquivo}`;
@@ -317,14 +273,9 @@
         }
 
         function renderizarTodosJogos() {
-            // 1. Aba Novos (Lista Detalhada)
             document.getElementById('lista-novos').innerHTML = JOGOS_CONFIG.map(j => criarCardHTML(j)).join('');
-            
-            // 2. Aba Populares (Grade Compacta)
             const populares = [...JOGOS_CONFIG].sort((a,b) => (globalStats[b.id] || 0) - (globalStats[a.id] || 0));
             document.getElementById('lista-populares').innerHTML = populares.map(j => criarCardGridHTML(j)).join('');
-            
-            // 3. Aba Favoritos (Grade Compacta)
             const favoritos = [...JOGOS_CONFIG].filter(j => (userStats[j.id] || 0) > 0).sort((a,b) => (userStats[b.id] || 0) - (userStats[a.id] || 0));
             document.getElementById('lista-favoritos').innerHTML = favoritos.length ? favoritos.map(j => criarCardGridHTML(j)).join('') : "<p style='color:#666; width:100%;'>Ainda não jogou nada.</p>";
         }
@@ -367,15 +318,12 @@
             const userRef = doc(db, "users", currentUser.uid);
             const snap = await getDoc(userRef);
             if (snap.data().fichas < 1) { mostrarNotificacao("🚫 Sem fichas!"); return; }
-
             const updates = { fichas: increment(-1) };
             updates[`jogosJogados.${idJogo}`] = increment(1);
             await updateDoc(userRef, updates);
             setDoc(doc(db, "config", "gameStats"), { [idJogo]: increment(1) }, { merge: true });
-
             document.getElementById('user-fichas').innerText = snap.data().fichas - 1;
             window.jogoAtualID = idJogo;
-
             const modal = document.getElementById('game-modal');
             const iframe = document.getElementById('game-frame');
             modal.style.display = 'flex';
