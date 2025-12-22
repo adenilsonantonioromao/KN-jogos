@@ -1,38 +1,37 @@
 name: Juiz Automatico KN Jogos
 
 on:
-  # Agendamento Automático
   schedule:
-    # CRON: Minuto Hora Dia Mês DiaDaSemana
-    # O GitHub usa horário UTC. 
-    # Brasília é UTC-3. Para rodar 00:00 BRT, configuramos 03:00 UTC.
+    # Roda as 03:00 UTC (00:00 Brasil)
     - cron: '0 3 * * *'
-  
-  # Permite rodar manualmente clicando num botão na aba "Actions" (Ótimo para testar agora)
+  # Botão para rodar manual
   workflow_dispatch:
 
 jobs:
   premiar:
     runs-on: ubuntu-latest
-    
+
     steps:
-    # 1. Baixa os arquivos do seu repositório para a máquina virtual do GitHub
     - name: Baixar código do repositório
       uses: actions/checkout@v3
 
-    # 2. Instala o Node.js (Ambiente Javascript)
     - name: Instalar Node.js
       uses: actions/setup-node@v3
       with:
         node-version: 18
 
-    # 3. Instala a biblioteca do Firebase (necessária para o juiz.js funcionar)
     - name: Instalar Dependências (Firebase)
       run: npm install firebase-admin
 
-    # 4. Roda o script do Juiz usando a chave secreta guardada no GitHub
+    # --- AQUI ESTÁ O DETETIVE ---
+    - name: 🕵️‍♂️ MODO DETETIVE (Listar Arquivos)
+      run: |
+        echo "--- ARQUIVOS NA RAIZ ---"
+        ls -la
+        echo "--- ARQUIVOS DENTRO DE SCRIPTS ---"
+        ls -la scripts || echo "❌ A PASTA SCRIPTS NÃO FOI ENCONTRADA!"
+
     - name: Rodar o Juiz
       env:
-        # Pega a chave que você salvou nos Secrets do GitHub
         FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
       run: node scripts/juiz.js
