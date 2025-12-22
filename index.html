@@ -31,7 +31,11 @@
         .game-thumb { width: 100%; aspect-ratio: 16 / 11; background-color: #111; background-size: cover; background-position: center; }
         
         .game-info { padding: 15px; display: flex; justify-content: space-between; align-items: center; }
-        .play-stats { font-size: 0.75rem; color: #999; margin-top: 5px; display: flex; gap: 10px; }
+        
+        /* NOVO ESTILO PARA DATAS */
+        .game-dates { font-size: 0.65rem; color: #999; margin-top: 8px; border-top: 1px solid #eee; padding-top: 5px; }
+        .game-dates span { display: inline-block; margin-right: 10px; }
+
         .play-btn { background: var(--green); color: white; border: none; padding: 10px 25px; border-radius: 10px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 0 #2E7D32; font-family: 'Fredoka One'; }
         .play-btn:active { transform: translateY(4px); box-shadow: none; }
 
@@ -231,6 +235,12 @@
                 querySnapshot.forEach((doc) => {
                     JOGOS_CONFIG.push(doc.data());
                 });
+                // Ordena por data de inclusão (mais novos primeiro) se existir
+                JOGOS_CONFIG.sort((a, b) => {
+                    const dateA = a.dataInclusao ? new Date(a.dataInclusao) : new Date(0);
+                    const dateB = b.dataInclusao ? new Date(b.dataInclusao) : new Date(0);
+                    return dateB - dateA;
+                });
                 document.getElementById('loading-games').style.display = 'none';
             } catch (e) {
                 console.error(e);
@@ -257,10 +267,28 @@
             if(snap.exists()) globalStats = snap.data();
         }
 
+        // Função auxiliar para formatar data
+        function formatarData(isoString) {
+            if (!isoString) return "";
+            const d = new Date(isoString);
+            return d.toLocaleDateString('pt-BR');
+        }
+
         // --- RENDERIZADOR 1: LISTA NORMAL (Para Aba Novos) ---
         function criarCardHTML(jogo) {
             const caminhoImg = `capas/${jogo.img}`;
             const caminhoArquivo = `jogos/${jogo.arquivo}`;
+            
+            // Formata as datas
+            const dataCriacao = formatarData(jogo.dataInclusao);
+            const dataUpdate = formatarData(jogo.dataAtualizacao);
+            
+            // Monta o HTML das datas (só exibe se existir)
+            let htmlDatas = '<div class="game-dates">';
+            if(dataCriacao) htmlDatas += `<span>📅 Criado: ${dataCriacao}</span>`;
+            if(dataUpdate && dataUpdate !== dataCriacao) htmlDatas += `<span>🔄 Atualizado: ${dataUpdate}</span>`;
+            htmlDatas += '</div>';
+
             return `
             <div class="game-card">
                 <div class="game-thumb" style="background-image: url('${caminhoImg}');"></div>
@@ -268,6 +296,7 @@
                     <div>
                         <h3 style="margin:0; font-size:1.1rem;">${jogo.nome}</h3>
                         <p style="margin:5px 0; font-size:0.8rem; color:#666;">${jogo.desc}</p>
+                        ${htmlDatas}
                     </div>
                     <button class="play-btn" onclick="iniciarJogo('${caminhoArquivo}', '${jogo.id}')">JOGAR</button>
                 </div>
