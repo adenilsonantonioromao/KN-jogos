@@ -331,17 +331,44 @@
         // --- RESTO DO CÓDIGO ---
         window.abrirModalShare = function() { document.getElementById('share-modal').style.display = 'flex'; }
         window.fecharModalShare = function() { document.getElementById('share-modal').style.display = 'none'; }
-        window.copiarLinkGanharFichas = async function() {
+       window.copiarLinkGanharFichas = async function() {
+            // 1. Copia o link para a área de transferência (Isso sempre acontece)
             const input = document.getElementById('share-link-input');
-            input.select(); input.setSelectionRange(0, 99999);
+            input.select();
+            input.setSelectionRange(0, 99999); // Para celulares
             navigator.clipboard.writeText(input.value);
-            mostrarNotificacao("Link copiado! +3 Fichas 🪙");
+            
+            // 2. Verifica a Recompensa Diária
             if (currentUser) {
                 const userRef = doc(db, "users", currentUser.uid);
-                await updateDoc(userRef, { fichas: increment(3) });
-                document.getElementById('user-fichas').innerText = parseInt(document.getElementById('user-fichas').innerText) + 3;
+                
+                // Pega os dados atuais do usuário no banco
+                const snap = await getDoc(userRef);
+                const data = snap.data();
+
+                // Gera a data de hoje em formato texto (ex: "22/12/2025")
+                const hoje = new Date().toLocaleDateString('pt-BR');
+
+                // Verifica se já resgatou hoje
+                if (data.ultimoResgateShare === hoje) {
+                    // Já pegou hoje
+                    mostrarNotificacao("Link copiado! (Recompensa diária já coletada) ✅");
+                } else {
+                    // Ainda não pegou hoje: Dá 10 Fichas e Salva a Data
+                    await updateDoc(userRef, { 
+                        fichas: increment(10),
+                        ultimoResgateShare: hoje 
+                    });
+                    
+                    // Atualiza o visual
+                    document.getElementById('user-fichas').innerText = data.fichas + 10;
+                    mostrarNotificacao("Link copiado! Ganhou +10 Fichas! 🎉");
+                }
+            } else {
+                mostrarNotificacao("Link copiado! Faça login para ganhar fichas.");
             }
-            setTimeout(fecharModalShare, 1500);
+            
+            setTimeout(fecharModalShare, 2000);
         }
 
         async function carregarListaDeJogos() {
@@ -510,3 +537,4 @@
     </script>
 </body>
 </html>
+
