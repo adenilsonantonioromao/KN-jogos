@@ -250,6 +250,23 @@
     </div>
 
     <script type="module">
+        <script type="module">
+        // --- CÓDIGO DE SEGURANÇA (PARAQUEDAS) ---
+        // Se o site travar por 5 segundos, isso força o desbloqueio
+        setTimeout(() => {
+            const splash = document.getElementById('splash-screen');
+            if (splash && splash.style.display !== 'none') {
+                console.warn("⚠️ O carregamento demorou demais. Forçando abertura.");
+                splash.style.display = 'none';
+                // Se não carregou o usuário, mostra o login por segurança
+                if (document.getElementById('app-container').style.display === 'none') {
+                    document.getElementById('login-screen').style.display = 'flex';
+                }
+            }
+        }, 5000); // 5000ms = 5 segundos
+
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        // ... (resto dos seus imports continuam aqui)
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
         import { getFirestore, doc, getDoc, getDocs, setDoc, updateDoc, increment, collection, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
@@ -484,4 +501,5 @@
             if (!isoString) return null;
             const d = new Date(isoString);
             return d.toLocaleDateString('pt-BR');
+
 
