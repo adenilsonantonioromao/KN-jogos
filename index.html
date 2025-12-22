@@ -12,6 +12,48 @@
         body { font-family: 'Nunito', sans-serif; background-color: var(--bg); margin: 0; padding: 0; text-align: center; color: var(--dark); padding-bottom: 80px; }
         h1, h2, h3 { font-family: 'Fredoka One', cursive; color: var(--primary); margin: 10px 0; }
         
+        /* --- CARROSSEL DE BANNERS (NOVO) --- */
+        .carousel-container {
+            width: 100%;
+            max-width: 600px;
+            height: 200px; /* Altura do banner */
+            margin: 10px auto 20px auto;
+            border-radius: 15px;
+            overflow: hidden;
+            position: relative;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            background: #ddd;
+        }
+        .carousel-slide {
+            width: 100%;
+            height: 100%;
+            background-size: cover;
+            background-position: center;
+            position: absolute;
+            top: 0; left: 0;
+            opacity: 0;
+            transition: opacity 1s ease-in-out;
+        }
+        .carousel-slide.active { opacity: 1; }
+        
+        /* Bolinhas de navegação */
+        .carousel-dots {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 8px;
+            z-index: 10;
+        }
+        .dot {
+            width: 10px; height: 10px;
+            background: rgba(255,255,255,0.5);
+            border-radius: 50%;
+            cursor: pointer;
+        }
+        .dot.active { background: white; transform: scale(1.2); }
+
         /* --- LOGIN --- */
         #login-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, #2196F3, #9C27B0); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 2000; }
         .login-box { background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); width: 85%; max-width: 350px; }
@@ -21,24 +63,19 @@
         header { background: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 10px rgba(0,0,0,0.05); position: sticky; top: 0; z-index: 100; }
         .user-info { display: flex; align-items: center; gap: 10px; }
         .user-info img { width: 45px; height: 45px; border-radius: 50%; border: 2px solid var(--secondary); }
-        
-        /* ÁREA DE FICHAS E SHARE */
         .header-actions { display: flex; align-items: center; gap: 8px; }
         .chips-display { background: var(--secondary); padding: 5px 15px; border-radius: 20px; font-weight: bold; color: #3E2723; display: flex; align-items: center; gap: 5px; }
         .btn-share-header { background: #25D366; color: white; border: none; width: 35px; height: 35px; border-radius: 50%; cursor: pointer; font-size: 1.2rem; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.2); transition: transform 0.1s; }
         .btn-share-header:active { transform: scale(0.9); }
 
-        /* --- MODAL DE COMPARTILHAMENTO --- */
+        /* --- MODAL SHARE --- */
         #share-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 5000; justify-content: center; align-items: center; padding: 20px; }
         .share-box { background: white; padding: 25px; border-radius: 20px; max-width: 400px; width: 100%; text-align: center; position: relative; animation: popIn 0.3s; }
-        .share-box h2 { color: #25D366; margin-top: 0; }
         .share-info { background: #f0fdf4; padding: 15px; border-radius: 10px; margin: 15px 0; text-align: left; font-size: 0.9rem; border: 1px solid #bbf7d0; }
-        .share-info p { margin: 5px 0; display: flex; align-items: center; gap: 8px; }
         .share-link-box { display: flex; gap: 5px; margin-top: 15px; }
         .share-link-input { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 8px; background: #eee; color: #555; font-size: 0.8rem; }
         .btn-copy { background: #25D366; color: white; border: none; padding: 0 20px; border-radius: 8px; font-weight: bold; cursor: pointer; }
         .close-modal { position: absolute; top: 10px; right: 15px; font-size: 1.5rem; cursor: pointer; color: #999; }
-
         @keyframes popIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 
         /* --- CARDS DE JOGO --- */
@@ -46,14 +83,12 @@
         .game-card:active { transform: scale(0.99); }
         .game-thumb { width: 100%; aspect-ratio: 16 / 11; background-color: #111; background-size: cover; background-position: center; }
         .game-info { padding: 15px; display: flex; justify-content: space-between; align-items: center; }
-        
         .game-dates { font-size: 0.7rem; color: #888; margin-top: 8px; border-top: 1px solid #f0f0f0; padding-top: 5px; display: flex; flex-direction: column; gap: 2px; }
         .game-dates span { display: flex; align-items: center; gap: 5px; }
-
         .play-btn { background: var(--green); color: white; border: none; padding: 10px 25px; border-radius: 10px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 0 #2E7D32; font-family: 'Fredoka One'; }
         .play-btn:active { transform: translateY(4px); box-shadow: none; }
 
-        /* --- GRID DE IMAGENS --- */
+        /* --- GRID --- */
         .grid-games { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; padding: 5px; }
         .card-grid { position: relative; border-radius: 15px; overflow: hidden; aspect-ratio: 16 / 11; cursor: pointer; box-shadow: 0 4px 5px rgba(0,0,0,0.2); transition: transform 0.2s; }
         .card-grid:active { transform: scale(0.95); }
@@ -61,11 +96,7 @@
         .card-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.3); display: flex; justify-content: center; align-items: center; opacity: 0.8; transition: 0.3s; }
         .card-grid:hover .card-overlay { background: rgba(0, 0, 0, 0.1); opacity: 1; }
         .play-icon-overlay { font-size: 2.5rem; color: white; text-shadow: 0 0 10px rgba(0,0,0,0.8); filter: drop-shadow(0 4px 2px rgba(0,0,0,0.5)); }
-
-        @media (max-width: 600px) {
-            .grid-games { grid-template-columns: repeat(2, 1fr); }
-            .game-window { height: 75vh; } 
-        }
+        @media (max-width: 600px) { .grid-games { grid-template-columns: repeat(2, 1fr); } .game-window { height: 75vh; } }
 
         /* --- JANELA DE JOGO --- */
         #game-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.95); backdrop-filter: blur(5px); z-index: 3000; flex-direction: column; justify-content: center; align-items: center; }
@@ -78,7 +109,17 @@
         .btn-restart { background: var(--secondary); color: #3E2723; }
         .btn-fullscreen { background: #2196F3; }
 
-        /* --- RANKING E TABS --- */
+        /* --- NAV E NOTIF --- */
+        .tab-content { display: none; padding: 15px; animation: fadeIn 0.3s; }
+        .tab-content.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        .bottom-nav { position: fixed; bottom: 0; width: 100%; background: white; display: flex; justify-content: space-around; padding: 10px 0; border-top-left-radius: 20px; border-top-right-radius: 20px; box-shadow: 0 -5px 15px rgba(0,0,0,0.05); z-index: 100; max-width: 600px; left: 50%; transform: translateX(-50%); }
+        .nav-btn { background: none; border: none; font-size: 0.75rem; color: #90A4AE; cursor: pointer; display: flex; flex-direction: column; align-items: center; font-weight: bold; width: 25%; }
+        .nav-btn.active { color: var(--primary); }
+        .nav-btn span { font-size: 1.4rem; margin-bottom: 2px; }
+        .notification { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: #333; color: white; padding: 10px 20px; border-radius: 30px; z-index: 4000; display: none; font-weight: bold; width: 80%; max-width: 300px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
+        
+        /* RANKING */
         .rank-list { list-style: none; padding: 0; margin: 0; }
         .rank-item { background: white; margin-bottom: 10px; padding: 10px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         .rank-item.me { border: 2px solid var(--primary); background: #FFF3E0; }
@@ -86,40 +127,25 @@
         .rank-user { display: flex; align-items: center; gap: 10px; flex-grow: 1; text-align: left; }
         .rank-user img { width: 30px; height: 30px; border-radius: 50%; }
         .rank-score { font-weight: bold; color: var(--green); }
-        
-        .tab-content { display: none; padding: 15px; animation: fadeIn 0.3s; }
-        .tab-content.active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-
-        .bottom-nav { position: fixed; bottom: 0; width: 100%; background: white; display: flex; justify-content: space-around; padding: 10px 0; border-top-left-radius: 20px; border-top-right-radius: 20px; box-shadow: 0 -5px 15px rgba(0,0,0,0.05); z-index: 100; max-width: 600px; left: 50%; transform: translateX(-50%); }
-        .nav-btn { background: none; border: none; font-size: 0.75rem; color: #90A4AE; cursor: pointer; display: flex; flex-direction: column; align-items: center; font-weight: bold; width: 25%; }
-        .nav-btn.active { color: var(--primary); }
-        .nav-btn span { font-size: 1.4rem; margin-bottom: 2px; }
-
-        .notification { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: #333; color: white; padding: 10px 20px; border-radius: 30px; z-index: 4000; display: none; font-weight: bold; width: 80%; max-width: 300px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
     </style>
 </head>
 <body>
 
     <div id="notificacao" class="notification"></div>
     
-    <!-- MODAL DE COMPARTILHAMENTO -->
     <div id="share-modal">
         <div class="share-box">
             <span class="close-modal" onclick="fecharModalShare()">×</span>
             <h2>📢 Ganhe Fichas!</h2>
             <p>Convide amigos e ganhe recompensas.</p>
-            
             <div class="share-info">
                 <p>🔗 <strong>+3 Fichas:</strong> Por cada link enviado/copiado.</p>
                 <p>👥 <strong>+25 Fichas:</strong> Por cada amigo que se cadastrar.</p>
             </div>
-
             <div class="share-link-box">
                 <input type="text" id="share-link-input" class="share-link-input" readonly value="Carregando...">
                 <button class="btn-copy" onclick="copiarLinkGanharFichas()">COPIAR</button>
             </div>
-            <p style="font-size:0.75rem; color:#999; margin-top:10px;">Envie no WhatsApp, Discord ou Telegram!</p>
         </div>
     </div>
 
@@ -155,6 +181,12 @@
         </header>
 
         <div id="tab-novos" class="tab-content active">
+            <!-- CARROSSEL DE BANNERS -->
+            <div id="carousel-container" class="carousel-container" style="display:none;">
+                <!-- Slides injetados via JS -->
+                <div class="carousel-dots" id="carousel-dots"></div>
+            </div>
+
             <h2>Novos Jogos 🔥</h2>
             <div id="loading-games">Carregando jogos...</div>
             <div id="lista-novos"></div>
@@ -209,13 +241,9 @@
         let userStats = {}; 
         let JOGOS_CONFIG = []; 
 
-        // --- LÓGICA DE INDICAÇÃO (CAPTURA O REF NA URL) ---
         const urlParams = new URLSearchParams(window.location.search);
         const refID = urlParams.get('ref');
-        if (refID) {
-            console.log("Usuário indicado por:", refID);
-            sessionStorage.setItem('kn_referrer', refID);
-        }
+        if (refID) sessionStorage.setItem('kn_referrer', refID);
 
         document.getElementById('btn-login').addEventListener('click', () => { signInWithPopup(auth, provider).catch(alert); });
 
@@ -225,12 +253,12 @@
                 document.getElementById('login-screen').style.display = 'none';
                 document.getElementById('app-container').style.display = 'block';
                 
-                // Gera o link de indicação do usuário
                 const meuLink = `${window.location.origin}${window.location.pathname}?ref=${user.uid}`;
                 document.getElementById('share-link-input').value = meuLink;
 
                 await carregarUsuario(user);
                 await carregarListaDeJogos(); 
+                await carregarBanners(); // NOVO: Carrega os banners
                 await carregarStatsGlobais();
                 renderizarTodosJogos();
             }
@@ -239,38 +267,14 @@
         async function carregarUsuario(user) {
             const userRef = doc(db, "users", user.uid);
             let snap = await getDoc(userRef);
-            
-            // --- LÓGICA DE NOVO USUÁRIO + RECOMPENSA DE INDICAÇÃO ---
             if (!snap.exists()) {
-                // Cria o usuário novo
-                await setDoc(userRef, { 
-                    nome: user.displayName, 
-                    email: user.email, 
-                    foto: user.photoURL, 
-                    fichas: 5, 
-                    pontuacaoTotal: 0, 
-                    recordes: {}, 
-                    jogosJogados: {},
-                    dataInscricao: new Date().toISOString()
-                });
-                
-                // Verifica se veio por indicação
+                await setDoc(userRef, { nome: user.displayName, email: user.email, foto: user.photoURL, fichas: 5, pontuacaoTotal: 0, recordes: {}, jogosJogados: {}, dataInscricao: new Date().toISOString() });
                 const referrerID = sessionStorage.getItem('kn_referrer');
                 if (referrerID && referrerID !== user.uid) {
-                    try {
-                        // Dá 25 fichas para quem indicou
-                        const refRef = doc(db, "users", referrerID);
-                        await updateDoc(refRef, { fichas: increment(25) });
-                        console.log("Recompensa de 25 fichas enviada para:", referrerID);
-                    } catch (e) {
-                        console.error("Erro ao recompensar indicador:", e);
-                    }
+                    try { await updateDoc(doc(db, "users", referrerID), { fichas: increment(25) }); } catch (e) {}
                 }
-
                 snap = await getDoc(userRef);
             }
-            // ---------------------------------------------------------
-
             const data = snap.data();
             userStats = data.jogosJogados || {};
             document.getElementById('user-name').innerText = user.displayName.split(' ')[0];
@@ -278,35 +282,82 @@
             document.getElementById('user-fichas').innerText = data.fichas;
         }
 
-        // --- SISTEMA DE COMPARTILHAMENTO ---
-        window.abrirModalShare = function() {
-            document.getElementById('share-modal').style.display = 'flex';
+        // --- LÓGICA DE BANNERS (CARROSSEL) ---
+        async function carregarBanners() {
+            try {
+                const querySnapshot = await getDocs(collection(db, "listaBanners"));
+                let banners = [];
+                querySnapshot.forEach((doc) => banners.push(doc.data()));
+                
+                if(banners.length === 0) return;
+
+                // Ordena por ordem definida no admin
+                banners.sort((a, b) => a.ordem - b.ordem);
+
+                const container = document.getElementById('carousel-container');
+                const dotsContainer = document.getElementById('carousel-dots');
+                container.style.display = 'block';
+
+                banners.forEach((b, index) => {
+                    // Cria Slide
+                    const slide = document.createElement('div');
+                    slide.className = `carousel-slide ${index === 0 ? 'active' : ''}`;
+                    slide.style.backgroundImage = `url('banners/${b.arquivo}')`;
+                    container.appendChild(slide);
+
+                    // Cria Bolinha
+                    const dot = document.createElement('div');
+                    dot.className = `dot ${index === 0 ? 'active' : ''}`;
+                    dot.onclick = () => mudarSlide(index);
+                    dotsContainer.appendChild(dot);
+                });
+
+                iniciarRotacaoBanners(banners.length);
+
+            } catch (e) { console.error("Erro banners:", e); }
         }
-        window.fecharModalShare = function() {
-            document.getElementById('share-modal').style.display = 'none';
+
+        let currentSlide = 0;
+        let slideInterval;
+
+        function iniciarRotacaoBanners(total) {
+            if(total <= 1) return;
+            slideInterval = setInterval(() => {
+                let next = currentSlide + 1;
+                if(next >= total) next = 0;
+                mudarSlide(next);
+            }, 5000); // 5 Segundos
         }
-        
+
+        function mudarSlide(index) {
+            const slides = document.querySelectorAll('.carousel-slide');
+            const dots = document.querySelectorAll('.dot');
+            
+            slides[currentSlide].classList.remove('active');
+            dots[currentSlide].classList.remove('active');
+            
+            currentSlide = index;
+            
+            slides[currentSlide].classList.add('active');
+            dots[currentSlide].classList.add('active');
+        }
+
+        // --- RESTO DO CÓDIGO ---
+        window.abrirModalShare = function() { document.getElementById('share-modal').style.display = 'flex'; }
+        window.fecharModalShare = function() { document.getElementById('share-modal').style.display = 'none'; }
         window.copiarLinkGanharFichas = async function() {
             const input = document.getElementById('share-link-input');
-            input.select();
-            input.setSelectionRange(0, 99999); // Mobile
+            input.select(); input.setSelectionRange(0, 99999);
             navigator.clipboard.writeText(input.value);
-            
             mostrarNotificacao("Link copiado! +3 Fichas 🪙");
-            
-            // Adiciona 3 fichas ao usuário atual
             if (currentUser) {
                 const userRef = doc(db, "users", currentUser.uid);
                 await updateDoc(userRef, { fichas: increment(3) });
-                // Atualiza visualmente
-                const currentFichas = parseInt(document.getElementById('user-fichas').innerText);
-                document.getElementById('user-fichas').innerText = currentFichas + 3;
+                document.getElementById('user-fichas').innerText = parseInt(document.getElementById('user-fichas').innerText) + 3;
             }
-            
             setTimeout(fecharModalShare, 1500);
         }
 
-        // --- RESTO DO CÓDIGO (JOGOS, RANKING, ETC) ---
         async function carregarListaDeJogos() {
             try {
                 const querySnapshot = await getDocs(collection(db, "listaJogos"));
@@ -318,10 +369,7 @@
                     return dateB - dateA;
                 });
                 document.getElementById('loading-games').style.display = 'none';
-            } catch (e) {
-                console.error(e);
-                document.getElementById('loading-games').innerText = "Erro ao carregar jogos.";
-            }
+            } catch (e) { console.error(e); }
         }
 
         async function carregarStatsGlobais() {
@@ -340,13 +388,11 @@
             const caminhoArquivo = `jogos/${jogo.arquivo}`;
             const dataCriacao = formatarData(jogo.dataInclusao);
             const dataUpdate = formatarData(jogo.dataAtualizacao);
-            
             let htmlDatas = '<div class="game-dates">';
             if (dataCriacao) htmlDatas += `<span>📅 Lançamento: ${dataCriacao}</span>`;
             else htmlDatas += `<span>📅 Clássico (Sem data)</span>`;
             if (dataUpdate && dataUpdate !== dataCriacao) htmlDatas += `<span>🔄 Atualizado: ${dataUpdate}</span>`;
             htmlDatas += '</div>';
-
             return `
             <div class="game-card">
                 <div class="game-thumb" style="background-image: url('${caminhoImg}');"></div>
@@ -364,13 +410,7 @@
         function criarCardGridHTML(jogo) {
             const caminhoImg = `capas/${jogo.img}`;
             const caminhoArquivo = `jogos/${jogo.arquivo}`;
-            return `
-            <div class="card-grid" onclick="iniciarJogo('${caminhoArquivo}', '${jogo.id}')">
-                <div class="card-grid-thumb" style="background-image: url('${caminhoImg}');"></div>
-                <div class="card-overlay">
-                    <span class="play-icon-overlay">▶</span>
-                </div>
-            </div>`;
+            return `<div class="card-grid" onclick="iniciarJogo('${caminhoArquivo}', '${jogo.id}')"><div class="card-grid-thumb" style="background-image: url('${caminhoImg}');"></div><div class="card-overlay"><span class="play-icon-overlay">▶</span></div></div>`;
         }
 
         function renderizarTodosJogos() {
