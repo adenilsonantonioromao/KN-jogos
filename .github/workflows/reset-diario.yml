@@ -21,10 +21,6 @@ jobs:
     - name: Instalar Firebase
       run: npm install firebase-admin
 
-    # --- AQUI ESTÁ O DETETIVE (Para vermos o erro) ---
-    - name: 🕵️‍♂️ MODO DETETIVE (Listar Tudo)
-      run: ls -R
-
     - name: Rodar o Juiz
       env:
         FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
