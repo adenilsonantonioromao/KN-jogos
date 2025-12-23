@@ -1,66 +1,444 @@
-<!-- 1. BOTÃO DA CARTA (Cole onde quiser que apareça no topo) -->
-<div id="btn-inbox" onclick="abrirInbox()" style="cursor: pointer; position: relative; display: inline-block; margin-left: 15px;">
-    <span style="font-size: 24px;">📩</span>
-    <!-- Bolinha vermelha de notificação -->
-    <div id="inbox-badge" style="display: none; position: absolute; top: -5px; right: -8px; background: red; color: white; border-radius: 50%; width: 18px; height: 18px; font-size: 11px; text-align: center; line-height: 18px; border: 1px solid #fff;">0</div>
-</div>
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KN Jogos Online</title>
+    <style>
+        /* --- ESTILOS GERAIS (Dark Theme) --- */
+        body { margin: 0; font-family: 'Segoe UI', sans-serif; background-color: #121212; color: #fff; overflow-x: hidden; }
+        
+        /* Cabeçalho */
+        header { display: flex; justify-content: space-between; align-items: center; padding: 15px; background: #1f1f1f; border-bottom: 2px solid #333; }
+        .logo { font-weight: bold; font-size: 24px; color: #00ff88; text-transform: uppercase; letter-spacing: 2px; }
+        
+        /* Área do Usuário e Carteira */
+        .user-area { display: flex; align-items: center; gap: 15px; }
+        .wallet { background: #333; padding: 5px 15px; border-radius: 20px; font-weight: bold; color: gold; display: flex; align-items: center; gap: 5px; }
+        .user-pic { width: 40px; height: 40px; border-radius: 50%; border: 2px solid #00ff88; }
+        
+        /* --- ÍCONE DO INBOX (NOVO) --- */
+        #btn-inbox { cursor: pointer; position: relative; display: flex; align-items: center; justify-content: center; }
+        #btn-inbox span { font-size: 26px; }
+        #inbox-badge { 
+            display: none; position: absolute; top: -5px; right: -5px; 
+            background: #ff0044; color: white; border-radius: 50%; 
+            width: 18px; height: 18px; font-size: 11px; font-weight: bold;
+            text-align: center; line-height: 18px; border: 2px solid #1f1f1f; 
+        }
 
-<!-- 2. MODAL DA CAIXA DE ENTRADA (Cole antes do </body>) -->
-<div id="inbox-modal" class="modal-overlay" style="display: none;">
-    <div class="inbox-container">
-        <div class="inbox-header">
-            <h3>📬 Notificações</h3>
-            <button onclick="fecharInbox()" class="btn-close">✖</button>
+        /* Container Principal */
+        #app { display: none; /* Escondido até logar */ }
+        #splash { display: flex; height: 100vh; justify-content: center; align-items: center; flex-direction: column; text-align: center; }
+        
+        /* Botões */
+        .btn-login { background: #fff; color: #333; padding: 10px 20px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 16px; display: flex; align-items: center; gap: 10px; }
+        
+        /* Grid de Jogos */
+        .games-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px; padding: 15px; }
+        .game-card { background: #222; border-radius: 10px; overflow: hidden; transition: transform 0.2s; cursor: pointer; }
+        .game-card:hover { transform: scale(1.05); border: 1px solid #00ff88; }
+        .game-thumb { width: 100%; height: 120px; object-fit: cover; }
+        .game-info { padding: 10px; text-align: center; }
+
+        /* Modal de Jogo (Iframe) */
+        #game-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 3000; }
+        iframe { width: 100%; height: 100%; border: none; }
+        #close-game { position: absolute; top: 10px; right: 10px; background: red; color: white; border: none; padding: 5px 15px; cursor: pointer; z-index: 3001; font-weight: bold; }
+
+        /* --- MODAL DE INBOX (ESTILO NOVO) --- */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.9); z-index: 2000;
+            display: flex; justify-content: center; align-items: center;
+        }
+        .inbox-container {
+            background: #1e1e1e; width: 90%; max-width: 450px; height: 70vh;
+            border-radius: 12px; border: 1px solid #444; display: flex; flex-direction: column;
+            box-shadow: 0 0 25px rgba(0,255,136,0.1);
+        }
+        .inbox-header {
+            padding: 15px; border-bottom: 1px solid #333; display: flex; justify-content: space-between; align-items: center;
+            background: #252525; border-radius: 12px 12px 0 0;
+        }
+        .inbox-list { flex: 1; overflow-y: auto; padding: 10px; }
+        
+        .msg-card {
+            background: #2a2a2a; margin-bottom: 10px; padding: 12px;
+            border-radius: 6px; border-left: 4px solid #555; position: relative;
+            cursor: pointer; transition: 0.2s;
+        }
+        .msg-card:hover { background: #333; }
+        .msg-card.unread { border-left: 4px solid #00ff88; background: #2f3530; }
+        .msg-top { display: flex; justify-content: space-between; margin-bottom: 5px; }
+        .msg-title { font-weight: bold; color: #fff; font-size: 14px; }
+        .msg-date { font-size: 10px; color: #888; }
+        .msg-body { font-size: 13px; color: #ccc; line-height: 1.4; margin-right: 25px; }
+        .btn-trash {
+            position: absolute; bottom: 8px; right: 8px;
+            background: none; border: none; cursor: pointer; font-size: 16px; opacity: 0.6;
+        }
+        .btn-trash:hover { opacity: 1; transform: scale(1.1); color: red; }
+
+        /* Links Úteis */
+        .links-bar { display: flex; justify-content: center; gap: 20px; padding: 10px; background: #1a1a1a; }
+        .links-bar a { color: #aaa; text-decoration: none; font-size: 14px; }
+        .links-bar a:hover { color: #fff; }
+    </style>
+
+    <!-- Importmap Obrigatório para os Jogos -->
+    <script type="importmap">
+    {
+      "imports": {
+        "react": "https://esm.sh/react@18.2.0",
+        "react/jsx-runtime": "https://esm.sh/react@18.2.0/jsx-runtime",
+        "react-dom": "https://esm.sh/react-dom@18.2.0",
+        "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
+        "three": "https://esm.sh/three@0.160.0",
+        "@react-three/fiber": "https://esm.sh/@react-three/fiber@8.15.16?external=react,react-dom,three",
+        "@react-three/drei": "https://esm.sh/@react-three/drei@9.99.0?external=react,react-dom,three,@react-three/fiber"
+      }
+    }
+    </script>
+</head>
+<body>
+
+    <!-- TELA DE LOGIN (Splash) -->
+    <div id="splash">
+        <h1 class="logo" style="font-size: 40px; margin-bottom: 20px;">KN JOGOS</h1>
+        <p>Arcade Web • Competição • Prêmios</p>
+        <button id="btn-google" class="btn-login">
+            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="20">
+            Entrar com Google
+        </button>
+    </div>
+
+    <!-- APLICAÇÃO PRINCIPAL -->
+    <div id="app">
+        <header>
+            <div class="logo">KN</div>
+            <div class="user-area">
+                <!-- Ícone Inbox -->
+                <div id="btn-inbox" title="Minhas Mensagens">
+                    <span>📩</span>
+                    <div id="inbox-badge">0</div>
+                </div>
+                <!-- Carteira -->
+                <div class="wallet">
+                    🪙 <span id="user-fichas">0</span>
+                </div>
+                <!-- Foto -->
+                <img id="user-photo" class="user-pic" src="" alt="User">
+            </div>
+        </header>
+
+        <div class="links-bar">
+            <a href="ranking.html">🏆 Ranking</a>
+            <a href="#" id="btn-share-link">🔗 Compartilhar e Ganhar</a>
+            <a href="admin.html" id="link-admin" style="display:none;">⚙️ Admin</a>
         </div>
-        <div id="inbox-list" class="inbox-list">
-            <p style="text-align: center; color: #888; margin-top: 20px;">Carregando mensagens...</p>
+
+        <!-- Carrossel de Banners -->
+        <div style="width: 100%; height: 200px; background: #333; overflow: hidden; position: relative;">
+             <img src="banners/novosjogos.jpg" style="width:100%; height:100%; object-fit: cover;" onerror="this.src='https://via.placeholder.com/1200x400?text=KN+JOGOS'">
+        </div>
+
+        <h3 style="padding-left: 15px; margin-top: 20px;">🎮 Jogos Disponíveis</h3>
+        
+        <!-- Lista de Jogos -->
+        <div class="games-grid" id="games-list">
+            <!-- Os jogos serão inseridos aqui via JS -->
+        </div>
+
+        <p style="text-align: center; color: #555; font-size: 12px; padding: 20px;">
+            KN Jogos Online © 2025
+        </p>
+    </div>
+
+    <!-- MODAL DO JOGO -->
+    <div id="game-modal">
+        <button id="close-game">SAIR DO JOGO (X)</button>
+        <iframe id="game-frame" src=""></iframe>
+    </div>
+
+    <!-- MODAL DE INBOX -->
+    <div id="inbox-modal" class="modal-overlay" style="display: none;">
+        <div class="inbox-container">
+            <div class="inbox-header">
+                <h3>📬 Notificações</h3>
+                <button id="close-inbox" style="background:none; border:none; color:#aaa; font-size:24px; cursor:pointer;">✖</button>
+            </div>
+            <div id="inbox-list" class="inbox-list">
+                <p style="text-align: center; color: #888; margin-top: 20px;">Carregando mensagens...</p>
+            </div>
         </div>
     </div>
-</div>
 
-<!-- 3. ESTILOS CSS (Cole junto com o Modal ou no seu <style>) -->
-<style>
-    /* Fundo escuro atrás do modal */
-    .modal-overlay {
-        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        background: rgba(0, 0, 0, 0.85); z-index: 2000;
-        display: flex; justify-content: center; align-items: center;
-    }
-    /* A caixa da janela */
-    .inbox-container {
-        background: #1e1e1e; width: 90%; max-width: 450px; height: 70vh;
-        border-radius: 12px; border: 1px solid #444; display: flex; flex-direction: column;
-        box-shadow: 0 0 20px rgba(0,0,0,0.8);
-    }
-    .inbox-header {
-        padding: 15px; border-bottom: 1px solid #333; display: flex; justify-content: space-between; align-items: center;
-        background: #252525; border-radius: 12px 12px 0 0;
-    }
-    .inbox-header h3 { margin: 0; color: #fff; }
-    .btn-close { background: none; border: none; color: #aaa; font-size: 20px; cursor: pointer; }
-    
-    /* Lista de Mensagens */
-    .inbox-list { flex: 1; overflow-y: auto; padding: 10px; }
-    
-    /* Item de Mensagem */
-    .msg-card {
-        background: #2a2a2a; margin-bottom: 10px; padding: 12px;
-        border-radius: 6px; border-left: 4px solid #555; position: relative;
-        transition: background 0.2s;
-    }
-    .msg-card.unread {
-        border-left: 4px solid #00ff88; /* Verde neon para não lidas */
-        background: #2f3530;
-    }
-    .msg-top { display: flex; justify-content: space-between; margin-bottom: 5px; }
-    .msg-title { font-weight: bold; color: #fff; font-size: 14px; }
-    .msg-date { font-size: 10px; color: #888; }
-    .msg-body { font-size: 13px; color: #ccc; line-height: 1.4; margin-right: 20px;}
-    
-    /* Botão de Apagar (Lixeira) */
-    .btn-trash {
-        position: absolute; bottom: 8px; right: 8px;
-        background: none; border: none; cursor: pointer; font-size: 14px; opacity: 0.7;
-    }
-    .btn-trash:hover { opacity: 1; transform: scale(1.1); }
-</style>
+    <!-- LÓGICA DO SISTEMA -->
+    <script type="module">
+        // Importa Firebase e Analytics
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics.js";
+        import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, updateDoc, increment, onSnapshot, collection, serverTimestamp, addDoc, deleteDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        // SUAS CREDENCIAIS REAIS (KN JOGOS)
+        const firebaseConfig = {
+          apiKey: "AIzaSyBIR7CqYYvMZVQxtO67JCQoJ3OLT1cvAx8",
+          authDomain: "kn-jogos.firebaseapp.com",
+          projectId: "kn-jogos",
+          storageBucket: "kn-jogos.firebasestorage.app",
+          messagingSenderId: "273132829744",
+          appId: "1:273132829744:web:a03e85b80ffabfa24101f5",
+          measurementId: "G-CX4Z8R1S6F"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const analytics = getAnalytics(app); // Analytics Iniciado
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const provider = new GoogleAuthProvider();
+
+        let currentUser = null;
+        let currentGameId = null;
+
+        // --- 1. AUTENTICAÇÃO E INICIALIZAÇÃO ---
+        
+        // Verifica link de indicação (?ref=...) ao abrir o site
+        const urlParams = new URLSearchParams(window.location.search);
+        const refLink = urlParams.get('ref');
+        if (refLink) {
+            console.log("🔗 Link de indicação detectado:", refLink);
+            sessionStorage.setItem('kn_indicador', refLink);
+        }
+
+        // Botão de Login
+        document.getElementById('btn-google').addEventListener('click', () => {
+            signInWithPopup(auth, provider).catch(err => alert("Erro ao logar: " + err.message));
+        });
+
+        // Monitora Estado do Usuário
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                currentUser = user;
+                document.getElementById('splash').style.display = 'none';
+                document.getElementById('app').style.display = 'block';
+                
+                // Preenche dados visuais
+                document.getElementById('user-photo').src = user.photoURL;
+                
+                // ⚠️ TROQUE PELO SEU EMAIL DE ADMIN (PARA APARECER O BOTÃO) ⚠️
+                if(user.email === "adenilsonantonioromao@gmail.com" || user.email === "knjogos@gmail.com") { 
+                    document.getElementById('link-admin').style.display = 'inline';
+                }
+
+                await carregarDadosUsuario(user);
+                iniciarInbox(user.uid);
+                carregarJogos();
+            } else {
+                document.getElementById('splash').style.display = 'flex';
+                document.getElementById('app').style.display = 'none';
+            }
+        });
+
+        async function carregarDadosUsuario(user) {
+            const userRef = doc(db, 'users', user.uid);
+            const snap = await getDoc(userRef);
+
+            if (!snap.exists()) {
+                // NOVO USUÁRIO
+                console.log("Criando novo usuário...");
+                
+                // Processa Indicação
+                const indicadorId = sessionStorage.getItem('kn_indicador');
+                if (indicadorId && indicadorId !== user.uid) {
+                    processarIndicacao(user.uid, indicadorId);
+                    sessionStorage.removeItem('kn_indicador');
+                }
+
+                await setDoc(userRef, {
+                    nome: user.displayName,
+                    email: user.email,
+                    foto: user.photoURL,
+                    fichas: 10,
+                    pontosCampeao: 0,
+                    scoreDiario: 0, dataUltimoDiario: "",
+                    scoreSemanal: 0,
+                    scoreMensal: 0,
+                    dataCriacao: serverTimestamp()
+                });
+                document.getElementById('user-fichas').innerText = "10";
+            } else {
+                // USUÁRIO ANTIGO (Lazy Reset)
+                const data = snap.data();
+                const hoje = new Date().toLocaleDateString('pt-BR');
+                if (data.dataUltimoDiario !== hoje) {
+                    await updateDoc(userRef, { scoreDiario: 0, dataUltimoDiario: hoje });
+                }
+                document.getElementById('user-fichas').innerText = data.fichas;
+            }
+
+            onSnapshot(userRef, (doc) => {
+                document.getElementById('user-fichas').innerText = doc.data().fichas;
+            });
+        }
+
+        // --- 2. SISTEMA DE INBOX ---
+
+        function iniciarInbox(userId) {
+            const msgsRef = collection(db, 'users', userId, 'mensagens');
+            const q = query(msgsRef, orderBy('data', 'desc'));
+
+            onSnapshot(q, (snapshot) => {
+                const lista = document.getElementById('inbox-list');
+                const badge = document.getElementById('inbox-badge');
+                let naoLidas = 0;
+                let html = '';
+
+                if (snapshot.empty) {
+                    lista.innerHTML = '<p style="text-align:center; padding:20px; color:#666">Nenhuma mensagem.</p>';
+                    badge.style.display = 'none';
+                    return;
+                }
+
+                snapshot.forEach(docSnap => {
+                    const msg = docSnap.data();
+                    const id = docSnap.id;
+                    if (!msg.lida) naoLidas++;
+
+                    let dataStr = 'Recente';
+                    if (msg.data) {
+                        const d = msg.data.toDate();
+                        dataStr = `${d.getDate()}/${d.getMonth()+1} ${d.getHours()}:${String(d.getMinutes()).padStart(2,'0')}`;
+                    }
+
+                    html += `
+                        <div class="msg-card ${msg.lida ? '' : 'unread'}" id="msg-${id}">
+                            <div class="msg-top">
+                                <span class="msg-title">${msg.titulo}</span>
+                                <span class="msg-date">${dataStr}</span>
+                            </div>
+                            <div class="msg-body">${msg.corpo}</div>
+                            <button class="btn-trash" data-id="${id}">🗑️</button>
+                        </div>
+                    `;
+                });
+
+                lista.innerHTML = html;
+
+                document.querySelectorAll('.msg-card').forEach(card => {
+                    card.addEventListener('click', (e) => {
+                        const id = card.id.replace('msg-', '');
+                        if(e.target.classList.contains('btn-trash')) return;
+                        marcarComoLida(userId, id);
+                    });
+                });
+
+                document.querySelectorAll('.btn-trash').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        apagarMensagem(userId, btn.dataset.id);
+                    });
+                });
+
+                if (naoLidas > 0) {
+                    badge.style.display = 'block';
+                    badge.innerText = naoLidas > 99 ? '99+' : naoLidas;
+                } else {
+                    badge.style.display = 'none';
+                }
+            });
+        }
+
+        async function marcarComoLida(userId, msgId) {
+            await updateDoc(doc(db, 'users', userId, 'mensagens', msgId), {
+                lida: true,
+                lidaEm: serverTimestamp()
+            });
+        }
+
+        async function apagarMensagem(userId, msgId) {
+            if(confirm("Apagar mensagem?")) {
+                await deleteDoc(doc(db, 'users', userId, 'mensagens', msgId));
+            }
+        }
+
+        document.getElementById('btn-inbox').addEventListener('click', () => {
+            document.getElementById('inbox-modal').style.display = 'flex';
+        });
+        document.getElementById('close-inbox').addEventListener('click', () => {
+            document.getElementById('inbox-modal').style.display = 'none';
+        });
+
+        // --- 3. GATILHOS DE RECOMPENSA ---
+
+        async function processarIndicacao(novoUserId, idAmigo) {
+            try {
+                const amigoRef = doc(db, 'users', idAmigo);
+                const snap = await getDoc(amigoRef);
+                if (!snap.exists()) return;
+
+                await updateDoc(amigoRef, { fichas: increment(25) });
+
+                await addDoc(collection(db, 'users', idAmigo, 'mensagens'), {
+                    titulo: '🤝 Indicação de Sucesso!',
+                    corpo: 'Um amigo se cadastrou pelo seu link! Você ganhou <strong>25 Fichas</strong>.',
+                    data: serverTimestamp(),
+                    lida: false
+                });
+
+                await addDoc(collection(db, 'users', novoUserId, 'mensagens'), {
+                    titulo: '👋 Bem-vindo VIP!',
+                    corpo: 'Você entrou por convite. Aproveite os jogos!',
+                    data: serverTimestamp(),
+                    lida: false
+                });
+            } catch (e) {
+                console.error("Erro indicação", e);
+            }
+        }
+
+        document.getElementById('btn-share-link').addEventListener('click', async (e) => {
+            e.preventDefault();
+            if(!currentUser) return;
+            const link = `${window.location.origin}${window.location.pathname}?ref=${currentUser.uid}`;
+            
+            try {
+                await navigator.clipboard.writeText(link);
+                alert("Link copiado! Envie para amigos.\n\n" + link);
+                registrarCompartilhamento(currentUser.uid);
+            } catch (err) {
+                prompt("Copie seu link:", link);
+                registrarCompartilhamento(currentUser.uid);
+            }
+        });
+
+        async function registrarCompartilhamento(userId) {
+            const userRef = doc(db, 'users', userId);
+            const hoje = new Date().toLocaleDateString('pt-BR');
+            const snap = await getDoc(userRef);
+            
+            if(snap.exists() && snap.data().ultimoCompartilhamento !== hoje) {
+                await updateDoc(userRef, {
+                    fichas: increment(10),
+                    ultimoCompartilhamento: hoje
+                });
+                
+                await addDoc(collection(db, 'users', userId, 'mensagens'), {
+                    titulo: '📢 Bônus Diário',
+                    corpo: 'Você compartilhou o link e ganhou <strong>10 Fichas</strong>!',
+                    data: serverTimestamp(),
+                    lida: false
+                });
+            }
+        }
+
+        // --- 4. LISTAGEM E EXECUÇÃO DOS JOGOS ---
+
+        const MEUS_JOGOS = [
+            { id: 'neon', nome: 'Neon Drive', img: 'capas/Neoncap.jpg', url: 'jogos/Neon.html' },
+            { id: 'sky',  nome: 'Sky Box',    img: 'capas/Skyboxcap.jpg', url: 'jogos/Skybox.html' },
+            { id: 'jurassic', nome: 'Jurassic Run', img: 'capas/jurassiccap.jpg', url: 'jogos/Jurassic.html' }
+        ];
+
+        function carre
