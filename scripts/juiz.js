@@ -1,9 +1,8 @@
 const admin = require('firebase-admin');
 
 // 1. Configuração de Segurança
-// O GitHub injeta a chave secreta aqui. Sem isso, não conecta.
 if (!process.env.FIREBASE_SERVICE_ACCOUNT) {
-    console.error("❌ ERRO: A chave FIREBASE_SERVICE_ACCOUNT não foi encontrada.");
+    console.error("❌ ERRO CRÍTICO: Chave de segurança não encontrada.");
     process.exit(1);
 }
 
@@ -15,93 +14,83 @@ admin.initializeApp({
 
 const db = admin.firestore();
 
-async function premiarVencedores() {
-    console.log("⚖️ O Juiz iniciou a sessão (Brasília)...");
+// --- TABELA DE PONTOS (Top 5) ---
+// Índices: 0=1º lugar, 1=2º lugar, etc.
+const PONTOS_DIARIO  = [10, 7, 5, 3, 1];
+const PONTOS_SEMANAL = [50, 35, 25, 15, 5];
+const PONTOS_MENSAL  = [150, 100, 75, 45, 15];
 
-    // Pega todos os usuários do banco
+async function distribuirPontos(listaUsuarios, tipoRanking, arrayPontos) {
+    // Ordena do maior score para o menor
+    // Ex: scoreDiario, scoreSemanal...
+    listaUsuarios.sort((a, b) => (b[tipoRanking] || 0) - (a[tipoRanking] || 0));
+
+    // Pega só os 5 primeiros
+    const top5 = listaUsuarios.slice(0, 5);
+
+    console.log(`\n🏆 Processando Ranking: ${tipoRanking.toUpperCase()}`);
+
+    for (let i = 0; i < top5.length; i++) {
+        const user = top5[i];
+        const pontosGanhos = arrayPontos[i];
+        const scoreAtual = user[tipoRanking] || 0;
+
+        // Só premia se o usuário tiver pontuado algo (> 0)
+        if (scoreAtual > 0) {
+            console.log(`   #${i + 1} ${user.nome}: Ganhou +${pontosGanhos} Pontos de Campeão (Score: ${scoreAtual})`);
+            
+            // Atualiza no Firebase
+            await db.collection('users').doc(user.id).update({
+                pontosCampeao: admin.firestore.FieldValue.increment(pontosGanhos)
+            });
+        }
+    }
+}
+
+async function startJuiz() {
+    console.log("⚖️ O Juiz acordou! Iniciando sessão (Brasília)...");
+
+    // Pega todos os usuários
     const usersRef = db.collection('users');
     const snapshot = await usersRef.get();
     
     if (snapshot.empty) {
-        console.log('👀 Nenhum usuário encontrado no banco.');
+        console.log('Nenhum usuário encontrado.');
         return;
     }
 
     let usuarios = [];
     snapshot.forEach(doc => {
-        let data = doc.data();
-        usuarios.push({ id: doc.id, ...data });
+        usuarios.push({ id: doc.id, ...doc.data() });
     });
 
     console.log(`📊 Analisando ${usuarios.length} jogadores...`);
 
-    // --- CONFIGURAÇÃO DE DATAS ---
-    // O GitHub Actions roda em UTC. Precisamos garantir que seja horário de Brasília.
-    // Ajuste simples: subtrair 3 horas do horário atual do servidor
+    // Ajuste de Fuso Horário (GitHub roda em UTC, Brasil é UTC-3)
     const agora = new Date();
     agora.setHours(agora.getHours() - 3); 
+    const diaSemana = agora.getDay(); // 5 = Sexta
+    const diaMes = agora.getDate();   // 1 = Primeiro dia
 
-    const diaSemana = agora.getDay(); // 0=Dom, 1=Seg... 5=Sexta
-    const diaMes = agora.getDate();   // 1 a 31
+    // 1. SEMPRE RODA: Premiação Diária
+    await distribuirPontos([...usuarios], 'scoreDiario', PONTOS_DIARIO);
 
-    console.log(`📅 Data simulada (BRT): Dia ${diaMes}, Semana ${diaSemana}`);
-
-    // --- 1. PREMIAÇÃO DIÁRIA (+1 Ponto) ---
-    // Quem fez mais pontos ontem (que ainda estão salvos no banco)
-    
-    // Ordena do maior para o menor scoreDiario
-    usuarios.sort((a, b) => (b.scoreDiario || 0) - (a.scoreDiario || 0));
-    const topDiario = usuarios[0];
-
-    if (topDiario && topDiario.scoreDiario > 0) {
-        console.log(`🥇 Campeão do Dia: ${topDiario.nome} com ${topDiario.scoreDiario} pontos! (+1 Rank)`);
-        
-        await usersRef.doc(topDiario.id).update({
-            pontosCampeao: admin.firestore.FieldValue.increment(1)
-        });
-    } else {
-        console.log("🤷‍♂️ Ninguém pontuou no diário hoje.");
-    }
-
-    // --- 2. PREMIAÇÃO SEMANAL (+5 Pontos) ---
-    // Regra: Roda toda Sexta-feira (Dia 5)
+    // 2. SEXTA-FEIRA: Premiação Semanal
     if (diaSemana === 5) { 
-        console.log("📅 Hoje é Sexta-feira! Verificando Ranking Semanal...");
-        
-        usuarios.sort((a, b) => (b.scoreSemanal || 0) - (a.scoreSemanal || 0));
-        const topSemanal = usuarios[0];
-        
-        if (topSemanal && topSemanal.scoreSemanal > 0) {
-            console.log(`🏆 Campeão da Semana: ${topSemanal.nome} com ${topSemanal.scoreSemanal} pontos! (+5 Rank)`);
-            
-            await usersRef.doc(topSemanal.id).update({
-                pontosCampeao: admin.firestore.FieldValue.increment(5)
-            });
-        }
+        console.log("📅 Hoje é Sexta-feira! Liberando prêmios semanais...");
+        await distribuirPontos([...usuarios], 'scoreSemanal', PONTOS_SEMANAL);
     }
 
-    // --- 3. PREMIAÇÃO MENSAL (+15 Pontos) ---
-    // Regra: Roda dia 01 de cada mês
+    // 3. DIA 01: Premiação Mensal
     if (diaMes === 1) {
-        console.log("📅 Hoje é dia 01! Verificando Ranking Mensal...");
-        
-        usuarios.sort((a, b) => (b.scoreMensal || 0) - (a.scoreMensal || 0));
-        const topMensal = usuarios[0];
-        
-        if (topMensal && topMensal.scoreMensal > 0) {
-            console.log(`👑 IMPERADOR DO MÊS: ${topMensal.nome} com ${topMensal.scoreMensal} pontos! (+15 Rank)`);
-            
-            await usersRef.doc(topMensal.id).update({
-                pontosCampeao: admin.firestore.FieldValue.increment(15)
-            });
-        }
+        console.log("📅 Hoje é dia 01! Liberando prêmios MENSAIS...");
+        await distribuirPontos([...usuarios], 'scoreMensal', PONTOS_MENSAL);
     }
 
-    console.log("✅ Sessão do Juiz encerrada com sucesso.");
+    console.log("\n✅ Sessão do Juiz encerrada com sucesso.");
 }
 
-// Executa a função
-premiarVencedores().catch(err => {
-    console.error("❌ Erro fatal no Juiz:", err);
+startJuiz().catch(err => {
+    console.error("❌ Erro fatal:", err);
     process.exit(1);
 });
