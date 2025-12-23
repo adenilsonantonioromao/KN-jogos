@@ -2,9 +2,7 @@ name: Juiz Automatico KN Jogos
 
 on:
   schedule:
-    # Roda as 03:00 UTC (00:00 Brasil)
     - cron: '0 3 * * *'
-  # Botão para rodar manual
   workflow_dispatch:
 
 jobs:
@@ -12,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Baixar código do repositório
+    - name: Baixar código
       uses: actions/checkout@v3
 
     - name: Instalar Node.js
@@ -20,16 +18,12 @@ jobs:
       with:
         node-version: 18
 
-    - name: Instalar Dependências (Firebase)
+    - name: Instalar Firebase
       run: npm install firebase-admin
 
-    # --- AQUI ESTÁ O DETETIVE ---
-    - name: 🕵️‍♂️ MODO DETETIVE (Listar Arquivos)
-      run: |
-        echo "--- ARQUIVOS NA RAIZ ---"
-        ls -la
-        echo "--- ARQUIVOS DENTRO DE SCRIPTS ---"
-        ls -la scripts || echo "❌ A PASTA SCRIPTS NÃO FOI ENCONTRADA!"
+    # --- AQUI ESTÁ O DETETIVE (Para vermos o erro) ---
+    - name: 🕵️‍♂️ MODO DETETIVE (Listar Tudo)
+      run: ls -R
 
     - name: Rodar o Juiz
       env:
