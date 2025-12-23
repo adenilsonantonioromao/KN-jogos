@@ -4,20 +4,40 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>KN Jogos Online</title>
+    
+    <!-- CSS DO PROJETO -->
     <style>
-        /* --- ESTILOS GERAIS (Dark Theme) --- */
+        /* --- GERAL --- */
         body { margin: 0; font-family: 'Segoe UI', sans-serif; background-color: #121212; color: #fff; overflow-x: hidden; }
         
-        /* Cabeçalho */
+        /* --- TELA DE LOGIN (SEU ESTILO ORIGINAL) --- */
+        #login-screen { 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: linear-gradient(135deg, #2196F3, #9C27B0); 
+            display: flex; /* Flex para centralizar */
+            flex-direction: column; justify-content: center; align-items: center; z-index: 2000; 
+        }
+        .login-box { 
+            background: white; padding: 30px; border-radius: 20px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3); width: 85%; max-width: 350px; 
+            text-align: center; color: #333;
+        }
+        .btn-google {
+            background: #fff; border: 1px solid #ccc; color: #555; width: 100%; padding: 12px;
+            border-radius: 8px; font-weight: bold; cursor: pointer; display: flex;
+            align-items: center; justify-content: center; gap: 10px; font-size: 16px;
+            margin-top: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        /* --- CABEÇALHO --- */
         header { display: flex; justify-content: space-between; align-items: center; padding: 15px; background: #1f1f1f; border-bottom: 2px solid #333; }
         .logo { font-weight: bold; font-size: 24px; color: #00ff88; text-transform: uppercase; letter-spacing: 2px; }
         
-        /* Área do Usuário e Carteira */
         .user-area { display: flex; align-items: center; gap: 15px; }
         .wallet { background: #333; padding: 5px 15px; border-radius: 20px; font-weight: bold; color: gold; display: flex; align-items: center; gap: 5px; }
         .user-pic { width: 40px; height: 40px; border-radius: 50%; border: 2px solid #00ff88; }
-        
-        /* --- ÍCONE DO INBOX (NOVO) --- */
+
+        /* --- ÍCONE INBOX (NOVO) --- */
         #btn-inbox { cursor: pointer; position: relative; display: flex; align-items: center; justify-content: center; }
         #btn-inbox span { font-size: 26px; }
         #inbox-badge { 
@@ -27,29 +47,31 @@
             text-align: center; line-height: 18px; border: 2px solid #1f1f1f; 
         }
 
-        /* Container Principal */
-        #app { display: none; /* Escondido até logar */ }
-        #splash { display: flex; height: 100vh; justify-content: center; align-items: center; flex-direction: column; text-align: center; }
+        /* --- APP PRINCIPAL --- */
+        #app { display: none; }
         
-        /* Botões */
-        .btn-login { background: #fff; color: #333; padding: 10px 20px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 16px; display: flex; align-items: center; gap: 10px; }
-        
-        /* Grid de Jogos */
+        .links-bar { display: flex; justify-content: center; gap: 20px; padding: 10px; background: #1a1a1a; }
+        .links-bar a { color: #aaa; text-decoration: none; font-size: 14px; }
+        .links-bar a:hover { color: #fff; }
+
+        /* --- GAMES GRID --- */
         .games-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px; padding: 15px; }
         .game-card { background: #222; border-radius: 10px; overflow: hidden; transition: transform 0.2s; cursor: pointer; }
         .game-card:hover { transform: scale(1.05); border: 1px solid #00ff88; }
         .game-thumb { width: 100%; height: 120px; object-fit: cover; }
         .game-info { padding: 10px; text-align: center; }
 
-        /* Modal de Jogo (Iframe) */
-        #game-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 3000; }
-        iframe { width: 100%; height: 100%; border: none; }
-        #close-game { position: absolute; top: 10px; right: 10px; background: red; color: white; border: none; padding: 5px 15px; cursor: pointer; z-index: 3001; font-weight: bold; }
+        /* --- MODAL DO JOGO --- */
+        #game-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 3000; flex-direction: column; }
+        iframe { width: 100%; flex: 1; border: none; }
+        .game-bar { background: #111; padding: 5px; display: flex; justify-content: space-between; align-items: center; color: white; }
+        .btn-game-nav { background: #333; color: white; border: 1px solid #555; padding: 5px 10px; cursor: pointer; font-size: 12px; }
+        .btn-close { background: #d32f2f; border-color: #b71c1c; }
 
-        /* --- MODAL DE INBOX (ESTILO NOVO) --- */
+        /* --- MODAL DE INBOX (MENSAGENS) --- */
         .modal-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.9); z-index: 2000;
+            background: rgba(0, 0, 0, 0.9); z-index: 4000;
             display: flex; justify-content: center; align-items: center;
         }
         .inbox-container {
@@ -57,36 +79,25 @@
             border-radius: 12px; border: 1px solid #444; display: flex; flex-direction: column;
             box-shadow: 0 0 25px rgba(0,255,136,0.1);
         }
-        .inbox-header {
-            padding: 15px; border-bottom: 1px solid #333; display: flex; justify-content: space-between; align-items: center;
-            background: #252525; border-radius: 12px 12px 0 0;
-        }
+        .inbox-header { padding: 15px; border-bottom: 1px solid #333; display: flex; justify-content: space-between; align-items: center; background: #252525; border-radius: 12px 12px 0 0; }
         .inbox-list { flex: 1; overflow-y: auto; padding: 10px; }
-        
-        .msg-card {
-            background: #2a2a2a; margin-bottom: 10px; padding: 12px;
-            border-radius: 6px; border-left: 4px solid #555; position: relative;
-            cursor: pointer; transition: 0.2s;
-        }
-        .msg-card:hover { background: #333; }
+        .msg-card { background: #2a2a2a; margin-bottom: 10px; padding: 12px; border-radius: 6px; border-left: 4px solid #555; position: relative; cursor: pointer; }
         .msg-card.unread { border-left: 4px solid #00ff88; background: #2f3530; }
         .msg-top { display: flex; justify-content: space-between; margin-bottom: 5px; }
         .msg-title { font-weight: bold; color: #fff; font-size: 14px; }
         .msg-date { font-size: 10px; color: #888; }
         .msg-body { font-size: 13px; color: #ccc; line-height: 1.4; margin-right: 25px; }
-        .btn-trash {
-            position: absolute; bottom: 8px; right: 8px;
-            background: none; border: none; cursor: pointer; font-size: 16px; opacity: 0.6;
+        .btn-trash { position: absolute; bottom: 8px; right: 8px; background: none; border: none; cursor: pointer; font-size: 16px; opacity: 0.6; }
+        
+        /* --- NOTIFICAÇÃO TOAST --- */
+        #notificacao {
+            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+            background: #333; color: #00ff88; padding: 10px 20px; border-radius: 30px;
+            border: 1px solid #00ff88; display: none; z-index: 5000; font-weight: bold;
         }
-        .btn-trash:hover { opacity: 1; transform: scale(1.1); color: red; }
-
-        /* Links Úteis */
-        .links-bar { display: flex; justify-content: center; gap: 20px; padding: 10px; background: #1a1a1a; }
-        .links-bar a { color: #aaa; text-decoration: none; font-size: 14px; }
-        .links-bar a:hover { color: #fff; }
     </style>
 
-    <!-- Importmap Obrigatório para os Jogos -->
+    <!-- MAPA DE IMPORTAÇÃO (React/Three) -->
     <script type="importmap">
     {
       "imports": {
@@ -103,23 +114,25 @@
 </head>
 <body>
 
-    <!-- TELA DE LOGIN (Splash) -->
-    <div id="splash">
-        <h1 class="logo" style="font-size: 40px; margin-bottom: 20px;">KN JOGOS</h1>
-        <p>Arcade Web • Competição • Prêmios</p>
-        <button id="btn-google" class="btn-login">
-            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="20">
-            Entrar com Google
-        </button>
+    <!-- 1. TELA DE LOGIN (Seu Design) -->
+    <div id="login-screen">
+        <div class="login-box">
+            <h1 style="margin:0; color:#2196F3;">KN JOGOS</h1>
+            <p style="color:#666;">Entre para competir!</p>
+            <button id="btn-google" class="btn-google">
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="20">
+                Entrar com Google
+            </button>
+        </div>
     </div>
 
-    <!-- APLICAÇÃO PRINCIPAL -->
+    <!-- 2. APP PRINCIPAL -->
     <div id="app">
         <header>
             <div class="logo">KN</div>
             <div class="user-area">
                 <!-- Ícone Inbox -->
-                <div id="btn-inbox" title="Minhas Mensagens">
+                <div id="btn-inbox" title="Mensagens">
                     <span>📩</span>
                     <div id="inbox-badge">0</div>
                 </div>
@@ -134,11 +147,11 @@
 
         <div class="links-bar">
             <a href="ranking.html">🏆 Ranking</a>
-            <a href="#" id="btn-share-link">🔗 Compartilhar e Ganhar</a>
+            <a href="#" id="btn-share-link">🔗 Indicar Amigo</a>
             <a href="admin.html" id="link-admin" style="display:none;">⚙️ Admin</a>
         </div>
 
-        <!-- Carrossel de Banners -->
+        <!-- Banner -->
         <div style="width: 100%; height: 200px; background: #333; overflow: hidden; position: relative;">
              <img src="banners/novosjogos.jpg" style="width:100%; height:100%; object-fit: cover;" onerror="this.src='https://via.placeholder.com/1200x400?text=KN+JOGOS'">
         </div>
@@ -146,43 +159,48 @@
         <h3 style="padding-left: 15px; margin-top: 20px;">🎮 Jogos Disponíveis</h3>
         
         <!-- Lista de Jogos -->
-        <div class="games-grid" id="games-list">
-            <!-- Os jogos serão inseridos aqui via JS -->
-        </div>
+        <div class="games-grid" id="games-list"></div>
 
-        <p style="text-align: center; color: #555; font-size: 12px; padding: 20px;">
-            KN Jogos Online © 2025
-        </p>
+        <p style="text-align: center; color: #555; font-size: 12px; padding: 20px;">KN Jogos Online © 2025</p>
     </div>
 
-    <!-- MODAL DO JOGO -->
+    <!-- 3. MODAL DO JOGO (Com barra de controle) -->
     <div id="game-modal">
-        <button id="close-game">SAIR DO JOGO (X)</button>
+        <div class="game-bar">
+            <span>Jogando...</span>
+            <div>
+                <button class="btn-game-nav" onclick="ativarTelaCheia()">[ ] Tela Cheia</button>
+                <button class="btn-game-nav" onclick="reiniciarJogo()">🔄 Reiniciar</button>
+                <button class="btn-game-nav btn-close" onclick="fecharJogo()">✖ Sair</button>
+            </div>
+        </div>
         <iframe id="game-frame" src=""></iframe>
     </div>
 
-    <!-- MODAL DE INBOX -->
+    <!-- 4. MODAL DE INBOX -->
     <div id="inbox-modal" class="modal-overlay" style="display: none;">
         <div class="inbox-container">
             <div class="inbox-header">
-                <h3>📬 Notificações</h3>
+                <h3 style="margin:0; color:#fff;">📬 Notificações</h3>
                 <button id="close-inbox" style="background:none; border:none; color:#aaa; font-size:24px; cursor:pointer;">✖</button>
             </div>
             <div id="inbox-list" class="inbox-list">
-                <p style="text-align: center; color: #888; margin-top: 20px;">Carregando mensagens...</p>
+                <p style="text-align: center; color: #888; margin-top: 20px;">Carregando...</p>
             </div>
         </div>
     </div>
 
+    <!-- 5. NOTIFICAÇÃO FLUTUANTE -->
+    <div id="notificacao"></div>
+
     <!-- LÓGICA DO SISTEMA -->
     <script type="module">
-        // Importa Firebase e Analytics
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics.js";
         import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
         import { getFirestore, doc, getDoc, setDoc, updateDoc, increment, onSnapshot, collection, serverTimestamp, addDoc, deleteDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-        // SUAS CREDENCIAIS REAIS (KN JOGOS)
+        // CONFIGURAÇÃO FIREBASE
         const firebaseConfig = {
           apiKey: "AIzaSyBIR7CqYYvMZVQxtO67JCQoJ3OLT1cvAx8",
           authDomain: "kn-jogos.firebaseapp.com",
@@ -194,62 +212,54 @@
         };
 
         const app = initializeApp(firebaseConfig);
-        const analytics = getAnalytics(app); // Analytics Iniciado
+        const analytics = getAnalytics(app);
         const auth = getAuth(app);
         const db = getFirestore(app);
         const provider = new GoogleAuthProvider();
 
         let currentUser = null;
-        let currentGameId = null;
+        window.jogoAtualID = null; // Tornei global para usar nas funções window.
 
-        // --- 1. AUTENTICAÇÃO E INICIALIZAÇÃO ---
-        
-        // Verifica link de indicação (?ref=...) ao abrir o site
+        // --- VERIFICAÇÃO DE INDICAÇÃO (Ref Link) ---
         const urlParams = new URLSearchParams(window.location.search);
         const refLink = urlParams.get('ref');
         if (refLink) {
-            console.log("🔗 Link de indicação detectado:", refLink);
+            console.log("🔗 Indicação:", refLink);
             sessionStorage.setItem('kn_indicador', refLink);
         }
 
-        // Botão de Login
+        // --- LOGIN ---
         document.getElementById('btn-google').addEventListener('click', () => {
-            signInWithPopup(auth, provider).catch(err => alert("Erro ao logar: " + err.message));
+            signInWithPopup(auth, provider).catch(err => alert("Erro: " + err.message));
         });
 
-        // Monitora Estado do Usuário
         onAuthStateChanged(auth, async (user) => {
             if (user) {
                 currentUser = user;
-                document.getElementById('splash').style.display = 'none';
+                document.getElementById('login-screen').style.display = 'none';
                 document.getElementById('app').style.display = 'block';
-                
-                // Preenche dados visuais
                 document.getElementById('user-photo').src = user.photoURL;
-                
-                // ⚠️ TROQUE PELO SEU EMAIL DE ADMIN (PARA APARECER O BOTÃO) ⚠️
-                if(user.email === "adenilsonantonioromao@gmail.com" || user.email === "knjogos@gmail.com") { 
+
+                // Admin check
+                if(user.email === "adenilsonantonioromao@gmail.com" || user.email === "knjogos@gmail.com") {
                     document.getElementById('link-admin').style.display = 'inline';
                 }
 
-                await carregarDadosUsuario(user);
+                await carregarUsuario(user);
                 iniciarInbox(user.uid);
                 carregarJogos();
             } else {
-                document.getElementById('splash').style.display = 'flex';
+                document.getElementById('login-screen').style.display = 'flex';
                 document.getElementById('app').style.display = 'none';
             }
         });
 
-        async function carregarDadosUsuario(user) {
+        async function carregarUsuario(user) {
             const userRef = doc(db, 'users', user.uid);
             const snap = await getDoc(userRef);
 
             if (!snap.exists()) {
-                // NOVO USUÁRIO
-                console.log("Criando novo usuário...");
-                
-                // Processa Indicação
+                // NOVO USUÁRIO + INDICAÇÃO
                 const indicadorId = sessionStorage.getItem('kn_indicador');
                 if (indicadorId && indicadorId !== user.uid) {
                     processarIndicacao(user.uid, indicadorId);
@@ -262,29 +272,26 @@
                     foto: user.photoURL,
                     fichas: 10,
                     pontosCampeao: 0,
+                    jogosJogados: {}, // Sua estrutura original
+                    recordes: {},     // Sua estrutura original
                     scoreDiario: 0, dataUltimoDiario: "",
-                    scoreSemanal: 0,
-                    scoreMensal: 0,
+                    scoreSemanal: 0, dataUltimoSemanal: "",
+                    scoreMensal: 0, dataUltimoMensal: "",
                     dataCriacao: serverTimestamp()
                 });
                 document.getElementById('user-fichas').innerText = "10";
             } else {
-                // USUÁRIO ANTIGO (Lazy Reset)
                 const data = snap.data();
-                const hoje = new Date().toLocaleDateString('pt-BR');
-                if (data.dataUltimoDiario !== hoje) {
-                    await updateDoc(userRef, { scoreDiario: 0, dataUltimoDiario: hoje });
-                }
                 document.getElementById('user-fichas').innerText = data.fichas;
+                // Os resets de data são feitos na hora de salvar o ponto (Lazy)
             }
 
             onSnapshot(userRef, (doc) => {
-                document.getElementById('user-fichas').innerText = doc.data().fichas;
+                if(doc.exists()) document.getElementById('user-fichas').innerText = doc.data().fichas;
             });
         }
 
-        // --- 2. SISTEMA DE INBOX ---
-
+        // --- SISTEMA DE INBOX ---
         function iniciarInbox(userId) {
             const msgsRef = collection(db, 'users', userId, 'mensagens');
             const q = query(msgsRef, orderBy('data', 'desc'));
@@ -296,7 +303,7 @@
                 let html = '';
 
                 if (snapshot.empty) {
-                    lista.innerHTML = '<p style="text-align:center; padding:20px; color:#666">Nenhuma mensagem.</p>';
+                    lista.innerHTML = '<p style="text-align:center; padding:20px; color:#666">Vazio.</p>';
                     badge.style.display = 'none';
                     return;
                 }
@@ -305,140 +312,113 @@
                     const msg = docSnap.data();
                     const id = docSnap.id;
                     if (!msg.lida) naoLidas++;
-
-                    let dataStr = 'Recente';
+                    
+                    let dataStr = 'Hoje';
                     if (msg.data) {
                         const d = msg.data.toDate();
                         dataStr = `${d.getDate()}/${d.getMonth()+1} ${d.getHours()}:${String(d.getMinutes()).padStart(2,'0')}`;
                     }
 
                     html += `
-                        <div class="msg-card ${msg.lida ? '' : 'unread'}" id="msg-${id}">
+                        <div class="msg-card ${msg.lida ? '' : 'unread'}" onclick="lerMsg('${userId}', '${id}')">
                             <div class="msg-top">
                                 <span class="msg-title">${msg.titulo}</span>
                                 <span class="msg-date">${dataStr}</span>
                             </div>
                             <div class="msg-body">${msg.corpo}</div>
-                            <button class="btn-trash" data-id="${id}">🗑️</button>
+                            <button class="btn-trash" onclick="event.stopPropagation(); apagarMsg('${userId}', '${id}')">🗑️</button>
                         </div>
                     `;
                 });
-
                 lista.innerHTML = html;
-
-                document.querySelectorAll('.msg-card').forEach(card => {
-                    card.addEventListener('click', (e) => {
-                        const id = card.id.replace('msg-', '');
-                        if(e.target.classList.contains('btn-trash')) return;
-                        marcarComoLida(userId, id);
-                    });
-                });
-
-                document.querySelectorAll('.btn-trash').forEach(btn => {
-                    btn.addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        apagarMensagem(userId, btn.dataset.id);
-                    });
-                });
-
-                if (naoLidas > 0) {
-                    badge.style.display = 'block';
-                    badge.innerText = naoLidas > 99 ? '99+' : naoLidas;
-                } else {
-                    badge.style.display = 'none';
-                }
+                badge.style.display = naoLidas > 0 ? 'block' : 'none';
+                badge.innerText = naoLidas > 99 ? '99+' : naoLidas;
             });
         }
 
-        async function marcarComoLida(userId, msgId) {
-            await updateDoc(doc(db, 'users', userId, 'mensagens', msgId), {
-                lida: true,
-                lidaEm: serverTimestamp()
-            });
+        window.lerMsg = async (uid, mid) => {
+            await updateDoc(doc(db, 'users', uid, 'mensagens', mid), { lida: true, lidaEm: serverTimestamp() });
+        }
+        window.apagarMsg = async (uid, mid) => {
+            if(confirm("Apagar?")) await deleteDoc(doc(db, 'users', uid, 'mensagens', mid));
         }
 
-        async function apagarMensagem(userId, msgId) {
-            if(confirm("Apagar mensagem?")) {
-                await deleteDoc(doc(db, 'users', userId, 'mensagens', msgId));
-            }
-        }
+        document.getElementById('btn-inbox').addEventListener('click', () => document.getElementById('inbox-modal').style.display = 'flex');
+        document.getElementById('close-inbox').addEventListener('click', () => document.getElementById('inbox-modal').style.display = 'none');
 
-        document.getElementById('btn-inbox').addEventListener('click', () => {
-            document.getElementById('inbox-modal').style.display = 'flex';
-        });
-        document.getElementById('close-inbox').addEventListener('click', () => {
-            document.getElementById('inbox-modal').style.display = 'none';
-        });
-
-        // --- 3. GATILHOS DE RECOMPENSA ---
-
+        // --- SISTEMA DE COMPARTILHAMENTO E INDICAÇÃO ---
         async function processarIndicacao(novoUserId, idAmigo) {
-            try {
-                const amigoRef = doc(db, 'users', idAmigo);
-                const snap = await getDoc(amigoRef);
-                if (!snap.exists()) return;
-
+            const amigoRef = doc(db, 'users', idAmigo);
+            const snap = await getDoc(amigoRef);
+            if(snap.exists()) {
                 await updateDoc(amigoRef, { fichas: increment(25) });
-
                 await addDoc(collection(db, 'users', idAmigo, 'mensagens'), {
-                    titulo: '🤝 Indicação de Sucesso!',
-                    corpo: 'Um amigo se cadastrou pelo seu link! Você ganhou <strong>25 Fichas</strong>.',
-                    data: serverTimestamp(),
-                    lida: false
+                    titulo: '🤝 Indicação!', corpo: 'Amigo cadastrado! +25 Fichas.', data: serverTimestamp(), lida: false
                 });
-
-                await addDoc(collection(db, 'users', novoUserId, 'mensagens'), {
-                    titulo: '👋 Bem-vindo VIP!',
-                    corpo: 'Você entrou por convite. Aproveite os jogos!',
-                    data: serverTimestamp(),
-                    lida: false
-                });
-            } catch (e) {
-                console.error("Erro indicação", e);
             }
         }
 
         document.getElementById('btn-share-link').addEventListener('click', async (e) => {
             e.preventDefault();
-            if(!currentUser) return;
             const link = `${window.location.origin}${window.location.pathname}?ref=${currentUser.uid}`;
-            
             try {
                 await navigator.clipboard.writeText(link);
-                alert("Link copiado! Envie para amigos.\n\n" + link);
-                registrarCompartilhamento(currentUser.uid);
-            } catch (err) {
-                prompt("Copie seu link:", link);
-                registrarCompartilhamento(currentUser.uid);
-            }
+                mostrarNotificacao("Link copiado! Envie para amigos.");
+                registrarShare(currentUser.uid);
+            } catch(err) { prompt("Copie seu link:", link); registrarShare(currentUser.uid); }
         });
 
-        async function registrarCompartilhamento(userId) {
-            const userRef = doc(db, 'users', userId);
+        async function registrarShare(uid) {
+            const userRef = doc(db, 'users', uid);
             const hoje = new Date().toLocaleDateString('pt-BR');
             const snap = await getDoc(userRef);
-            
-            if(snap.exists() && snap.data().ultimoCompartilhamento !== hoje) {
-                await updateDoc(userRef, {
-                    fichas: increment(10),
-                    ultimoCompartilhamento: hoje
-                });
-                
-                await addDoc(collection(db, 'users', userId, 'mensagens'), {
-                    titulo: '📢 Bônus Diário',
-                    corpo: 'Você compartilhou o link e ganhou <strong>10 Fichas</strong>!',
-                    data: serverTimestamp(),
-                    lida: false
+            if(snap.data().ultimoCompartilhamento !== hoje) {
+                await updateDoc(userRef, { fichas: increment(10), ultimoCompartilhamento: hoje });
+                await addDoc(collection(db, 'users', uid, 'mensagens'), {
+                    titulo: '📢 Bônus Share', corpo: 'Compartilhou o link! +10 Fichas.', data: serverTimestamp(), lida: false
                 });
             }
         }
 
-        // --- 4. LISTAGEM E EXECUÇÃO DOS JOGOS ---
-
+        // --- JOGOS (Sua Lógica Original) ---
         const MEUS_JOGOS = [
             { id: 'neon', nome: 'Neon Drive', img: 'capas/Neoncap.jpg', url: 'jogos/Neon.html' },
             { id: 'sky',  nome: 'Sky Box',    img: 'capas/Skyboxcap.jpg', url: 'jogos/Skybox.html' },
             { id: 'jurassic', nome: 'Jurassic Run', img: 'capas/jurassiccap.jpg', url: 'jogos/Jurassic.html' }
         ];
 
-        function carre
+        function carregarJogos() {
+            const div = document.getElementById('games-list');
+            div.innerHTML = '';
+            MEUS_JOGOS.forEach(game => {
+                const el = document.createElement('div');
+                el.className = 'game-card';
+                el.innerHTML = `
+                    <img src="${game.img}" class="game-thumb" onerror="this.src='https://via.placeholder.com/150'">
+                    <div class="game-info">
+                        <strong>${game.nome}</strong><br>
+                        <span style="color:#00ff88; font-size:12px;">1 Ficha</span>
+                    </div>
+                `;
+                el.onclick = () => window.iniciarJogo(game.url, game.id);
+                div.appendChild(el);
+            });
+        }
+
+        // Funções Globais (window) para manter compatibilidade com seus scripts antigos
+        window.iniciarJogo = async function(urlArquivo, idJogo) {
+            if(!currentUser) return;
+            const userRef = doc(db, "users", currentUser.uid);
+            const snap = await getDoc(userRef);
+            
+            if (snap.data().fichas < 1) { mostrarNotificacao("🚫 Sem fichas!"); return; }
+            
+            const updates = { fichas: increment(-1) };
+            updates[`jogosJogados.${idJogo}`] = increment(1); // Mantive sua estrutura
+            
+            await updateDoc(userRef, updates);
+            // setDoc(doc(db, "config", "gameStats"), { [idJogo]: increment(1) }, { merge: true }); // Opcional se usar gameStats
+
+            window.jogoAtualID = idJogo;
+            const modal = document.getElementById('game-modal');
+            const i
