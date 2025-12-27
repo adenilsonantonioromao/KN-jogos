@@ -69,6 +69,41 @@
         .btn-share-header { background: #25D366; color: white; border: none; width: 35px; height: 35px; border-radius: 50%; cursor: pointer; font-size: 1.2rem; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.2); transition: transform 0.1s; }
         .btn-share-header:active { transform: scale(0.9); }
 
+        /* --- NOVO: ESTILOS DO INBOX --- */
+        .btn-inbox { 
+            background: white; border: none; font-size: 1.4rem; cursor: pointer; position: relative; 
+            margin-right: 5px; padding: 5px;
+        }
+        .badge-count {
+            position: absolute; top: 0; right: 0; 
+            background: #FF0000; color: white; 
+            font-size: 0.65rem; font-weight: bold;
+            width: 18px; height: 18px; border-radius: 50%;
+            display: flex; justify-content: center; align-items: center;
+            border: 2px solid white; display: none;
+        }
+        .msg-list { list-style: none; padding: 0; margin: 0; max-height: 400px; overflow-y: auto; }
+        .msg-item { 
+            background: white; border: 1px solid #eee; margin-bottom: 10px; 
+            border-radius: 8px; padding: 12px; text-align: left; 
+            transition: 0.2s; position: relative;
+        }
+        .msg-item.unread { 
+            background: #E3F2FD; border-left: 4px solid #2196F3; 
+            box-shadow: 0 2px 5px rgba(33, 150, 243, 0.15);
+        }
+        .msg-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 5px; }
+        .msg-title { font-weight: bold; color: var(--dark); font-size: 0.95rem; }
+        .msg-date { font-size: 0.7rem; color: #888; }
+        .msg-body { font-size: 0.85rem; color: #555; line-height: 1.4; }
+        .msg-btn-read {
+            margin-top: 8px; background: none; border: 1px solid #2196F3; 
+            color: #2196F3; padding: 4px 10px; border-radius: 20px; 
+            font-size: 0.75rem; cursor: pointer; width: 100%;
+        }
+        .msg-btn-read:hover { background: #2196F3; color: white; }
+        .empty-inbox { color: #999; font-style: italic; padding: 20px; text-align: center; }
+
         /* --- MODAIS --- */
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 5000; justify-content: center; align-items: center; padding: 20px; }
         .modal-box { background: white; padding: 25px; border-radius: 20px; max-width: 400px; width: 100%; text-align: center; position: relative; animation: popIn 0.3s; }
@@ -174,6 +209,20 @@
         </div>
     </div>
 
+    <!-- NOVO MODAL DE INBOX (MENSAGENS) -->
+    <div id="inbox-modal" class="modal-overlay">
+        <div class="modal-box" style="text-align: left;">
+            <span class="close-modal" onclick="fecharModalInbox()">×</span>
+            <h2 style="text-align: center;">📬 Mensagens</h2>
+            <p style="text-align: center; color: #666; font-size: 0.9rem; margin-bottom: 15px;">
+                Prêmios e avisos do sistema.
+            </p>
+            <ul id="lista-mensagens" class="msg-list">
+                <div class="empty-inbox">Carregando...</div>
+            </ul>
+        </div>
+    </div>
+
     <div id="login-screen">
         <div class="login-box">
             <h1>KN Jogos 🎮</h1>
@@ -202,8 +251,15 @@
                     <button class="btn-edit-nick" onclick="abrirModalApelido(false)">✏️</button>
                 </div>
             </div>
+            
+            <!-- AÇÕES DO HEADER (ATUALIZADO COM INBOX) -->
             <div class="header-actions">
                 <div class="chips-display">🪙 <span id="user-fichas">0</span></div>
+                
+                <button class="btn-inbox" onclick="abrirModalInbox()">
+                    🔔<div id="inbox-badge" class="badge-count">0</div>
+                </button>
+                
                 <button class="btn-share-header" onclick="abrirModalShare()">📢</button>
             </div>
         </header>
@@ -264,9 +320,10 @@
             }
         }, 5000); // 5000ms = 5 segundos
 
+        // IMPORT ATUALIZADO COM onSnapshot
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc, getDocs, setDoc, updateDoc, increment, collection, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, getDocs, setDoc, updateDoc, increment, collection, query, orderBy, limit, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyBIR7CqYYvMZVQxtO67JCQoJ3OLT1cvAx8",
@@ -286,7 +343,10 @@
         let currentUser = null;
         let globalStats = {}; 
         let userStats = {}; 
-        let JOGOS_CONFIG = []; 
+        let JOGOS_CONFIG = [];
+        
+        // Variável para controle das mensagens em tempo real
+        let unsubscribeMsg = null;
 
         const urlParams = new URLSearchParams(window.location.search);
         const refID = urlParams.get('ref');
@@ -314,375 +374,16 @@
                     const inputLink = document.getElementById('share-link-input');
                     if(inputLink) inputLink.value = meuLink;
 
-                    // 3. Carrega dados (Se der erro aqui, o catch pega)
+                    // 3. Carrega dados
                     await carregarUsuario(user);
+                    
+                    // 4. Inicia monitoramento de mensagens (Inbox)
+                    iniciarMonitoramentoMensagens(user);
+
                     await carregarListaDeJogos(); 
                     await carregarBanners(); 
                     await carregarStatsGlobais();
                     renderizarTodosJogos();
                 } else {
                     // USUÁRIO NÃO LOGADO
-                    loginScreen.style.display = 'flex';
-                    appContainer.style.display = 'none';
-                }
-            } catch (error) {
-                console.error("Erro crítico ao carregar:", error);
-                alert("Ocorreu um erro ao carregar seus dados. Tente recarregar a página.");
-                // Em caso de erro, joga para o login para não travar
-                loginScreen.style.display = 'flex';
-                appContainer.style.display = 'none';
-            } finally {
-                // --- ISSO SEMPRE VAI RODAR, INDEPENDENTE DE ERROS ---
-                if(splash) {
-                    splash.style.opacity = '0';
-                    setTimeout(() => { splash.style.display = 'none'; }, 500);
-                }
-            }
-        });
-
-        async function carregarUsuario(user) {
-            const userRef = doc(db, "users", user.uid);
-            let snap = await getDoc(userRef);
-            if (!snap.exists()) {
-                await setDoc(userRef, { nome: user.displayName, email: user.email, foto: user.photoURL, fichas: 5, pontuacaoTotal: 0, recordes: {}, jogosJogados: {}, dataInscricao: new Date().toISOString() });
-                const referrerID = sessionStorage.getItem('kn_referrer');
-                if (referrerID && referrerID !== user.uid) {
-                    try { await updateDoc(doc(db, "users", referrerID), { fichas: increment(25) }); } catch (e) {}
-                }
-                snap = await getDoc(userRef);
-            }
-            const data = snap.data();
-            userStats = data.jogosJogados || {};
-            
-            if (!data.apelido) {
-                abrirModalApelido(true);
-            } else {
-                document.getElementById('user-name').innerText = data.apelido;
-            }
-
-            document.getElementById('user-photo').src = user.photoURL;
-            document.getElementById('user-fichas').innerText = data.fichas;
-        }
-
-        // --- SISTEMA DE APELIDO ---
-        window.abrirModalApelido = function(obrigatorio) {
-            const modal = document.getElementById('nickname-modal');
-            const closeBtn = document.getElementById('close-nick-modal');
-            modal.style.display = 'flex';
-            if (obrigatorio) {
-                closeBtn.style.display = 'none';
-            } else {
-                closeBtn.style.display = 'block';
-                document.getElementById('input-apelido').value = document.getElementById('user-name').innerText;
-            }
-        }
-
-        window.fecharModalApelido = function() { document.getElementById('nickname-modal').style.display = 'none'; }
-
-        window.salvarApelido = async function() {
-            const novoApelido = document.getElementById('input-apelido').value.trim();
-            if (novoApelido.length < 3 || novoApelido.length > 12) { alert("O apelido deve ter entre 3 e 12 letras."); return; }
-            if (currentUser) {
-                const userRef = doc(db, "users", currentUser.uid);
-                await updateDoc(userRef, { apelido: novoApelido });
-                document.getElementById('user-name').innerText = novoApelido;
-                mostrarNotificacao("Apelido salvo com sucesso! ✅");
-                fecharModalApelido();
-                if(document.getElementById('tab-rank').classList.contains('active')) carregarRanking();
-            }
-        }
-
-        // --- SISTEMA DE SHARE (10 FICHAS) ---
-        window.abrirModalShare = function() { document.getElementById('share-modal').style.display = 'flex'; }
-        window.fecharModalShare = function() { document.getElementById('share-modal').style.display = 'none'; }
-        
-        window.copiarLinkGanharFichas = async function() {
-            const input = document.getElementById('share-link-input');
-            input.select(); input.setSelectionRange(0, 99999);
-            navigator.clipboard.writeText(input.value);
-            
-            if (currentUser) {
-                const userRef = doc(db, "users", currentUser.uid);
-                const snap = await getDoc(userRef);
-                const data = snap.data();
-                const hoje = new Date().toLocaleDateString('pt-BR');
-
-                if (data.ultimoResgateShare === hoje) {
-                    mostrarNotificacao("Link copiado! (Já resgatou hoje) ✅");
-                } else {
-                    await updateDoc(userRef, { fichas: increment(10), ultimoResgateShare: hoje });
-                    document.getElementById('user-fichas').innerText = data.fichas + 10;
-                    mostrarNotificacao("Link copiado! +10 Fichas! 🎉");
-                }
-            }
-            setTimeout(fecharModalShare, 2000);
-        }
-
-        // --- BANNERS ---
-        async function carregarBanners() {
-            try {
-                const querySnapshot = await getDocs(collection(db, "listaBanners"));
-                let banners = [];
-                querySnapshot.forEach((doc) => banners.push(doc.data()));
-                if(banners.length === 0) return;
-                banners.sort((a, b) => a.ordem - b.ordem);
-                const container = document.getElementById('carousel-container');
-                const dotsContainer = document.getElementById('carousel-dots');
-                container.style.display = 'block';
-                banners.forEach((b, index) => {
-                    const slide = document.createElement('div');
-                    slide.className = `carousel-slide ${index === 0 ? 'active' : ''}`;
-                    slide.style.backgroundImage = `url('banners/${b.arquivo}')`;
-                    if (b.link) {
-                        slide.classList.add('clickable');
-                        slide.onclick = () => {
-                            if (b.link === '#share') abrirModalShare();
-                            else if (b.link.startsWith('#')) {
-                                const aba = b.link.replace('#tab-', '');
-                                const btn = document.querySelector(`.nav-btn[onclick*="${aba}"]`);
-                                if (btn) btn.click();
-                            } else window.open(b.link, '_blank');
-                        };
-                    }
-                    container.appendChild(slide);
-                    const dot = document.createElement('div');
-                    dot.className = `dot ${index === 0 ? 'active' : ''}`;
-                    dot.onclick = () => mudarSlide(index);
-                    dotsContainer.appendChild(dot);
-                });
-                iniciarRotacaoBanners(banners.length);
-            } catch (e) { console.error("Erro banners:", e); }
-        }
-
-        let currentSlide = 0;
-        let slideInterval;
-        function iniciarRotacaoBanners(total) {
-            if(total <= 1) return;
-            slideInterval = setInterval(() => {
-                let next = currentSlide + 1;
-                if(next >= total) next = 0;
-                mudarSlide(next);
-            }, 5000);
-        }
-        function mudarSlide(index) {
-            const slides = document.querySelectorAll('.carousel-slide');
-            const dots = document.querySelectorAll('.dot');
-            slides[currentSlide].classList.remove('active');
-            dots[currentSlide].classList.remove('active');
-            currentSlide = index;
-            slides[currentSlide].classList.add('active');
-            dots[currentSlide].classList.add('active');
-        }
-
-        // --- JOGOS E RANKING ---
-        async function carregarListaDeJogos() {
-            try {
-                const querySnapshot = await getDocs(collection(db, "listaJogos"));
-                JOGOS_CONFIG = [];
-                querySnapshot.forEach((doc) => { JOGOS_CONFIG.push(doc.data()); });
-                JOGOS_CONFIG.sort((a, b) => {
-                    const dateA = a.dataInclusao ? new Date(a.dataInclusao) : new Date(0);
-                    const dateB = b.dataInclusao ? new Date(b.dataInclusao) : new Date(0);
-                    return dateB - dateA;
-                });
-                document.getElementById('loading-games').style.display = 'none';
-            } catch (e) { console.error(e); }
-        }
-
-        async function carregarStatsGlobais() {
-            const snap = await getDoc(doc(db, "config", "gameStats"));
-            if(snap.exists()) globalStats = snap.data();
-        }
-
-        function formatarData(isoString) {
-            if (!isoString) return null;
-            const d = new Date(isoString);
-            return d.toLocaleDateString('pt-BR');
-        }
-
-        function criarCardHTML(jogo) {
-            const caminhoImg = `capas/${jogo.img}`;
-            const caminhoArquivo = `jogos/${jogo.arquivo}`;
-            const dataCriacao = formatarData(jogo.dataInclusao);
-            const dataUpdate = formatarData(jogo.dataAtualizacao);
-            let htmlDatas = '<div class="game-dates">';
-            if (dataCriacao) htmlDatas += `<span>📅 Lançamento: ${dataCriacao}</span>`;
-            else htmlDatas += `<span>📅 Clássico (Sem data)</span>`;
-            if (dataUpdate && dataUpdate !== dataCriacao) htmlDatas += `<span>🔄 Atualizado: ${dataUpdate}</span>`;
-            htmlDatas += '</div>';
-            return `
-            <div class="game-card">
-                <div class="game-thumb" style="background-image: url('${caminhoImg}');"></div>
-                <div class="game-info">
-                    <div>
-                        <h3 style="margin:0; font-size:1.1rem;">${jogo.nome}</h3>
-                        <p style="margin:5px 0; font-size:0.8rem; color:#666;">${jogo.desc}</p>
-                        ${htmlDatas}
-                    </div>
-                    <button class="play-btn" onclick="iniciarJogo('${caminhoArquivo}', '${jogo.id}')">JOGAR</button>
-                </div>
-            </div>`;
-        }
-
-        function criarCardGridHTML(jogo) {
-            const caminhoImg = `capas/${jogo.img}`;
-            const caminhoArquivo = `jogos/${jogo.arquivo}`;
-            return `<div class="card-grid" onclick="iniciarJogo('${caminhoArquivo}', '${jogo.id}')"><div class="card-grid-thumb" style="background-image: url('${caminhoImg}');"></div><div class="card-overlay"><span class="play-icon-overlay">▶</span></div></div>`;
-        }
-
-        function renderizarTodosJogos() {
-            document.getElementById('lista-novos').innerHTML = JOGOS_CONFIG.map(j => criarCardHTML(j)).join('');
-            const populares = [...JOGOS_CONFIG].sort((a,b) => (globalStats[b.id] || 0) - (globalStats[a.id] || 0));
-            document.getElementById('lista-populares').innerHTML = populares.map(j => criarCardGridHTML(j)).join('');
-            const favoritos = [...JOGOS_CONFIG].filter(j => (userStats[j.id] || 0) > 0).sort((a,b) => (userStats[b.id] || 0) - (userStats[a.id] || 0));
-            document.getElementById('lista-favoritos').innerHTML = favoritos.length ? favoritos.map(j => criarCardGridHTML(j)).join('') : "<p style='color:#666; width:100%;'>Ainda não jogou nada.</p>";
-        }
-
-        window.mudarAba = async function(abaID, btn) {
-            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-            document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
-            document.getElementById('tab-' + abaID).classList.add('active');
-            btn.classList.add('active');
-            if(abaID === 'rank') carregarRanking();
-        }
-
-        async function carregarRanking() {
-            const list = document.getElementById('lista-rank');
-            list.innerHTML = "";
-            document.getElementById('loading-rank').style.display = 'block';
-            try {
-                // RANKING MENSAL (PADRÃO NA HOME)
-                const q = query(collection(db, "users"), orderBy("scoreMensal", "desc"), limit(50));
-                const querySnapshot = await getDocs(q);
-                document.getElementById('loading-rank').style.display = 'none';
-                let rank = 1;
-                querySnapshot.forEach((docSnap) => {
-                    const u = docSnap.data();
-                    const isMe = docSnap.id === currentUser.uid;
-                    const nomeExibicao = u.apelido || u.nome.split(' ')[0];
-                    // Verifica se o score é do mês atual, senão mostra 0
-                    const mesAtual = getMonthKey();
-                    const pontos = (u.dataUltimoMensal === mesAtual) ? (u.scoreMensal || 0) : 0;
-
-                    const html = `<li id="${isMe ? 'meu-rank' : ''}" class="rank-item ${isMe ? 'me' : ''}"><div class="rank-pos">#${rank}</div><div class="rank-user"><img src="${u.foto}"><div><strong>${nomeExibicao}</strong></div></div><div class="rank-score">${pontos}</div></li>`;
-                    list.innerHTML += html;
-                    rank++;
-                });
-            } catch (error) { console.error(error); }
-        }
-
-        window.rolarAteMim = function() {
-            const el = document.getElementById('meu-rank');
-            if(el) { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); el.style.border = "3px solid red"; setTimeout(() => el.style.border = "2px solid var(--primary)", 2000); }
-            else alert("Jogue mais para entrar no ranking!");
-        }
-
-        window.iniciarJogo = async function(urlArquivo, idJogo) {
-            if(!currentUser) return;
-            const userRef = doc(db, "users", currentUser.uid);
-            const snap = await getDoc(userRef);
-            if (snap.data().fichas < 1) { mostrarNotificacao("🚫 Sem fichas!"); return; }
-            const updates = { fichas: increment(-1) };
-            updates[`jogosJogados.${idJogo}`] = increment(1);
-            await updateDoc(userRef, updates);
-            setDoc(doc(db, "config", "gameStats"), { [idJogo]: increment(1) }, { merge: true });
-            document.getElementById('user-fichas').innerText = snap.data().fichas - 1;
-            window.jogoAtualID = idJogo;
-            const modal = document.getElementById('game-modal');
-            const iframe = document.getElementById('game-frame');
-            modal.style.display = 'flex';
-            iframe.src = urlArquivo; 
-        }
-
-        window.reiniciarJogo = async function() {
-            if(!currentUser) return;
-            if(!confirm("⚠️ JOGAR NOVAMENTE: Custo 1 Ficha 🪙\n\nConfirmar?")) return;
-            const userRef = doc(db, "users", currentUser.uid);
-            const snap = await getDoc(userRef);
-            if (snap.data().fichas < 1) { mostrarNotificacao("🚫 Sem fichas! :("); return; }
-            const updates = { fichas: increment(-1) };
-            updates[`jogosJogados.${window.jogoAtualID}`] = increment(1);
-            await updateDoc(userRef, updates);
-            setDoc(doc(db, "config", "gameStats"), { [window.jogoAtualID]: increment(1) }, { merge: true });
-            document.getElementById('user-fichas').innerText = snap.data().fichas - 1;
-            const iframe = document.getElementById('game-frame');
-            iframe.src = iframe.src;
-            mostrarNotificacao("🔄 Recarregando...");
-        }
-
-        window.fecharJogo = function() {
-            document.getElementById('game-modal').style.display = 'none';
-            document.getElementById('game-frame').src = "";
-            location.reload(); 
-        }
-
-        window.ativarTelaCheia = function() {
-            const iframe = document.getElementById('game-frame');
-            if (iframe.requestFullscreen) iframe.requestFullscreen();
-            else if (iframe.webkitRequestFullscreen) iframe.webkitRequestFullscreen();
-        }
-
-        // --- FUNÇÕES DE DATA ---
-        function getDayKey() { return new Date().toLocaleDateString('pt-BR'); }
-        function getMonthKey() { const d = new Date(); return `${d.getMonth()+1}/${d.getFullYear()}`; }
-        function getWeekKey() {
-            const d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() + 3 - (d.getDay() + 6) % 7);
-            const week1 = new Date(d.getFullYear(), 0, 4);
-            return 1 + Math.round(((d.getTime() - week1.getTime()) / 86400000 - 3 + (week1.getDay() + 6) % 7) / 7);
-        }
-
-        // --- LÓGICA DE PONTUAÇÃO (TEMPORADAS) ---
-        window.addEventListener('message', async function(event) {
-            if (event.data.type === 'GAME_OVER') {
-                const pontos = parseInt(event.data.score) || 0;
-                mostrarNotificacao(`Fim! Pontos: ${pontos}`);
-                
-                if (!currentUser) return;
-                const userRef = doc(db, "users", currentUser.uid);
-                
-                try {
-                    const docSnap = await getDoc(userRef);
-                    const data = docSnap.data();
-                    
-                    const hoje = getDayKey();
-                    const semanaAtual = getWeekKey();
-                    const mesAtual = getMonthKey();
-
-                    let updates = { pontuacaoTotal: increment(pontos) };
-
-                    // Diario
-                    if (data.dataUltimoDiario === hoje) updates.scoreDiario = increment(pontos);
-                    else { updates.scoreDiario = pontos; updates.dataUltimoDiario = hoje; }
-
-                    // Semanal
-                    if (data.dataUltimoSemanal === semanaAtual) updates.scoreSemanal = increment(pontos);
-                    else { updates.scoreSemanal = pontos; updates.dataUltimoSemanal = semanaAtual; }
-
-                    // Mensal
-                    if (data.dataUltimoMensal === mesAtual) updates.scoreMensal = increment(pontos);
-                    else { updates.scoreMensal = pontos; updates.dataUltimoMensal = mesAtual; }
-
-                    // Recordes
-                    let recordes = data.recordes || {};
-                    if (pontos > (recordes[window.jogoAtualID] || 0)) {
-                        recordes[window.jogoAtualID] = pontos;
-                        updates.recordes = recordes;
-                        mostrarNotificacao(`🏆 NOVO RECORDE NO JOGO!`);
-                    }
-
-                    await updateDoc(userRef, updates);
-
-                } catch (e) { console.error("Erro ao salvar pontos:", e); }
-            }
-            if (event.data.type === 'RESTART_REQUEST') reiniciarJogo();
-        });
-
-        function mostrarNotificacao(msg) {
-            const el = document.getElementById('notificacao');
-            el.innerText = msg;
-            el.style.display = 'block';
-            setTimeout(() => el.style.display = 'none', 4000);
-        }
-    </script>
-</body>
-</html>
+                    if(unsubscribeMsg) unsubscribeMsg(); // Para de
