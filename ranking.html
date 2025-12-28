@@ -18,7 +18,8 @@
         }
 
         h1 { font-family: 'Fredoka One', cursive; color: #FF5722; margin-bottom: 5px; font-size: 2rem; }
-        
+        p.subtitle { color: #666; margin-bottom: 20px; font-size: 0.9rem; }
+
         /* BOTÃO VOLTAR */
         .btn-back-home {
             position: fixed; top: 15px; left: 50%; transform: translateX(-50%);
@@ -34,13 +35,30 @@
         .btn-back-home span { font-size: 1.2rem; }
 
         /* ABAS */
-        .tabs { display: flex; gap: 10px; margin-bottom: 20px; justify-content: center; margin-top: 20px; }
-        .tab-btn { padding: 10px 20px; background: #ddd; border: none; border-radius: 20px; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        .tabs { display: flex; gap: 10px; margin-bottom: 15px; justify-content: center; margin-top: 10px; }
+        .tab-btn { padding: 10px 20px; background: #ddd; border: none; border-radius: 20px; font-weight: bold; cursor: pointer; transition: 0.3s; flex: 1; max-width: 150px; font-size: 0.9rem; }
         .tab-btn.active { background: #FF5722; color: white; transform: scale(1.05); box-shadow: 0 4px 10px rgba(255,87,34,0.3); }
         .content-section { display: none; animation: fadeIn 0.5s; }
         .content-section.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
+        /* --- NOVO: CAIXAS DE REGRAS --- */
+        .rules-box {
+            background: #fff8e1; /* Amarelo suave */
+            border: 2px solid #ffe082;
+            border-radius: 15px;
+            padding: 15px;
+            text-align: left;
+            max-width: 600px;
+            margin: 0 auto 20px auto;
+            font-size: 0.85rem;
+            color: #5d4037;
+            box-shadow: 0 4px 0 rgba(0,0,0,0.05);
+        }
+        .rules-title { font-weight: bold; color: #ff6f00; display: flex; align-items: center; gap: 5px; margin-bottom: 8px; font-size: 1rem; }
+        .rules-list { margin: 0; padding-left: 20px; list-style-type: disc; }
+        .rules-list li { margin-bottom: 4px; }
+        
         /* TABELA */
         .ranking-table { width: 100%; max-width: 800px; margin: 0 auto; border-collapse: collapse; background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
         th, td { padding: 12px; text-align: center; border-bottom: 1px solid #eee; }
@@ -66,7 +84,8 @@
         .place-1 .podium-name { font-size: 1rem; color: #E65100; }
 
         .champ-list { max-width: 600px; margin: 0 auto; list-style: none; padding: 0; }
-        .champ-item { background: white; padding: 10px; margin-bottom: 5px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .champ-item { background: white; padding: 10px; margin-bottom: 5px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); transition: transform 0.1s; }
+        .champ-item:active { transform: scale(0.98); }
         #error-msg { color: red; margin: 20px; font-weight: bold; display: none; }
     </style>
 </head>
@@ -75,18 +94,28 @@
     <a href="index.html" class="btn-back-home"><span>🎮</span> VOLTAR AO JOGO</a>
 
     <h1>📊 Central de Rankings</h1>
-    <p>Confira seu desempenho em todas as categorias!</p>
-
+    
     <div class="tabs">
         <button class="tab-btn active" onclick="mudarAba('tabelao')">📈 Tabelão Geral</button>
         <button class="tab-btn" onclick="mudarAba('campeoes')">👑 Galeria dos Campeões</button>
     </div>
 
-    <!-- MENSAGEM DE ERRO (CASO FALHE) -->
+    <!-- MENSAGEM DE ERRO -->
     <div id="error-msg"></div>
 
     <!-- ABA 1: TABELÃO -->
     <div id="tabelao" class="content-section active">
+        <!-- CAIXA DE REGRAS DO TABELÃO -->
+        <div class="rules-box">
+            <div class="rules-title">ℹ️ Como Funciona a Temporada</div>
+            <ul class="rules-list">
+                <li><strong>Diário:</strong> Reseta toda noite (00:00). Top 5 ganham prêmios.</li>
+                <li><strong>Semanal:</strong> Acumule pontos até Sexta-feira. Prêmios maiores!</li>
+                <li><strong>Mensal:</strong> O Grande Campeão! Reseta todo dia 01 do mês.</li>
+                <li><strong>Prêmios:</strong> Os melhores ganham Fichas 🪙 e Pontos de Campeão ⭐.</li>
+            </ul>
+        </div>
+
         <p style="font-size:0.8rem; color:#666;">Clique nos títulos das colunas para ordenar!</p>
         <div style="overflow-x:auto;">
             <table class="ranking-table">
@@ -107,15 +136,23 @@
 
     <!-- ABA 2: CAMPEÕES -->
     <div id="campeoes" class="content-section">
+        <p class="subtitle" style="font-weight:bold; color:#E65100;">Confira sua pontuação dos campeões ⭐</p>
+        
+        <!-- CAIXA DE REGRAS DOS CAMPEÕES -->
+        <div class="rules-box" style="background:#FFF3E0; border-color:#FFB74D; color:#E65100;">
+            <div class="rules-title">👑 O Hall da Fama</div>
+            <p style="margin:0;">Estes pontos representam sua glória eterna! Eles <strong>NUNCA resetam</strong>. São conquistados ao ficar no Top 5 dos rankings Diário, Semanal ou Mensal.</p>
+        </div>
+
         <div id="podium" class="podium-container"></div>
-        <h3>Top dos Tops (Pontos de Campeão)</h3>
+        
+        <h3 style="color:#555; font-size:1.2rem; margin-top:30px;">🏅 Placar Geral dos Campeões</h3>
         <ul id="lista-campeoes" class="champ-list"></ul>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-        // --- IMPORTAR APP CHECK (IGUAL AO INDEX) ---
         import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app-check.js";
 
         const firebaseConfig = {
@@ -129,14 +166,12 @@
         };
 
         const app = initializeApp(firebaseConfig);
-        
-        // --- ATIVAR SEGURANÇA (OBRIGATÓRIO AGORA) ---
         try {
             initializeAppCheck(app, {
                 provider: new ReCaptchaV3Provider('6Lc5vjgsAAAAANx2ia8s_Fh0_KS0_YNaAlSIYpJC'),
                 isTokenAutoRefreshEnabled: true
             });
-        } catch(e) { console.warn("Erro AppCheck:", e); }
+        } catch(e) { console.warn("AppCheck:", e); }
 
         const db = getFirestore(app);
         let todosUsuarios = [];
@@ -163,7 +198,6 @@
                     todosUsuarios.push({
                         nome: d.apelido || d.nome.split(' ')[0],
                         foto: d.foto,
-                        // Só exibe pontos se a data bater, senão é 0 (temporada virou)
                         diario: (d.dataUltimoDiario === hoje) ? (d.scoreDiario || 0) : 0,
                         semanal: (d.dataUltimoSemanal === semana) ? (d.scoreSemanal || 0) : 0,
                         mensal: (d.dataUltimoMensal === mes) ? (d.scoreMensal || 0) : 0,
@@ -174,8 +208,8 @@
                 renderizarTabela('mensal');
                 renderizarCampeoes();
             } catch (error) {
-                console.error("Erro ao carregar Ranking:", error);
-                document.getElementById('tabela-corpo').innerHTML = `<tr><td colspan="4" style="color:red;">Erro ao carregar dados.<br>${error.message}</td></tr>`;
+                console.error(error);
+                document.getElementById('tabela-corpo').innerHTML = `<tr><td colspan="4">Erro. Recarregue.</td></tr>`;
             }
         }
 
@@ -186,25 +220,19 @@
             const tbody = document.getElementById('tabela-corpo');
             tbody.innerHTML = "";
 
-            if(todosUsuarios.length === 0) {
-                tbody.innerHTML = "<tr><td colspan='4'>Nenhum jogador encontrado.</td></tr>";
-                return;
-            }
+            if(todosUsuarios.length === 0) { tbody.innerHTML = "<tr><td colspan='4'>Nenhum dado.</td></tr>"; return; }
 
             todosUsuarios.forEach(u => {
                 const styleD = criterio === 'diario' ? 'background:#e8f5e9;' : '';
                 const styleS = criterio === 'semanal' ? 'background:#e8f5e9;' : '';
                 const styleM = criterio === 'mensal' ? 'background:#e8f5e9;' : '';
-
-                const html = `
+                tbody.innerHTML += `
                     <tr>
                         <td><div class="user-cell"><img src="${u.foto}"> ${u.nome}</div></td>
                         <td style="${styleD}" class="score-val">${u.diario}</td>
                         <td style="${styleS}" class="score-val">${u.semanal}</td>
                         <td style="${styleM}" class="score-val">${u.mensal}</td>
-                    </tr>
-                `;
-                tbody.innerHTML += html;
+                    </tr>`;
             });
         }
 
@@ -216,27 +244,28 @@
             const podium = document.getElementById('podium');
             podium.innerHTML = "";
 
-            const ordemPodio = [1, 0, 2]; // Prata, Ouro, Bronze
-            
+            const ordemPodio = [1, 0, 2];
             ordemPodio.forEach(i => {
                 if(top3[i]) {
                     const u = top3[i];
                     const pos = i + 1;
-                    const html = `
+                    podium.innerHTML += `
                         <div class="podium-place place-${pos}">
                             <img src="${u.foto}" class="podium-avatar">
                             <div class="podium-name">${u.nome}</div>
                             <div class="podium-points">⭐ ${u.campeao}</div>
                             <div class="podium-bar">#${pos}</div>
                         </div>`;
-                    podium.innerHTML += html;
                 }
             });
 
             const lista = document.getElementById('lista-campeoes');
             lista.innerHTML = "";
+            
+            // Aqui garantimos que todos do 4º para baixo aparecem
             resto.forEach((u, index) => {
-                if(u.campeao > 0) {
+                // Só mostra se tiver pelo menos 1 ponto de campeão, senão a lista fica gigante com zeros
+                if(u.campeao >= 0) { 
                     lista.innerHTML += `
                         <li class="champ-item">
                             <div style="display:flex; align-items:center; gap:10px;">
