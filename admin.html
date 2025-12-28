@@ -123,6 +123,9 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
         import { getFirestore, doc, getDoc, setDoc, deleteDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        
+        // --- NOVO: IMPORT DO APP CHECK ---
+        import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app-check.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyBIR7CqYYvMZVQxtO67JCQoJ3OLT1cvAx8",
@@ -135,12 +138,26 @@
         };
 
         const app = initializeApp(firebaseConfig);
+
+        // --- NOVO: ATIVAR APP CHECK NO ADMIN ---
+        try {
+            const appCheck = initializeAppCheck(app, {
+                provider: new ReCaptchaV3Provider('6Lc5vjgsAAAAANx2ia8s_Fh0_KS0_YNaAlSIYpJC'),
+                isTokenAutoRefreshEnabled: true
+            });
+        } catch (e) {
+            console.warn("App Check Error:", e);
+        }
+
         const auth = getAuth(app);
         const db = getFirestore(app);
         const provider = new GoogleAuthProvider();
+        
+        // --- SEU EMAIL DE ADMIN ---
         const ADMIN_EMAIL = "adenilsonantonioromao@gmail.com";
 
         document.getElementById('btn-login').addEventListener('click', () => { signInWithPopup(auth, provider).catch(alert); });
+        
         onAuthStateChanged(auth, (user) => {
             if (user && user.email === ADMIN_EMAIL) {
                 document.getElementById('lock-screen').style.display = 'none';
@@ -149,10 +166,11 @@
                 carregarListaBanners();
             } else if (user) {
                 document.getElementById('error-msg').style.display = 'block';
-                document.getElementById('error-msg').innerText = "Acesso Negado.";
+                document.getElementById('error-msg').innerText = "Acesso Negado. Você não é o admin.";
                 signOut(auth);
             }
         });
+        
         window.sair = () => signOut(auth).then(() => location.reload());
 
         window.mudarAba = function(aba) {
@@ -179,7 +197,10 @@
                     item.onclick = () => preencherEditorJogo(data);
                     divLista.appendChild(item);
                 });
-            } catch (e) { divLista.innerHTML = "Erro."; }
+            } catch (e) { 
+                console.error(e);
+                divLista.innerHTML = "Erro ao carregar (Veja Console). Verifique se seu UID está nas Regras do Firestore."; 
+            }
         }
 
         function preencherEditorJogo(data) {
@@ -198,15 +219,22 @@
             const arquivo = document.getElementById('arquivo').value;
             const img = document.getElementById('img').value;
             if(!id) return alert("ID obrigatório");
-            const docRef = doc(db, "listaJogos", id);
-            const docSnap = await getDoc(docRef);
-            const agora = new Date().toISOString();
-            let dados = { id, nome, desc, arquivo, img, dataAtualizacao: agora };
-            if (!docSnap.exists()) dados.dataInclusao = agora;
-            await setDoc(docRef, dados, { merge: true });
-            await setDoc(doc(db, "config", "gameStats"), { [id]: 0 }, { merge: true });
-            mostrarStatus("✅ Jogo Salvo!");
-            carregarListaJogos();
+            
+            try {
+                const docRef = doc(db, "listaJogos", id);
+                const docSnap = await getDoc(docRef);
+                const agora = new Date().toISOString();
+                let dados = { id, nome, desc, arquivo, img, dataAtualizacao: agora };
+                if (!docSnap.exists()) dados.dataInclusao = agora;
+                
+                await setDoc(docRef, dados, { merge: true });
+                await setDoc(doc(db, "config", "gameStats"), { [id]: 0 }, { merge: true });
+                mostrarStatus("✅ Jogo Salvo!");
+                carregarListaJogos();
+            } catch(e) {
+                alert("Erro ao salvar! Verifique se seu UID de Admin está configurado nas Regras do Firestore.");
+                console.error(e);
+            }
         }
 
         // --- BANNERS ---
@@ -234,14 +262,14 @@
                     item.onclick = () => preencherEditorBanner(data);
                     divLista.appendChild(item);
                 });
-            } catch (e) { divLista.innerHTML = "Erro."; }
+            } catch (e) { console.error(e); divLista.innerHTML = "Erro."; }
         }
 
         function preencherEditorBanner(data) {
             document.getElementById('idBanner').value = data.id;
             document.getElementById('arquivoBanner').value = data.arquivo;
             document.getElementById('ordemBanner').value = data.ordem;
-            document.getElementById('linkBanner').value = data.link || ""; // Carrega o link
+            document.getElementById('linkBanner').value = data.link || ""; 
             mostrarStatus(`Editando Banner: ${data.id}`);
         }
 
@@ -249,25 +277,31 @@
             let id = document.getElementById('idBanner').value.trim();
             const arquivo = document.getElementById('arquivoBanner').value;
             const ordem = parseInt(document.getElementById('ordemBanner').value) || 99;
-            const link = document.getElementById('linkBanner').value.trim(); // Pega o link
+            const link = document.getElementById('linkBanner').value.trim(); 
             
             if(!arquivo) return alert("Nome do arquivo é obrigatório");
             if(!id) id = "banner_" + Date.now();
 
-            await setDoc(doc(db, "listaBanners", id), { id, arquivo, ordem, link }, { merge: true });
-            mostrarStatus("✅ Banner Salvo!");
-            carregarListaBanners();
-            limparFormularioBanner();
+            try {
+                await setDoc(doc(db, "listaBanners", id), { id, arquivo, ordem, link }, { merge: true });
+                mostrarStatus("✅ Banner Salvo!");
+                carregarListaBanners();
+                limparFormularioBanner();
+            } catch(e) {
+                alert("Erro ao salvar banner. Permissão negada.");
+            }
         }
 
         window.deletarBanner = async function() {
             const id = document.getElementById('idBanner').value.trim();
             if(!id) return;
             if(confirm("Tem certeza que quer apagar este banner?")) {
-                await deleteDoc(doc(db, "listaBanners", id));
-                mostrarStatus("🗑️ Banner Removido.");
-                carregarListaBanners();
-                limparFormularioBanner();
+                try {
+                    await deleteDoc(doc(db, "listaBanners", id));
+                    mostrarStatus("🗑️ Banner Removido.");
+                    carregarListaBanners();
+                    limparFormularioBanner();
+                } catch(e) { alert("Erro ao deletar."); }
             }
         }
 
