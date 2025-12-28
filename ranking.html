@@ -164,4 +164,105 @@
                         nome: d.apelido || d.nome.split(' ')[0],
                         foto: d.foto,
                         // Só exibe pontos se a data bater, senão é 0 (temporada virou)
-                        diario: (d.dataUltimoDiario === hoje) ? (d.sc
+                        diario: (d.dataUltimoDiario === hoje) ? (d.scoreDiario || 0) : 0,
+                        semanal: (d.dataUltimoSemanal === semana) ? (d.scoreSemanal || 0) : 0,
+                        mensal: (d.dataUltimoMensal === mes) ? (d.scoreMensal || 0) : 0,
+                        campeao: d.pontosCampeao || 0
+                    });
+                });
+
+                renderizarTabela('mensal');
+                renderizarCampeoes();
+            } catch (error) {
+                console.error("Erro ao carregar Ranking:", error);
+                document.getElementById('tabela-corpo').innerHTML = `<tr><td colspan="4" style="color:red;">Erro ao carregar dados.<br>${error.message}</td></tr>`;
+            }
+        }
+
+        window.ordenarPor = function(criterio) { renderizarTabela(criterio); }
+
+        function renderizarTabela(criterio) {
+            todosUsuarios.sort((a, b) => b[criterio] - a[criterio]);
+            const tbody = document.getElementById('tabela-corpo');
+            tbody.innerHTML = "";
+
+            if(todosUsuarios.length === 0) {
+                tbody.innerHTML = "<tr><td colspan='4'>Nenhum jogador encontrado.</td></tr>";
+                return;
+            }
+
+            todosUsuarios.forEach(u => {
+                const styleD = criterio === 'diario' ? 'background:#e8f5e9;' : '';
+                const styleS = criterio === 'semanal' ? 'background:#e8f5e9;' : '';
+                const styleM = criterio === 'mensal' ? 'background:#e8f5e9;' : '';
+
+                const html = `
+                    <tr>
+                        <td><div class="user-cell"><img src="${u.foto}"> ${u.nome}</div></td>
+                        <td style="${styleD}" class="score-val">${u.diario}</td>
+                        <td style="${styleS}" class="score-val">${u.semanal}</td>
+                        <td style="${styleM}" class="score-val">${u.mensal}</td>
+                    </tr>
+                `;
+                tbody.innerHTML += html;
+            });
+        }
+
+        function renderizarCampeoes() {
+            const campeoes = [...todosUsuarios].sort((a, b) => b.campeao - a.campeao);
+            const top3 = campeoes.slice(0, 3);
+            const resto = campeoes.slice(3);
+
+            const podium = document.getElementById('podium');
+            podium.innerHTML = "";
+
+            const ordemPodio = [1, 0, 2]; // Prata, Ouro, Bronze
+            
+            ordemPodio.forEach(i => {
+                if(top3[i]) {
+                    const u = top3[i];
+                    const pos = i + 1;
+                    const html = `
+                        <div class="podium-place place-${pos}">
+                            <img src="${u.foto}" class="podium-avatar">
+                            <div class="podium-name">${u.nome}</div>
+                            <div class="podium-points">⭐ ${u.campeao}</div>
+                            <div class="podium-bar">#${pos}</div>
+                        </div>`;
+                    podium.innerHTML += html;
+                }
+            });
+
+            const lista = document.getElementById('lista-campeoes');
+            lista.innerHTML = "";
+            resto.forEach((u, index) => {
+                if(u.campeao > 0) {
+                    lista.innerHTML += `
+                        <li class="champ-item">
+                            <div style="display:flex; align-items:center; gap:10px;">
+                                <span style="font-weight:bold; color:#999;">#${index + 4}</span>
+                                <img src="${u.foto}" style="width:30px; height:30px; border-radius:50%;">
+                                ${u.nome}
+                            </div>
+                            <div style="font-weight:bold; color:#FFC107;">⭐ ${u.campeao}</div>
+                        </li>`;
+                }
+            });
+            
+            if(lista.innerHTML === "" && podium.innerHTML === "") {
+                document.getElementById('campeoes').innerHTML += "<p style='margin-top:50px;'>Ainda não temos campeões coroados! 👑</p>";
+            }
+        }
+
+        window.mudarAba = function(aba) {
+            document.querySelectorAll('.content-section').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById(aba).classList.add('active');
+            const btns = document.querySelectorAll('.tab-btn');
+            if(aba === 'tabelao') btns[0].classList.add('active'); else btns[1].classList.add('active');
+        }
+
+        carregarDados();
+    </script>
+</body>
+</html>
