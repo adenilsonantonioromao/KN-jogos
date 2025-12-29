@@ -3,15 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Título -->
     <title>KN Jogos Online - Portal Oficial</title>
-    <!-- META TAGS DE REDES SOCIAIS (Para o Link ficar bonito no Zap) -->
-<meta property="og:title" content="KN Jogos - O Arcade Online com Prêmios!">
-<meta property="og:description" content="Jogue, suba no ranking e ganhe recompensas. Entre pelo meu link para ganhar bônus!">
-<meta property="og:image" content="https://adenilsonantonioromao.github.io/KN-jogos/capas/neon.jpg"> <!-- Use uma imagem de capa geral -->
-<meta property="og:url" content="https://adenilsonantonioromao.github.io/KN-jogos/">
-<meta property="og:type" content="website">
-<link rel="icon" type="image/x-icon" href="favicon.ico">
-    <!-- SCRIPT DE EMERGÊNCIA (PARAQUEDAS) -->
+
+    <!-- META TAGS DE REDES SOCIAIS -->
+    <meta property="og:title" content="KN Jogos - O Arcade Online com Prêmios!">
+    <meta property="og:description" content="Jogue, suba no ranking e ganhe recompensas. Entre pelo meu link para ganhar bônus!">
+    <meta property="og:image" content="https://adenilsonantonioromao.github.io/KN-jogos/capas/neon.jpg">
+    <meta property="og:url" content="https://adenilsonantonioromao.github.io/KN-jogos/">
+    <meta property="og:type" content="website">
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+
+    <!-- SCRIPT DE EMERGÊNCIA -->
     <script>
         window.addEventListener('load', function() {
             setTimeout(function() {
@@ -19,7 +22,7 @@
                 var app = document.getElementById('app-container');
                 var login = document.getElementById('login-screen');
                 if (splash && splash.style.display !== 'none') {
-                    console.warn("⚠️ O carregamento demorou demais. Forçando abertura via Paraquedas.");
+                    console.warn("⚠️ Forçando abertura via Paraquedas.");
                     splash.style.display = 'none';
                     if (app.style.display === 'none') { login.style.display = 'flex'; }
                 }
@@ -28,57 +31,28 @@
     </script>
 
     <style>
-        /* --- ESTILOS GERAIS --- */
         @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;700&display=swap');
         :root { --primary: #FF5722; --secondary: #FFC107; --bg: #f0fdf4; --dark: #37474F; --green: #4CAF50; }
         
         body { font-family: 'Nunito', sans-serif; background-color: var(--bg); margin: 0; padding: 0; text-align: center; color: var(--dark); padding-bottom: 80px; }
         h1, h2, h3 { font-family: 'Fredoka One', cursive; color: var(--primary); margin: 10px 0; }
         
-        /* --- SPLASH SCREEN --- */
-        #splash-screen {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: var(--bg); z-index: 9999;
-            display: flex; flex-direction: column; justify-content: center; align-items: center;
-            transition: opacity 0.5s ease;
-        }
-        .loader {
-            border: 5px solid #f3f3f3; border-top: 5px solid var(--primary);
-            border-radius: 50%; width: 50px; height: 50px;
-            animation: spin 1s linear infinite; margin-bottom: 20px;
-        }
+        #splash-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg); z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; transition: opacity 0.5s ease; }
+        .loader { border: 5px solid #f3f3f3; border-top: 5px solid var(--primary); border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin-bottom: 20px; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        /* --- CARROSSEL --- */
-        .carousel-container {
-            width: 100%; max-width: 600px; height: 200px; margin: 10px auto 20px auto;
-            border-radius: 15px; overflow: hidden; position: relative;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2); background: #ddd;
-        }
-        .carousel-slide {
-            width: 100%; height: 100%; background-size: cover; background-position: center;
-            position: absolute; top: 0; left: 0; opacity: 0; transition: opacity 1s ease-in-out;
-        }
+        .carousel-container { width: 100%; max-width: 600px; height: 200px; margin: 10px auto 20px auto; border-radius: 15px; overflow: hidden; position: relative; box-shadow: 0 5px 15px rgba(0,0,0,0.2); background: #ddd; }
+        .carousel-slide { width: 100%; height: 100%; background-size: cover; background-position: center; position: absolute; top: 0; left: 0; opacity: 0; transition: opacity 1s ease-in-out; }
         .carousel-slide.active { opacity: 1; }
         .carousel-slide.clickable { cursor: pointer; } 
-        
-        .carousel-dots {
-            position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%);
-            display: flex; gap: 8px; z-index: 10;
-        }
+        .carousel-dots { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); display: flex; gap: 8px; z-index: 10; }
         .dot { width: 10px; height: 10px; background: rgba(255,255,255,0.5); border-radius: 50%; cursor: pointer; }
         .dot.active { background: white; transform: scale(1.2); }
 
-        /* --- LOGIN --- */
-        #login-screen { 
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-            background: linear-gradient(135deg, #2196F3, #9C27B0); 
-            display: none; flex-direction: column; justify-content: center; align-items: center; z-index: 2000; 
-        }
+        #login-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, #2196F3, #9C27B0); display: none; flex-direction: column; justify-content: center; align-items: center; z-index: 2000; }
         .login-box { background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); width: 85%; max-width: 350px; }
         .btn-google { background: white; border: 1px solid #ddd; padding: 12px 25px; border-radius: 50px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 15px; display: flex; align-items: center; justify-content: center; gap: 10px; }
         
-        /* --- HEADER --- */
         header { background: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 10px rgba(0,0,0,0.05); position: sticky; top: 0; z-index: 100; }
         .user-info { display: flex; align-items: center; gap: 10px; }
         .user-info img { width: 45px; height: 45px; border-radius: 50%; border: 2px solid var(--secondary); }
@@ -87,11 +61,10 @@
         .btn-edit-nick:hover { color: var(--primary); }
 
         .header-actions { display: flex; align-items: center; gap: 8px; }
-        .chips-display { background: var(--secondary); padding: 5px 15px; border-radius: 20px; font-weight: bold; color: #3E2723; display: flex; align-items: center; gap: 5px; cursor: pointer; }
+        .chips-display { background: var(--secondary); padding: 5px 15px; border-radius: 20px; font-weight: bold; color: #3E2723; display: flex; align-items: center; gap: 5px; cursor: default; } /* SEM CLICK */
         .btn-share-header { background: #25D366; color: white; border: none; width: 35px; height: 35px; border-radius: 50%; cursor: pointer; font-size: 1.2rem; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.2); transition: transform 0.1s; }
         .btn-share-header:active { transform: scale(0.9); }
 
-        /* --- INBOX & EXTRATO --- */
         .btn-inbox { background: white; border: none; font-size: 1.4rem; cursor: pointer; position: relative; margin-right: 5px; padding: 5px; }
         .badge-count { position: absolute; top: 0; right: 0; background: #FF0000; color: white; font-size: 0.65rem; font-weight: bold; width: 18px; height: 18px; border-radius: 50%; display: flex; justify-content: center; align-items: center; border: 2px solid white; display: none; }
         .msg-list { list-style: none; padding: 0; margin: 0; max-height: 400px; overflow-y: auto; }
@@ -105,19 +78,11 @@
         .msg-btn-read:hover { background: #2196F3; color: white; }
         .empty-inbox { color: #999; font-style: italic; padding: 20px; text-align: center; }
 
-        /* Estilo para item de Extrato */
-        .extrato-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #eee; }
-        .extrato-val { font-weight: bold; }
-        .extrato-val.plus { color: #4CAF50; }
-        .extrato-val.minus { color: #D32F2F; }
-
-        /* --- MODAIS --- */
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 5000; justify-content: center; align-items: center; padding: 20px; }
         .modal-box { background: white; padding: 25px; border-radius: 20px; max-width: 400px; width: 100%; text-align: center; position: relative; animation: popIn 0.3s; }
         .close-modal { position: absolute; top: 10px; right: 15px; font-size: 1.5rem; cursor: pointer; color: #999; }
         @keyframes popIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 
-        /* Share */
         .share-info { background: #f0fdf4; padding: 15px; border-radius: 10px; margin: 15px 0; text-align: left; font-size: 0.9rem; border: 1px solid #bbf7d0; }
         .share-link-box { display: flex; gap: 5px; margin-top: 15px; }
         .share-link-input { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 8px; background: #eee; color: #555; font-size: 0.8rem; }
@@ -126,7 +91,6 @@
         .nick-input { width: 100%; padding: 12px; font-size: 1.1rem; border: 2px solid #ddd; border-radius: 10px; margin: 15px 0; text-align: center; font-weight: bold; color: var(--dark); }
         .btn-save-nick { background: var(--primary); color: white; border: none; padding: 12px 30px; border-radius: 30px; font-weight: bold; font-size: 1rem; cursor: pointer; width: 100%; }
 
-        /* --- CARDS & GRID --- */
         .game-card { background: white; border-radius: 15px; overflow: hidden; box-shadow: 0 4px 0 #CFD8DC; margin-bottom: 20px; text-align: left; transition: transform 0.1s; position: relative; }
         .game-card:active { transform: scale(0.99); }
         .game-thumb { width: 100%; aspect-ratio: 16 / 11; background-color: #111; background-size: cover; background-position: center; }
@@ -145,7 +109,6 @@
         .play-icon-overlay { font-size: 2.5rem; color: white; text-shadow: 0 0 10px rgba(0,0,0,0.8); filter: drop-shadow(0 4px 2px rgba(0,0,0,0.5)); }
         @media (max-width: 600px) { .grid-games { grid-template-columns: repeat(2, 1fr); } .game-window { height: 75vh; } }
 
-        /* --- JANELA DE JOGO --- */
         #game-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.95); backdrop-filter: blur(5px); z-index: 3000; flex-direction: column; justify-content: center; align-items: center; }
         .game-window { width: 95%; max-width: 900px; height: 65vh; background: #000; border: 2px solid var(--green); border-radius: 12px; box-shadow: 0 0 30px rgba(76, 175, 80, 0.3); overflow: hidden; position: relative; }
         iframe { border: none; width: 100%; height: 100%; display: block; background: #000; }
@@ -156,7 +119,6 @@
         .btn-restart { background: var(--secondary); color: #3E2723; }
         .btn-fullscreen { background: #2196F3; }
 
-        /* --- NAV E NOTIF --- */
         .tab-content { display: none; padding: 15px; animation: fadeIn 0.3s; }
         .tab-content.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
@@ -166,7 +128,6 @@
         .nav-btn span { font-size: 1.4rem; margin-bottom: 2px; }
         .notification { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: #333; color: white; padding: 10px 20px; border-radius: 30px; z-index: 4000; display: none; font-weight: bold; width: 80%; max-width: 300px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
         
-        /* RANKING */
         .rank-list { list-style: none; padding: 0; margin: 0; }
         .rank-item { background: white; margin-bottom: 10px; padding: 10px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         .rank-item.me { border: 2px solid var(--primary); background: #FFF3E0; }
@@ -178,7 +139,6 @@
 </head>
 <body>
 
-    <!-- SPLASH SCREEN -->
     <div id="splash-screen">
         <div class="loader"></div>
         <h2 style="color:var(--primary);">KN Jogos</h2>
@@ -220,20 +180,11 @@
         <div class="modal-box" style="text-align: left;">
             <span class="close-modal" onclick="fecharModalInbox()">×</span>
             <h2 style="text-align: center;">📬 Mensagens</h2>
+            <p style="text-align: center; color: #666; font-size: 0.9rem; margin-bottom: 15px;">
+                Prêmios e avisos do sistema.
+            </p>
             <ul id="lista-mensagens" class="msg-list">
                 <div class="empty-inbox">Carregando...</div>
-            </ul>
-        </div>
-    </div>
-
-    <!-- NOVO MODAL EXTRATO -->
-    <div id="extrato-modal" class="modal-overlay">
-        <div class="modal-box" style="text-align: left;">
-            <span class="close-modal" onclick="fecharModalExtrato()">×</span>
-            <h2 style="text-align: center;">🧾 Extrato de Fichas</h2>
-            <p style="text-align: center; color: #666; font-size: 0.9rem;">Histórico de ganhos e gastos.</p>
-            <ul id="lista-extrato" class="msg-list">
-                <div class="empty-inbox">Carregando histórico...</div>
             </ul>
         </div>
     </div>
@@ -268,8 +219,8 @@
             </div>
             
             <div class="header-actions">
-                <!-- Botão de Fichas abre o Extrato -->
-                <div class="chips-display" onclick="abrirModalExtrato()">🪙 <span id="user-fichas">0</span></div>
+                <!-- SEM ONCLICK -->
+                <div class="chips-display">🪙 <span id="user-fichas">0</span></div>
                 
                 <button class="btn-inbox" onclick="abrirModalInbox()">
                     🔔<div id="inbox-badge" class="badge-count">0</div>
@@ -283,6 +234,13 @@
             <div id="carousel-container" class="carousel-container" style="display:none;">
                 <div class="carousel-dots" id="carousel-dots"></div>
             </div>
+
+            <!-- PUBLICIDADE -->
+            <div style="margin: 10px auto; max-width: 320px; text-align: center;">
+                <p style="font-size: 10px; color: #ccc;">Publicidade</p>
+                <!-- INSIRA ADSENSE AQUI -->
+            </div>
+
             <h2>Novos Jogos 🔥</h2>
             <div id="loading-games">Carregando jogos...</div>
             <div id="lista-novos"></div>
@@ -300,6 +258,7 @@
 
         <div id="tab-rank" class="tab-content">
             <h2>🏆 Temporada Mensal</h2>
+            <p style="font-size:0.8rem; color:#666; margin-bottom:15px;">Reseta todo dia 01. Acumule pontos!</p>
             <button class="btn-control btn-fullscreen" style="margin: 0 auto 15px auto; background: #9C27B0; width: 100%;" onclick="window.location.href='ranking.html'">
                 📊 VER RANKING COMPLETO
             </button>
@@ -313,6 +272,10 @@
             <button class="nav-btn" onclick="mudarAba('favoritos', this)"><span>❤️</span>Favs</button>
             <button class="nav-btn" onclick="mudarAba('rank', this)"><span>📊</span>Rank</button>
         </nav>
+        
+        <footer style="margin-top: 50px; font-size: 0.7rem; color: #999;">
+            <a href="politica.html" style="color: #999; text-decoration: none;">Política de Privacidade</a>
+        </footer>
     </div>
 
     <script type="module">
@@ -355,51 +318,20 @@
 
         document.getElementById('btn-login').addEventListener('click', () => { signInWithPopup(auth, provider).catch(alert); });
 
-        // --- SISTEMA DE LOG (EXTRATO BANCÁRIO) ---
-        async function registrarExtrato(userId, valor, motivo) {
+        // --- SISTEMA DE LOG OCULTO (EXTRATO) ---
+        // Agora suporta 'tipo' para diferenciar Fichas de Pontos
+        async function registrarExtrato(userId, valor, motivo, tipo = "FICHA") {
             try {
-                // Serial = Timestamp + Random (Simula um código único)
-                const serial = Date.now().toString(36) + Math.random().toString(36).substr(2, 5).toUpperCase();
+                const serial = `${tipo}-${Date.now().toString(36)}`;
                 await addDoc(collection(db, "users", userId, "extrato"), {
                     data: new Date(),
                     valor: valor,
                     motivo: motivo,
+                    tipo: tipo, // NOVO CAMPO
                     serial: serial
                 });
             } catch(e) { console.error("Erro log:", e); }
         }
-
-        window.abrirModalExtrato = async function() {
-            document.getElementById('extrato-modal').style.display = 'flex';
-            const lista = document.getElementById('lista-extrato');
-            lista.innerHTML = '<div class="empty-inbox">Carregando...</div>';
-            
-            if (!currentUser) return;
-            try {
-                const q = query(collection(db, "users", currentUser.uid, "extrato"), orderBy("data", "desc"), limit(20));
-                const snap = await getDocs(q);
-                if (snap.empty) { lista.innerHTML = '<div class="empty-inbox">Sem histórico ainda.</div>'; return; }
-                
-                let html = "";
-                snap.forEach(doc => {
-                    const d = doc.data();
-                    const valClass = d.valor > 0 ? 'plus' : 'minus';
-                    const sinal = d.valor > 0 ? '+' : '';
-                    const dataFormatada = d.data.toDate().toLocaleDateString('pt-BR');
-                    html += `
-                    <li class="extrato-item">
-                        <div>
-                            <div style="font-weight:bold; font-size:0.9rem;">${d.motivo}</div>
-                            <div style="font-size:0.7rem; color:#999;">${dataFormatada} • #${d.serial}</div>
-                        </div>
-                        <div class="extrato-val ${valClass}">${sinal}${d.valor}</div>
-                    </li>`;
-                });
-                lista.innerHTML = html;
-            } catch(e) { lista.innerHTML = '<div class="empty-inbox">Erro ao carregar ou clique no link do Console para criar índice.</div>'; console.error(e); }
-        }
-        window.fecharModalExtrato = function() { document.getElementById('extrato-modal').style.display = 'none'; }
-
 
         onAuthStateChanged(auth, async (user) => {
             const loginScreen = document.getElementById('login-screen');
@@ -445,7 +377,6 @@
                         dataInscricao: new Date().toISOString() 
                     });
                     
-                    // --- BÔNUS DE INDICAÇÃO COM LOG ---
                     const referrerID = sessionStorage.getItem('kn_referrer');
                     if (referrerID && referrerID !== user.uid) {
                         try { 
@@ -453,8 +384,7 @@
                                 fichas: increment(25),
                                 historicoIndicacoes: arrayUnion(user.uid)
                             });
-                            // Cria Log para o Padrinho
-                            registrarExtrato(referrerID, 25, "Indicou novo jogador");
+                            registrarExtrato(referrerID, 25, "Indicação", "FICHA");
                         } catch (e) {}
                     }
                     snap = await getDoc(userRef);
@@ -472,6 +402,7 @@
 
         function iniciarMonitoramentoMensagens(user) {
             const listaEl = document.getElementById('lista-mensagens');
+            if (!listaEl) return;
             const msgsRef = collection(db, "users", user.uid, "mensagens");
             const q = query(msgsRef, orderBy("data", "desc"), limit(20));
 
@@ -490,7 +421,7 @@
                 });
                 listaEl.innerHTML = html;
                 if (badgeEl) { badgeEl.innerText = naoLidas; badgeEl.style.display = naoLidas > 0 ? 'flex' : 'none'; }
-            });
+            }, (error) => { console.warn("Inbox:", error); });
         }
 
         window.abrirModalInbox = function() { document.getElementById('inbox-modal').style.display = 'flex'; }
@@ -517,7 +448,6 @@
 
         window.abrirModalShare = function() { document.getElementById('share-modal').style.display = 'flex'; }
         window.fecharModalShare = function() { document.getElementById('share-modal').style.display = 'none'; }
-        
         window.copiarLinkGanharFichas = async function() {
             const input = document.getElementById('share-link-input');
             input.select(); navigator.clipboard.writeText(input.value);
@@ -528,16 +458,14 @@
                 if (data.ultimoResgateShare !== hoje) {
                     await updateDoc(userRef, { fichas: increment(10), ultimoResgateShare: hoje });
                     document.getElementById('user-fichas').innerText = data.fichas + 10;
-                    // GERA O LOG
-                    registrarExtrato(currentUser.uid, 10, "Bônus Diário (Link)");
+                    registrarExtrato(currentUser.uid, 10, "Bônus Diário", "FICHA");
                     mostrarNotificacao("+10 Fichas! 🎉");
                 } else mostrarNotificacao("Já resgatou hoje ✅");
             }
             setTimeout(fecharModalShare, 2000);
         }
 
-        // ... Banners (sem alteração) ...
-        async function carregarBanners() { /* ... (mesmo código de antes) ... */ 
+        async function carregarBanners() {
             try {
                 const querySnapshot = await getDocs(collection(db, "listaBanners"));
                 let banners = [];
@@ -603,10 +531,14 @@
             if(snap.exists()) globalStats = snap.data();
         }
         function criarCardHTML(jogo) {
-            return `<div class="game-card"><div class="game-thumb" style="background-image: url('capas/${jogo.img}');"></div><div class="game-info"><div><h3 style="margin:0; font-size:1.1rem;">${jogo.nome}</h3><p style="margin:5px 0; font-size:0.8rem; color:#666;">${jogo.desc}</p></div><button class="play-btn" onclick="iniciarJogo('jogos/${jogo.arquivo}', '${jogo.id}')">JOGAR</button></div></div>`;
+            const caminhoImg = `capas/${jogo.img}`;
+            const caminhoArquivo = `jogos/${jogo.arquivo}`;
+            return `<div class="game-card"><div class="game-thumb" style="background-image: url('${caminhoImg}');"></div><div class="game-info"><div><h3 style="margin:0; font-size:1.1rem;">${jogo.nome}</h3><p style="margin:5px 0; font-size:0.8rem; color:#666;">${jogo.desc}</p></div><button class="play-btn" onclick="iniciarJogo('${caminhoArquivo}', '${jogo.id}')">JOGAR</button></div></div>`;
         }
         function criarCardGridHTML(jogo) {
-            return `<div class="card-grid" onclick="iniciarJogo('jogos/${jogo.arquivo}', '${jogo.id}')"><div class="card-grid-thumb" style="background-image: url('capas/${jogo.img}');"></div><div class="card-overlay"><span class="play-icon-overlay">▶</span></div></div>`;
+            const caminhoImg = `capas/${jogo.img}`;
+            const caminhoArquivo = `jogos/${jogo.arquivo}`;
+            return `<div class="card-grid" onclick="iniciarJogo('${caminhoArquivo}', '${jogo.id}')"><div class="card-grid-thumb" style="background-image: url('${caminhoImg}');"></div><div class="card-overlay"><span class="play-icon-overlay">▶</span></div></div>`;
         }
         function renderizarTodosJogos() {
             document.getElementById('lista-novos').innerHTML = JOGOS_CONFIG.map(j => criarCardHTML(j)).join('');
@@ -635,11 +567,13 @@
                     const u = docSnap.data();
                     const isMe = docSnap.id === currentUser.uid;
                     const nome = u.apelido || u.nome.split(' ')[0];
-                    const pts = u.scoreMensal || 0;
-                    list.innerHTML += `<li id="${isMe ? 'meu-rank' : ''}" class="rank-item ${isMe ? 'me' : ''}"><div class="rank-pos">#${rank}</div><div class="rank-user"><img src="${u.foto}"><div><strong>${nome}</strong></div></div><div class="rank-score">${pts}</div></li>`;
+                    const d = new Date();
+                    const mes = `${d.getMonth()+1}/${d.getFullYear()}`;
+                    const pontos = (u.dataUltimoMensal === mes) ? (u.scoreMensal || 0) : 0;
+                    list.innerHTML += `<li id="${isMe ? 'meu-rank' : ''}" class="rank-item ${isMe ? 'me' : ''}"><div class="rank-pos">#${rank}</div><div class="rank-user"><img src="${u.foto}"><div><strong>${nome}</strong></div></div><div class="rank-score">${pontos}</div></li>`;
                     rank++;
                 });
-            } catch (e) {}
+            } catch (error) { console.error(error); }
         }
         window.rolarAteMim = function() {
             const el = document.getElementById('meu-rank');
@@ -657,7 +591,7 @@
             document.getElementById('user-fichas').innerText = snap.data().fichas - 1;
             
             // LOG DE GASTO
-            registrarExtrato(currentUser.uid, -1, `Jogou: ${idJogo}`);
+            registrarExtrato(currentUser.uid, -1, `Jogou: ${idJogo}`, "FICHA");
             
             window.jogoAtualID = idJogo;
             const modal = document.getElementById('game-modal');
@@ -677,7 +611,7 @@
             document.getElementById('user-fichas').innerText = snap.data().fichas - 1;
             
             // LOG DE GASTO
-            registrarExtrato(currentUser.uid, -1, `Rejogou: ${window.jogoAtualID}`);
+            registrarExtrato(currentUser.uid, -1, `Rejogou: ${window.jogoAtualID}`, "FICHA");
 
             document.getElementById('game-frame').src = document.getElementById('game-frame').src;
             mostrarNotificacao("🔄 Recarregando...");
@@ -703,11 +637,26 @@
                 try {
                     const data = (await getDoc(userRef)).data();
                     let updates = { pontuacaoTotal: increment(pontos) };
-                    // ... (Lógica de datas mantida igual) ...
                     const hoje = new Date().toLocaleDateString('pt-BR');
-                    if(data.dataUltimoDiario !== hoje) { updates.scoreDiario = pontos; updates.dataUltimoDiario = hoje; } else updates.scoreDiario = increment(pontos);
                     
-                    // Salvar
+                    // Lógica de Temporadas
+                    const d = new Date(); d.setHours(0,0,0,0); d.setDate(d.getDate()+3-(d.getDay()+6)%7);
+                    const sem = 1+Math.round(((d.getTime()-new Date(d.getFullYear(),0,4).getTime())/86400000-3+(new Date(d.getFullYear(),0,4).getDay()+6)%7)/7);
+                    const mes = `${d.getMonth()+1}/${d.getFullYear()}`;
+
+                    if (data.dataUltimoDiario === hoje) updates.scoreDiario = increment(pontos); else { updates.scoreDiario = pontos; updates.dataUltimoDiario = hoje; }
+                    if (data.dataUltimoSemanal === sem) updates.scoreSemanal = increment(pontos); else { updates.scoreSemanal = pontos; updates.dataUltimoSemanal = sem; }
+                    if (data.dataUltimoMensal === mes) updates.scoreMensal = increment(pontos); else { updates.scoreMensal = pontos; updates.dataUltimoMensal = mes; }
+                    
+                    // Recorde e LOG DE PONTOS
+                    let recordes = data.recordes || {};
+                    if (pontos > (recordes[window.jogoAtualID] || 0)) { 
+                        recordes[window.jogoAtualID] = pontos; updates.recordes = recordes; mostrarNotificacao(`🏆 NOVO RECORDE!`); 
+                    }
+                    
+                    // AQUI: Registra o extrato oculto de pontos para o Juiz auditar
+                    registrarExtrato(currentUser.uid, pontos, `Score: ${window.jogoAtualID}`, "PONTO");
+
                     await updateDoc(userRef, updates);
                 } catch (e) { console.error(e); }
             }
@@ -723,4 +672,3 @@
     </script>
 </body>
 </html>
-
