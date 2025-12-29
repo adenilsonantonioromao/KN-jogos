@@ -3,10 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- Título -->
     <title>KN Jogos Online - Portal Oficial</title>
-
-    <!-- META TAGS DE REDES SOCIAIS -->
     <meta property="og:title" content="KN Jogos - O Arcade Online com Prêmios!">
     <meta property="og:description" content="Jogue, suba no ranking e ganhe recompensas. Entre pelo meu link para ganhar bônus!">
     <meta property="og:image" content="https://adenilsonantonioromao.github.io/KN-jogos/capas/neon.jpg">
@@ -61,7 +58,12 @@
         .btn-edit-nick:hover { color: var(--primary); }
 
         .header-actions { display: flex; align-items: center; gap: 8px; }
-        .chips-display { background: var(--secondary); padding: 5px 15px; border-radius: 20px; font-weight: bold; color: #3E2723; display: flex; align-items: center; gap: 5px; cursor: default; } /* SEM CLICK */
+        
+        /* NOVO: MOSTRADOR DE PONTOS (Estilo Azul) */
+        .score-display { background: #E1F5FE; padding: 5px 10px; border-radius: 20px; font-weight: bold; color: #0277BD; display: flex; align-items: center; gap: 4px; cursor: default; border: 1px solid #B3E5FC; font-size: 0.9rem; }
+
+        .chips-display { background: var(--secondary); padding: 5px 15px; border-radius: 20px; font-weight: bold; color: #3E2723; display: flex; align-items: center; gap: 5px; cursor: default; } 
+        
         .btn-share-header { background: #25D366; color: white; border: none; width: 35px; height: 35px; border-radius: 50%; cursor: pointer; font-size: 1.2rem; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.2); transition: transform 0.1s; }
         .btn-share-header:active { transform: scale(0.9); }
 
@@ -107,6 +109,14 @@
         .card-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.3); display: flex; justify-content: center; align-items: center; opacity: 0.8; transition: 0.3s; }
         .card-grid:hover .card-overlay { background: rgba(0, 0, 0, 0.1); opacity: 1; }
         .play-icon-overlay { font-size: 2.5rem; color: white; text-shadow: 0 0 10px rgba(0,0,0,0.8); filter: drop-shadow(0 4px 2px rgba(0,0,0,0.5)); }
+        
+        .card-grid-info {
+            position: absolute; bottom: 0; left: 0; width: 100%; 
+            background: rgba(0,0,0,0.7); color: white; 
+            font-size: 0.65rem; padding: 4px; font-weight: bold;
+            display: flex; justify-content: center; align-items: center; gap: 4px;
+        }
+
         @media (max-width: 600px) { .grid-games { grid-template-columns: repeat(2, 1fr); } .game-window { height: 75vh; } }
 
         #game-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.95); backdrop-filter: blur(5px); z-index: 3000; flex-direction: column; justify-content: center; align-items: center; }
@@ -135,6 +145,9 @@
         .rank-user { display: flex; align-items: center; gap: 10px; flex-grow: 1; text-align: left; }
         .rank-user img { width: 30px; height: 30px; border-radius: 50%; }
         .rank-score { font-weight: bold; color: var(--green); }
+        
+        .select-filter { padding: 10px; border-radius: 8px; border: 1px solid #ddd; font-family: 'Nunito', sans-serif; flex: 1; }
+        .btn-filter { padding: 10px 20px; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: bold; font-family: 'Nunito', sans-serif; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -219,7 +232,9 @@
             </div>
             
             <div class="header-actions">
-                <!-- SEM ONCLICK -->
+                <!-- NOVO: EXIBIÇÃO DE PONTOS DIÁRIOS -->
+                <div class="score-display">🏆 <span id="user-pontos-diario">0</span></div>
+
                 <div class="chips-display">🪙 <span id="user-fichas">0</span></div>
                 
                 <button class="btn-inbox" onclick="abrirModalInbox()">
@@ -235,10 +250,8 @@
                 <div class="carousel-dots" id="carousel-dots"></div>
             </div>
 
-            <!-- PUBLICIDADE -->
             <div style="margin: 10px auto; max-width: 320px; text-align: center;">
                 <p style="font-size: 10px; color: #ccc;">Publicidade</p>
-                <!-- INSIRA ADSENSE AQUI -->
             </div>
 
             <h2>Novos Jogos 🔥</h2>
@@ -247,7 +260,15 @@
         </div>
 
         <div id="tab-populares" class="tab-content">
-            <h2>Mais Jogados 🏆</h2>
+            <h2>Todos os Jogos 🏆</h2>
+            
+            <div class="filter-container" style="display:flex; gap:10px; margin-bottom:15px; justify-content:center;">
+                <select id="filter-tags" class="select-filter">
+                    <option value="all">Todas as Categorias</option>
+                </select>
+                <button onclick="filtrarJogos()" class="btn-filter">Filtrar</button>
+            </div>
+
             <div id="lista-populares" class="grid-games"></div>
         </div>
 
@@ -256,19 +277,25 @@
             <div id="lista-favoritos" class="grid-games"></div>
         </div>
 
+        <!-- ABA RANK ATUALIZADA -->
         <div id="tab-rank" class="tab-content">
-            <h2>🏆 Temporada Mensal</h2>
-            <p style="font-size:0.8rem; color:#666; margin-bottom:15px;">Reseta todo dia 01. Acumule pontos!</p>
-            <button class="btn-control btn-fullscreen" style="margin: 0 auto 15px auto; background: #9C27B0; width: 100%;" onclick="window.location.href='ranking.html'">
-                📊 VER RANKING COMPLETO
+            <h2>⚡ Top do Dia</h2>
+            <p style="font-size:0.8rem; color:#666; margin-bottom:15px;">Reseta todo dia às 03:00 da manhã.</p>
+
+            <button class="btn-control btn-fullscreen" style="margin: 0 auto 5px auto; background: #9C27B0; width: 100%;" onclick="window.location.href='ranking.html'">
+                📊 VER TEMPORADA MENSAL (COMPLETA)
             </button>
-            <button class="btn-control btn-fullscreen" style="margin: 0 auto 15px auto; font-size: 0.8rem; background: var(--primary);" onclick="rolarAteMim()">📍 Onde eu estou?</button>
+            <p style="font-size:0.75rem; color:#999; margin-bottom:15px;">👆 O Ranking acima é a Temporada. O de baixo é só hoje.</p>
+            
+            <button class="btn-control btn-fullscreen" style="margin: 0 auto 15px auto; font-size: 0.8rem; background: var(--primary);" onclick="rolarAteMim()">📍 Onde eu estou hoje?</button>
+            
             <div id="loading-rank">Carregando...</div>
             <ul id="lista-rank" class="rank-list"></ul>
         </div>
+        
         <nav class="bottom-nav">
             <button class="nav-btn active" onclick="mudarAba('novos', this)"><span>🔥</span>Novos</button>
-            <button class="nav-btn" onclick="mudarAba('populares', this)"><span>⭐</span>Top</button>
+            <button class="nav-btn" onclick="mudarAba('populares', this)"><span>🌎</span>Todos</button>
             <button class="nav-btn" onclick="mudarAba('favoritos', this)"><span>❤️</span>Favs</button>
             <button class="nav-btn" onclick="mudarAba('rank', this)"><span>📊</span>Rank</button>
         </nav>
@@ -318,8 +345,6 @@
 
         document.getElementById('btn-login').addEventListener('click', () => { signInWithPopup(auth, provider).catch(alert); });
 
-        // --- SISTEMA DE LOG OCULTO (EXTRATO) ---
-        // Agora suporta 'tipo' para diferenciar Fichas de Pontos
         async function registrarExtrato(userId, valor, motivo, tipo = "FICHA") {
             try {
                 const serial = `${tipo}-${Date.now().toString(36)}`;
@@ -327,7 +352,7 @@
                     data: new Date(),
                     valor: valor,
                     motivo: motivo,
-                    tipo: tipo, // NOVO CAMPO
+                    tipo: tipo,
                     serial: serial
                 });
             } catch(e) { console.error("Erro log:", e); }
@@ -397,7 +422,69 @@
                 
                 document.getElementById('user-photo').src = user.photoURL;
                 document.getElementById('user-fichas').innerText = data.fichas;
+
+                // ATUALIZAR PONTOS DIÁRIOS NO TOPO
+                const hoje = new Date().toLocaleDateString('pt-BR');
+                let ptsHoje = 0;
+                if(data.dataUltimoDiario === hoje) {
+                    ptsHoje = data.scoreDiario || 0;
+                }
+                document.getElementById('user-pontos-diario').innerText = ptsHoje;
+
             } catch(e) { console.error("Erro perfil:", e); }
+        }
+
+        window.carregarFiltros = function() {
+            const select = document.getElementById('filter-tags');
+            while (select.options.length > 1) { select.remove(1); }
+            const tagsUnicas = new Set();
+            JOGOS_CONFIG.forEach(j => { if(j.tag) tagsUnicas.add(j.tag); });
+            tagsUnicas.forEach(tag => {
+                const option = document.createElement('option');
+                option.value = tag; option.innerText = tag; select.appendChild(option);
+            });
+        }
+
+        window.filtrarJogos = function() {
+            const tagSelecionada = document.getElementById('filter-tags').value;
+            let listaFinal = [...JOGOS_CONFIG];
+            if (tagSelecionada !== 'all') { listaFinal = listaFinal.filter(j => j.tag === tagSelecionada); }
+            listaFinal.sort((a,b) => (globalStats[b.id] || 0) - (globalStats[a.id] || 0));
+            const container = document.getElementById('lista-populares');
+            if (listaFinal.length === 0) { container.innerHTML = "<p style='grid-column: 1/-1; color:#999;'>Nenhum jogo nesta categoria.</p>"; }
+            else { container.innerHTML = listaFinal.map(j => criarCardComContador(j)).join(''); }
+        }
+
+        function criarCardComContador(jogo) {
+            const caminhoImg = `capas/${jogo.img}`;
+            let arquivoLimpo = jogo.arquivo.startsWith('jogos/') ? jogo.arquivo.substring(6) : jogo.arquivo;
+            if(arquivoLimpo.startsWith('/')) arquivoLimpo = arquivoLimpo.substring(1);
+            const caminhoArquivo = `jogos/${arquivoLimpo}`;
+            const plays = globalStats[jogo.id] || 0;
+            return `<div class="card-grid" onclick="iniciarJogo('${caminhoArquivo}', '${jogo.id}')"><div class="card-grid-thumb" style="background-image: url('${caminhoImg}');"></div><div class="card-overlay"><span class="play-icon-overlay">▶</span></div><div class="card-grid-info">🔥 Jogados: ${plays}</div></div>`;
+        }
+
+        function criarCardHTML(jogo) {
+            const caminhoImg = `capas/${jogo.img}`;
+            let arquivoLimpo = jogo.arquivo.startsWith('jogos/') ? jogo.arquivo.substring(6) : jogo.arquivo;
+            if(arquivoLimpo.startsWith('/')) arquivoLimpo = arquivoLimpo.substring(1);
+            const caminhoArquivo = `jogos/${arquivoLimpo}`;
+            return `<div class="game-card"><div class="game-thumb" style="background-image: url('${caminhoImg}');"></div><div class="game-info"><div><h3 style="margin:0; font-size:1.1rem;">${jogo.nome}</h3><p style="margin:5px 0; font-size:0.8rem; color:#666;">${jogo.desc}</p></div><button class="play-btn" onclick="iniciarJogo('${caminhoArquivo}', '${jogo.id}')">JOGAR</button></div></div>`;
+        }
+
+        function criarCardGridHTML(jogo) {
+            const caminhoImg = `capas/${jogo.img}`;
+            let arquivoLimpo = jogo.arquivo.startsWith('jogos/') ? jogo.arquivo.substring(6) : jogo.arquivo;
+            if(arquivoLimpo.startsWith('/')) arquivoLimpo = arquivoLimpo.substring(1);
+            const caminhoArquivo = `jogos/${arquivoLimpo}`;
+            return `<div class="card-grid" onclick="iniciarJogo('${caminhoArquivo}', '${jogo.id}')"><div class="card-grid-thumb" style="background-image: url('${caminhoImg}');"></div><div class="card-overlay"><span class="play-icon-overlay">▶</span></div></div>`;
+        }
+        
+        function renderizarTodosJogos() {
+            document.getElementById('lista-novos').innerHTML = JOGOS_CONFIG.map(j => criarCardHTML(j)).join('');
+            carregarFiltros(); filtrarJogos();
+            const favoritos = [...JOGOS_CONFIG].filter(j => (userStats[j.id] || 0) > 0).sort((a,b) => (userStats[b.id] || 0) - (userStats[a.id] || 0));
+            document.getElementById('lista-favoritos').innerHTML = favoritos.length ? favoritos.map(j => criarCardGridHTML(j)).join('') : "<p style='color:#666; width:100%; grid-column: 1/-1;'>Ainda não jogou nada.</p>";
         }
 
         function iniciarMonitoramentoMensagens(user) {
@@ -530,23 +617,7 @@
             const snap = await getDoc(doc(db, "config", "gameStats"));
             if(snap.exists()) globalStats = snap.data();
         }
-        function criarCardHTML(jogo) {
-            const caminhoImg = `capas/${jogo.img}`;
-            const caminhoArquivo = `jogos/${jogo.arquivo}`;
-            return `<div class="game-card"><div class="game-thumb" style="background-image: url('${caminhoImg}');"></div><div class="game-info"><div><h3 style="margin:0; font-size:1.1rem;">${jogo.nome}</h3><p style="margin:5px 0; font-size:0.8rem; color:#666;">${jogo.desc}</p></div><button class="play-btn" onclick="iniciarJogo('${caminhoArquivo}', '${jogo.id}')">JOGAR</button></div></div>`;
-        }
-        function criarCardGridHTML(jogo) {
-            const caminhoImg = `capas/${jogo.img}`;
-            const caminhoArquivo = `jogos/${jogo.arquivo}`;
-            return `<div class="card-grid" onclick="iniciarJogo('${caminhoArquivo}', '${jogo.id}')"><div class="card-grid-thumb" style="background-image: url('${caminhoImg}');"></div><div class="card-overlay"><span class="play-icon-overlay">▶</span></div></div>`;
-        }
-        function renderizarTodosJogos() {
-            document.getElementById('lista-novos').innerHTML = JOGOS_CONFIG.map(j => criarCardHTML(j)).join('');
-            const populares = [...JOGOS_CONFIG].sort((a,b) => (globalStats[b.id] || 0) - (globalStats[a.id] || 0));
-            document.getElementById('lista-populares').innerHTML = populares.map(j => criarCardGridHTML(j)).join('');
-            const favoritos = [...JOGOS_CONFIG].filter(j => (userStats[j.id] || 0) > 0).sort((a,b) => (userStats[b.id] || 0) - (userStats[a.id] || 0));
-            document.getElementById('lista-favoritos').innerHTML = favoritos.length ? favoritos.map(j => criarCardGridHTML(j)).join('') : "<p style='color:#666; width:100%;'>Ainda não jogou nada.</p>";
-        }
+
         window.mudarAba = async function(abaID, btn) {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
             document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
@@ -554,22 +625,28 @@
             btn.classList.add('active');
             if(abaID === 'rank') carregarRanking();
         }
+
+        // --- MUDANÇA: CARREGAR RANK DIÁRIO ---
         async function carregarRanking() {
             const list = document.getElementById('lista-rank');
             list.innerHTML = "";
             document.getElementById('loading-rank').style.display = 'block';
             try {
-                const q = query(collection(db, "users"), orderBy("scoreMensal", "desc"), limit(50));
+                // Ordenar por scoreDiario agora
+                const q = query(collection(db, "users"), orderBy("scoreDiario", "desc"), limit(50));
                 const querySnapshot = await getDocs(q);
                 document.getElementById('loading-rank').style.display = 'none';
                 let rank = 1;
+                const hoje = new Date().toLocaleDateString('pt-BR');
+
                 querySnapshot.forEach((docSnap) => {
                     const u = docSnap.data();
                     const isMe = docSnap.id === currentUser.uid;
                     const nome = u.apelido || u.nome.split(' ')[0];
-                    const d = new Date();
-                    const mes = `${d.getMonth()+1}/${d.getFullYear()}`;
-                    const pontos = (u.dataUltimoMensal === mes) ? (u.scoreMensal || 0) : 0;
+                    
+                    // Exibe 0 se o score não for de hoje
+                    const pontos = (u.dataUltimoDiario === hoje) ? (u.scoreDiario || 0) : 0;
+                    
                     list.innerHTML += `<li id="${isMe ? 'meu-rank' : ''}" class="rank-item ${isMe ? 'me' : ''}"><div class="rank-pos">#${rank}</div><div class="rank-user"><img src="${u.foto}"><div><strong>${nome}</strong></div></div><div class="rank-score">${pontos}</div></li>`;
                     rank++;
                 });
@@ -578,7 +655,7 @@
         window.rolarAteMim = function() {
             const el = document.getElementById('meu-rank');
             if(el) { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); el.style.border = "3px solid red"; setTimeout(() => el.style.border = "2px solid var(--primary)", 2000); }
-            else alert("Jogue mais para entrar no ranking!");
+            else alert("Você ainda não pontuou hoje!");
         }
 
         window.iniciarJogo = async function(urlArquivo, idJogo) {
@@ -629,38 +706,62 @@
         }
 
         window.addEventListener('message', async function(event) {
-            if (event.data.type === 'GAME_OVER') {
-                const pontos = parseInt(event.data.score) || 0;
-                mostrarNotificacao(`Fim! Pontos: ${pontos}`);
-                if (!currentUser) return;
-                const userRef = doc(db, "users", currentUser.uid);
-                try {
-                    const data = (await getDoc(userRef)).data();
-                    let updates = { pontuacaoTotal: increment(pontos) };
-                    const hoje = new Date().toLocaleDateString('pt-BR');
-                    
-                    // Lógica de Temporadas
-                    const d = new Date(); d.setHours(0,0,0,0); d.setDate(d.getDate()+3-(d.getDay()+6)%7);
-                    const sem = 1+Math.round(((d.getTime()-new Date(d.getFullYear(),0,4).getTime())/86400000-3+(new Date(d.getFullYear(),0,4).getDay()+6)%7)/7);
-                    const mes = `${d.getMonth()+1}/${d.getFullYear()}`;
+            let pontos = 0;
+            let isGameOver = false;
 
-                    if (data.dataUltimoDiario === hoje) updates.scoreDiario = increment(pontos); else { updates.scoreDiario = pontos; updates.dataUltimoDiario = hoje; }
-                    if (data.dataUltimoSemanal === sem) updates.scoreSemanal = increment(pontos); else { updates.scoreSemanal = pontos; updates.dataUltimoSemanal = sem; }
-                    if (data.dataUltimoMensal === mes) updates.scoreMensal = increment(pontos); else { updates.scoreMensal = pontos; updates.dataUltimoMensal = mes; }
-                    
-                    // Recorde e LOG DE PONTOS
-                    let recordes = data.recordes || {};
-                    if (pontos > (recordes[window.jogoAtualID] || 0)) { 
-                        recordes[window.jogoAtualID] = pontos; updates.recordes = recordes; mostrarNotificacao(`🏆 NOVO RECORDE!`); 
-                    }
-                    
-                    // AQUI: Registra o extrato oculto de pontos para o Juiz auditar
-                    registrarExtrato(currentUser.uid, pontos, `Score: ${window.jogoAtualID}`, "PONTO");
-
-                    await updateDoc(userRef, updates);
-                } catch (e) { console.error(e); }
+            if (event.data && event.data.type === 'GAME_OVER') {
+                pontos = parseInt(event.data.score) || 0;
+                isGameOver = true;
             }
-            if (event.data.type === 'RESTART_REQUEST') reiniciarJogo();
+            else if (typeof event.data === 'number') {
+                pontos = parseInt(event.data);
+                isGameOver = true;
+            }
+
+            if (!isGameOver) {
+                if (event.data === 'RESTART_REQUEST' || (event.data && event.data.type === 'RESTART_REQUEST')) {
+                    reiniciarJogo();
+                }
+                return;
+            }
+
+            mostrarNotificacao(`Fim! Pontos: ${pontos}`);
+            
+            if (!currentUser) return;
+
+            // ATUALIZA VISUALMENTE PONTOS DIÁRIOS
+            try {
+                const spanPts = document.getElementById('user-pontos-diario');
+                const atual = parseInt(spanPts.innerText) || 0;
+                spanPts.innerText = atual + pontos;
+            } catch(e) {}
+
+            const userRef = doc(db, "users", currentUser.uid);
+
+            try {
+                const data = (await getDoc(userRef)).data();
+                let updates = { pontuacaoTotal: increment(pontos) };
+                const hoje = new Date().toLocaleDateString('pt-BR');
+                
+                const d = new Date(); d.setHours(0,0,0,0); d.setDate(d.getDate()+3-(d.getDay()+6)%7);
+                const sem = 1+Math.round(((d.getTime()-new Date(d.getFullYear(),0,4).getTime())/86400000-3+(new Date(d.getFullYear(),0,4).getDay()+6)%7)/7);
+                const mes = `${d.getMonth()+1}/${d.getFullYear()}`;
+
+                if (data.dataUltimoDiario === hoje) updates.scoreDiario = increment(pontos); else { updates.scoreDiario = pontos; updates.dataUltimoDiario = hoje; }
+                if (data.dataUltimoSemanal === sem) updates.scoreSemanal = increment(pontos); else { updates.scoreSemanal = pontos; updates.dataUltimoSemanal = sem; }
+                if (data.dataUltimoMensal === mes) updates.scoreMensal = increment(pontos); else { updates.scoreMensal = pontos; updates.dataUltimoMensal = mes; }
+                
+                let recordes = data.recordes || {};
+                if (pontos > (recordes[window.jogoAtualID] || 0)) { 
+                    recordes[window.jogoAtualID] = pontos; 
+                    updates.recordes = recordes; 
+                    mostrarNotificacao(`🏆 NOVO RECORDE!`); 
+                }
+                
+                registrarExtrato(currentUser.uid, pontos, `Score: ${window.jogoAtualID}`, "PONTO");
+
+                await updateDoc(userRef, updates);
+            } catch (e) { console.error("Erro ao salvar pontos:", e); }
         });
 
         function mostrarNotificacao(msg) {
