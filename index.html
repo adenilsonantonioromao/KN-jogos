@@ -58,10 +58,7 @@
         .btn-edit-nick:hover { color: var(--primary); }
 
         .header-actions { display: flex; align-items: center; gap: 8px; }
-        
-        /* NOVO: MOSTRADOR DE PONTOS (Estilo Azul) */
         .score-display { background: #E1F5FE; padding: 5px 10px; border-radius: 20px; font-weight: bold; color: #0277BD; display: flex; align-items: center; gap: 4px; cursor: default; border: 1px solid #B3E5FC; font-size: 0.9rem; }
-
         .chips-display { background: var(--secondary); padding: 5px 15px; border-radius: 20px; font-weight: bold; color: #3E2723; display: flex; align-items: center; gap: 5px; cursor: default; } 
         
         .btn-share-header { background: #25D366; color: white; border: none; width: 35px; height: 35px; border-radius: 50%; cursor: pointer; font-size: 1.2rem; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.2); transition: transform 0.1s; }
@@ -232,9 +229,7 @@
             </div>
             
             <div class="header-actions">
-                <!-- NOVO: EXIBIÇÃO DE PONTOS DIÁRIOS -->
                 <div class="score-display">🏆 <span id="user-pontos-diario">0</span></div>
-
                 <div class="chips-display">🪙 <span id="user-fichas">0</span></div>
                 
                 <button class="btn-inbox" onclick="abrirModalInbox()">
@@ -259,6 +254,7 @@
             <div id="lista-novos"></div>
         </div>
 
+        <!-- ABA TODOS OS JOGOS COM FILTRO -->
         <div id="tab-populares" class="tab-content">
             <h2>Todos os Jogos 🏆</h2>
             
@@ -277,13 +273,12 @@
             <div id="lista-favoritos" class="grid-games"></div>
         </div>
 
-        <!-- ABA RANK ATUALIZADA -->
         <div id="tab-rank" class="tab-content">
             <h2>⚡ Top do Dia</h2>
             <p style="font-size:0.8rem; color:#666; margin-bottom:15px;">Reseta todo dia às 03:00 da manhã.</p>
 
             <button class="btn-control btn-fullscreen" style="margin: 0 auto 5px auto; background: #9C27B0; width: 100%;" onclick="window.location.href='ranking.html'">
-                📊 VER TEMPORADA MENSAL (COMPLETA)
+                📊 VER TEMPORADA MENSAL
             </button>
             <p style="font-size:0.75rem; color:#999; margin-bottom:15px;">👆 O Ranking acima é a Temporada. O de baixo é só hoje.</p>
             
@@ -423,7 +418,7 @@
                 document.getElementById('user-photo').src = user.photoURL;
                 document.getElementById('user-fichas').innerText = data.fichas;
 
-                // ATUALIZAR PONTOS DIÁRIOS NO TOPO
+                // ATUALIZA PONTOS DIARIOS
                 const hoje = new Date().toLocaleDateString('pt-BR');
                 let ptsHoje = 0;
                 if(data.dataUltimoDiario === hoje) {
@@ -438,8 +433,11 @@
             const select = document.getElementById('filter-tags');
             while (select.options.length > 1) { select.remove(1); }
             const tagsUnicas = new Set();
-            JOGOS_CONFIG.forEach(j => { if(j.tag) tagsUnicas.add(j.tag); });
-            tagsUnicas.forEach(tag => {
+            JOGOS_CONFIG.forEach(j => {
+                if (j.tags && Array.isArray(j.tags)) j.tags.forEach(tag => tagsUnicas.add(tag));
+                else if (j.tag) tagsUnicas.add(j.tag);
+            });
+            Array.from(tagsUnicas).sort().forEach(tag => {
                 const option = document.createElement('option');
                 option.value = tag; option.innerText = tag; select.appendChild(option);
             });
@@ -448,7 +446,15 @@
         window.filtrarJogos = function() {
             const tagSelecionada = document.getElementById('filter-tags').value;
             let listaFinal = [...JOGOS_CONFIG];
-            if (tagSelecionada !== 'all') { listaFinal = listaFinal.filter(j => j.tag === tagSelecionada); }
+            
+            // Logica Multi-Tag
+            if (tagSelecionada !== 'all') {
+                listaFinal = listaFinal.filter(j => {
+                    let tags = j.tags && Array.isArray(j.tags) ? j.tags : (j.tag ? [j.tag] : []);
+                    return tags.includes(tagSelecionada);
+                });
+            }
+
             listaFinal.sort((a,b) => (globalStats[b.id] || 0) - (globalStats[a.id] || 0));
             const container = document.getElementById('lista-populares');
             if (listaFinal.length === 0) { container.innerHTML = "<p style='grid-column: 1/-1; color:#999;'>Nenhum jogo nesta categoria.</p>"; }
@@ -461,7 +467,16 @@
             if(arquivoLimpo.startsWith('/')) arquivoLimpo = arquivoLimpo.substring(1);
             const caminhoArquivo = `jogos/${arquivoLimpo}`;
             const plays = globalStats[jogo.id] || 0;
-            return `<div class="card-grid" onclick="iniciarJogo('${caminhoArquivo}', '${jogo.id}')"><div class="card-grid-thumb" style="background-image: url('${caminhoImg}');"></div><div class="card-overlay"><span class="play-icon-overlay">▶</span></div><div class="card-grid-info">🔥 Jogados: ${plays}</div></div>`;
+            return `<div class="card-grid" onclick="iniciarJogo('${caminhoArquivo}', '${jogo.id}')"><div class="card-grid-thumb" style="background-image: url('${caminhoImg}');"></div><div class="card-overlay"><span class="play-icon-overlay">▶</span></div><div class="card-grid-info">🔥 Global: ${plays}</div></div>`;
+        }
+
+        // NOVO: CARD ESPECÍFICO PARA FAVORITOS (MOSTRA CONTAGEM PESSOAL)
+        function criarCardFavorito(jogo, count) {
+            const caminhoImg = `capas/${jogo.img}`;
+            let arquivoLimpo = jogo.arquivo.startsWith('jogos/') ? jogo.arquivo.substring(6) : jogo.arquivo;
+            if(arquivoLimpo.startsWith('/')) arquivoLimpo = arquivoLimpo.substring(1);
+            const caminhoArquivo = `jogos/${arquivoLimpo}`;
+            return `<div class="card-grid" onclick="iniciarJogo('${caminhoArquivo}', '${jogo.id}')"><div class="card-grid-thumb" style="background-image: url('${caminhoImg}');"></div><div class="card-overlay"><span class="play-icon-overlay">▶</span></div><div class="card-grid-info" style="background: rgba(0,0,100,0.8); color: #FFF;">❤️ Você: ${count}x</div></div>`;
         }
 
         function criarCardHTML(jogo) {
@@ -472,150 +487,18 @@
             return `<div class="game-card"><div class="game-thumb" style="background-image: url('${caminhoImg}');"></div><div class="game-info"><div><h3 style="margin:0; font-size:1.1rem;">${jogo.nome}</h3><p style="margin:5px 0; font-size:0.8rem; color:#666;">${jogo.desc}</p></div><button class="play-btn" onclick="iniciarJogo('${caminhoArquivo}', '${jogo.id}')">JOGAR</button></div></div>`;
         }
 
-        function criarCardGridHTML(jogo) {
-            const caminhoImg = `capas/${jogo.img}`;
-            let arquivoLimpo = jogo.arquivo.startsWith('jogos/') ? jogo.arquivo.substring(6) : jogo.arquivo;
-            if(arquivoLimpo.startsWith('/')) arquivoLimpo = arquivoLimpo.substring(1);
-            const caminhoArquivo = `jogos/${arquivoLimpo}`;
-            return `<div class="card-grid" onclick="iniciarJogo('${caminhoArquivo}', '${jogo.id}')"><div class="card-grid-thumb" style="background-image: url('${caminhoImg}');"></div><div class="card-overlay"><span class="play-icon-overlay">▶</span></div></div>`;
-        }
-        
         function renderizarTodosJogos() {
             document.getElementById('lista-novos').innerHTML = JOGOS_CONFIG.map(j => criarCardHTML(j)).join('');
-            carregarFiltros(); filtrarJogos();
+            
+            // Populares (Global)
+            carregarFiltros(); 
+            filtrarJogos(); 
+
+            // Favoritos (Pessoal com Contador)
             const favoritos = [...JOGOS_CONFIG].filter(j => (userStats[j.id] || 0) > 0).sort((a,b) => (userStats[b.id] || 0) - (userStats[a.id] || 0));
-            document.getElementById('lista-favoritos').innerHTML = favoritos.length ? favoritos.map(j => criarCardGridHTML(j)).join('') : "<p style='color:#666; width:100%; grid-column: 1/-1;'>Ainda não jogou nada.</p>";
-        }
-
-        function iniciarMonitoramentoMensagens(user) {
-            const listaEl = document.getElementById('lista-mensagens');
-            if (!listaEl) return;
-            const msgsRef = collection(db, "users", user.uid, "mensagens");
-            const q = query(msgsRef, orderBy("data", "desc"), limit(20));
-
-            unsubscribeMsg = onSnapshot(q, (snapshot) => {
-                const badgeEl = document.getElementById('inbox-badge');
-                let naoLidas = 0;
-                let html = "";
-                if (snapshot.empty) { listaEl.innerHTML = '<div class="empty-inbox">Vazio.</div>'; if(badgeEl) badgeEl.style.display = 'none'; return; }
-                
-                snapshot.forEach((doc) => {
-                    const msg = doc.data();
-                    if (!msg.lida) naoLidas++;
-                    let dataF = "Agora";
-                    try { dataF = msg.data.toDate().toLocaleDateString('pt-BR'); } catch(e){}
-                    html += `<li class="msg-item ${msg.lida ? '' : 'unread'}"><div class="msg-header"><span class="msg-title">${msg.titulo}</span><span class="msg-date">${dataF}</span></div><div class="msg-body">${msg.corpo}</div>${!msg.lida ? `<button class="msg-btn-read" onclick="marcarMensagemLida('${doc.id}')">✔ Lida</button>` : ''}</li>`;
-                });
-                listaEl.innerHTML = html;
-                if (badgeEl) { badgeEl.innerText = naoLidas; badgeEl.style.display = naoLidas > 0 ? 'flex' : 'none'; }
-            }, (error) => { console.warn("Inbox:", error); });
-        }
-
-        window.abrirModalInbox = function() { document.getElementById('inbox-modal').style.display = 'flex'; }
-        window.fecharModalInbox = function() { document.getElementById('inbox-modal').style.display = 'none'; }
-        window.marcarMensagemLida = async function(msgId) {
-            if(!currentUser) return;
-            await updateDoc(doc(db, "users", currentUser.uid, "mensagens", msgId), { lida: true });
-        }
-
-        window.abrirModalApelido = function(obrigatorio) {
-            document.getElementById('nickname-modal').style.display = 'flex';
-            if (!obrigatorio) document.getElementById('input-apelido').value = document.getElementById('user-name').innerText;
-            document.getElementById('close-nick-modal').style.display = obrigatorio ? 'none' : 'block';
-        }
-        window.fecharModalApelido = function() { document.getElementById('nickname-modal').style.display = 'none'; }
-        window.salvarApelido = async function() {
-            const nick = document.getElementById('input-apelido').value.trim();
-            if (nick.length < 3) { alert("Mínimo 3 letras."); return; }
-            await updateDoc(doc(db, "users", currentUser.uid), { apelido: nick });
-            document.getElementById('user-name').innerText = nick;
-            fecharModalApelido();
-            if(document.getElementById('tab-rank').classList.contains('active')) carregarRanking();
-        }
-
-        window.abrirModalShare = function() { document.getElementById('share-modal').style.display = 'flex'; }
-        window.fecharModalShare = function() { document.getElementById('share-modal').style.display = 'none'; }
-        window.copiarLinkGanharFichas = async function() {
-            const input = document.getElementById('share-link-input');
-            input.select(); navigator.clipboard.writeText(input.value);
-            if (currentUser) {
-                const userRef = doc(db, "users", currentUser.uid);
-                const data = (await getDoc(userRef)).data();
-                const hoje = new Date().toLocaleDateString('pt-BR');
-                if (data.ultimoResgateShare !== hoje) {
-                    await updateDoc(userRef, { fichas: increment(10), ultimoResgateShare: hoje });
-                    document.getElementById('user-fichas').innerText = data.fichas + 10;
-                    registrarExtrato(currentUser.uid, 10, "Bônus Diário", "FICHA");
-                    mostrarNotificacao("+10 Fichas! 🎉");
-                } else mostrarNotificacao("Já resgatou hoje ✅");
-            }
-            setTimeout(fecharModalShare, 2000);
-        }
-
-        async function carregarBanners() {
-            try {
-                const querySnapshot = await getDocs(collection(db, "listaBanners"));
-                let banners = [];
-                querySnapshot.forEach((doc) => banners.push(doc.data()));
-                if(banners.length === 0) return;
-                banners.sort((a, b) => a.ordem - b.ordem);
-                const container = document.getElementById('carousel-container');
-                const dotsContainer = document.getElementById('carousel-dots');
-                container.style.display = 'block';
-                banners.forEach((b, index) => {
-                    const slide = document.createElement('div');
-                    slide.className = `carousel-slide ${index === 0 ? 'active' : ''}`;
-                    slide.style.backgroundImage = `url('banners/${b.arquivo}')`;
-                    if (b.link) {
-                        slide.classList.add('clickable');
-                        slide.onclick = () => {
-                            if (b.link === '#share') abrirModalShare();
-                            else if (b.link.startsWith('#')) {
-                                const btn = document.querySelector(`.nav-btn[onclick*="${b.link.replace('#tab-', '')}"]`);
-                                if (btn) btn.click();
-                            } else window.open(b.link, '_blank');
-                        };
-                    }
-                    container.appendChild(slide);
-                    const dot = document.createElement('div');
-                    dot.className = `dot ${index === 0 ? 'active' : ''}`;
-                    dot.onclick = () => mudarSlide(index);
-                    dotsContainer.appendChild(dot);
-                });
-                iniciarRotacaoBanners(banners.length);
-            } catch (e) {}
-        }
-        let currentSlide = 0;
-        function iniciarRotacaoBanners(total) {
-            if(total <= 1) return;
-            setInterval(() => {
-                let next = currentSlide + 1;
-                if(next >= total) next = 0;
-                mudarSlide(next);
-            }, 5000);
-        }
-        function mudarSlide(index) {
-            const slides = document.querySelectorAll('.carousel-slide');
-            const dots = document.querySelectorAll('.dot');
-            slides[currentSlide].classList.remove('active');
-            dots[currentSlide].classList.remove('active');
-            currentSlide = index;
-            slides[currentSlide].classList.add('active');
-            dots[currentSlide].classList.add('active');
-        }
-
-        async function carregarListaDeJogos() {
-            try {
-                const querySnapshot = await getDocs(collection(db, "listaJogos"));
-                JOGOS_CONFIG = [];
-                querySnapshot.forEach((doc) => { JOGOS_CONFIG.push(doc.data()); });
-                JOGOS_CONFIG.sort((a, b) => (new Date(b.dataInclusao || 0) - new Date(a.dataInclusao || 0)));
-                document.getElementById('loading-games').style.display = 'none';
-            } catch (e) {}
-        }
-        async function carregarStatsGlobais() {
-            const snap = await getDoc(doc(db, "config", "gameStats"));
-            if(snap.exists()) globalStats = snap.data();
+            document.getElementById('lista-favoritos').innerHTML = favoritos.length ? 
+                favoritos.map(j => criarCardFavorito(j, userStats[j.id])).join('') : 
+                "<p style='color:#666; width:100%; grid-column: 1/-1;'>Ainda não jogou nada.</p>";
         }
 
         window.mudarAba = async function(abaID, btn) {
@@ -626,13 +509,12 @@
             if(abaID === 'rank') carregarRanking();
         }
 
-        // --- MUDANÇA: CARREGAR RANK DIÁRIO ---
         async function carregarRanking() {
             const list = document.getElementById('lista-rank');
             list.innerHTML = "";
             document.getElementById('loading-rank').style.display = 'block';
             try {
-                // Ordenar por scoreDiario agora
+                // RANKING DIARIO
                 const q = query(collection(db, "users"), orderBy("scoreDiario", "desc"), limit(50));
                 const querySnapshot = await getDocs(q);
                 document.getElementById('loading-rank').style.display = 'none';
@@ -643,10 +525,7 @@
                     const u = docSnap.data();
                     const isMe = docSnap.id === currentUser.uid;
                     const nome = u.apelido || u.nome.split(' ')[0];
-                    
-                    // Exibe 0 se o score não for de hoje
                     const pontos = (u.dataUltimoDiario === hoje) ? (u.scoreDiario || 0) : 0;
-                    
                     list.innerHTML += `<li id="${isMe ? 'meu-rank' : ''}" class="rank-item ${isMe ? 'me' : ''}"><div class="rank-pos">#${rank}</div><div class="rank-user"><img src="${u.foto}"><div><strong>${nome}</strong></div></div><div class="rank-score">${pontos}</div></li>`;
                     rank++;
                 });
@@ -729,7 +608,6 @@
             
             if (!currentUser) return;
 
-            // ATUALIZA VISUALMENTE PONTOS DIÁRIOS
             try {
                 const spanPts = document.getElementById('user-pontos-diario');
                 const atual = parseInt(spanPts.innerText) || 0;
