@@ -1,307 +1,4 @@
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KN Jogos Online - Portal Oficial</title>
-    
-    <!-- META TAGS -->
-    <meta property="og:title" content="KN Jogos - O Arcade Online com Prêmios!">
-    <meta property="og:description" content="Jogue, suba no ranking e ganhe recompensas. Entre pelo meu link para ganhar bônus!">
-    <meta property="og:image" content="https://adenilsonantonioromao.github.io/KN-jogos/capas/neon.jpg">
-    <meta property="og:url" content="https://adenilsonantonioromao.github.io/KN-jogos/">
-    <meta property="og:type" content="website">
-    <link rel="icon" type="image/x-icon" href="favicon.ico">
-
-    <!-- SCRIPT DE EMERGÊNCIA -->
-    <script>
-        window.addEventListener('load', function() {
-            setTimeout(function() {
-                var splash = document.getElementById('splash-screen');
-                var app = document.getElementById('app-container');
-                var login = document.getElementById('login-screen');
-                if (splash && getComputedStyle(splash).display !== 'none') {
-                    console.warn("⚠️ Forçando abertura via Paraquedas.");
-                    splash.style.display = 'none';
-                    if (app && login) { if (getComputedStyle(app).display === 'none') { login.style.display = 'flex'; } }
-                }
-            }, 4000);
-        });
-    </script>
-
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;700&display=swap');
-        :root { --primary: #FF5722; --secondary: #FFC107; --bg: #f0fdf4; --dark: #37474F; --green: #4CAF50; }
-        
-        body { font-family: 'Nunito', sans-serif; background-color: var(--bg); margin: 0; padding: 0; text-align: center; color: var(--dark); padding-bottom: 80px; }
-        h1, h2, h3 { font-family: 'Fredoka One', cursive; color: var(--primary); margin: 10px 0; }
-        
-        /* TELA DE CARREGAMENTO */
-        #splash-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg); z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; transition: opacity 0.5s ease; }
-        .loader { border: 5px solid #f3f3f3; border-top: 5px solid var(--primary); border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin-bottom: 20px; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-
-        /* COMPONENTES GERAIS */
-        .carousel-container { width: 100%; max-width: 600px; height: 200px; margin: 10px auto 20px auto; border-radius: 15px; overflow: hidden; position: relative; box-shadow: 0 5px 15px rgba(0,0,0,0.2); background: #ddd; }
-        .carousel-slide { width: 100%; height: 100%; background-size: cover; background-position: center; position: absolute; top: 0; left: 0; opacity: 0; transition: opacity 1s ease-in-out; }
-        .carousel-slide.active { opacity: 1; }
-        .carousel-slide.clickable { cursor: pointer; } 
-        .carousel-dots { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); display: flex; gap: 8px; z-index: 10; }
-        .dot { width: 10px; height: 10px; background: rgba(255,255,255,0.5); border-radius: 50%; cursor: pointer; }
-        .dot.active { background: white; transform: scale(1.2); }
-
-        #login-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, #2196F3, #9C27B0); display: none; flex-direction: column; justify-content: center; align-items: center; z-index: 2000; }
-        .login-box { background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); width: 85%; max-width: 350px; }
-        .btn-google { background: white; border: 1px solid #ddd; padding: 12px 25px; border-radius: 50px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 15px; display: flex; align-items: center; justify-content: center; gap: 10px; }
-        
-        header { background: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 10px rgba(0,0,0,0.05); position: sticky; top: 0; z-index: 100; }
-        .user-info { display: flex; align-items: center; gap: 10px; }
-        .user-info img { width: 45px; height: 45px; border-radius: 50%; border: 2px solid var(--secondary); }
-        .user-details { text-align: left; display: flex; align-items: center; gap: 5px; }
-        .btn-edit-nick { background: none; border: none; cursor: pointer; font-size: 0.9rem; color: #999; padding: 0; }
-        .btn-edit-nick:hover { color: var(--primary); }
-
-        .header-actions { display: flex; align-items: center; gap: 8px; }
-        .score-display { background: #E1F5FE; padding: 5px 10px; border-radius: 20px; font-weight: bold; color: #0277BD; display: flex; align-items: center; gap: 4px; cursor: default; border: 1px solid #B3E5FC; font-size: 0.9rem; }
-        .chips-display { background: var(--secondary); padding: 5px 15px; border-radius: 20px; font-weight: bold; color: #3E2723; display: flex; align-items: center; gap: 5px; cursor: default; } 
-        
-        .btn-inbox { background: white; border: none; font-size: 1.4rem; cursor: pointer; position: relative; margin-right: 5px; padding: 5px; }
-        .badge-count { position: absolute; top: 0; right: 0; background: #FF0000; color: white; font-size: 0.65rem; font-weight: bold; width: 18px; height: 18px; border-radius: 50%; display: flex; justify-content: center; align-items: center; border: 2px solid white; display: none; }
-        .btn-share-header { background: #25D366; color: white; border: none; width: 35px; height: 35px; border-radius: 50%; cursor: pointer; font-size: 1.2rem; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.2); transition: transform 0.1s; }
-        .btn-share-header:active { transform: scale(0.9); }
-
-        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 5000; justify-content: center; align-items: center; padding: 20px; }
-        .modal-box { background: white; padding: 25px; border-radius: 20px; max-width: 400px; width: 100%; text-align: center; position: relative; animation: popIn 0.3s; }
-        .close-modal { position: absolute; top: 10px; right: 15px; font-size: 1.5rem; cursor: pointer; color: #999; }
-        @keyframes popIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-
-        .share-info { background: #f0fdf4; padding: 15px; border-radius: 10px; margin: 15px 0; text-align: left; font-size: 0.9rem; border: 1px solid #bbf7d0; }
-        .share-link-box { display: flex; gap: 5px; margin-top: 15px; }
-        .share-link-input { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 8px; background: #eee; color: #555; font-size: 0.8rem; }
-        .btn-copy { background: #25D366; color: white; border: none; padding: 0 20px; border-radius: 8px; font-weight: bold; cursor: pointer; }
-        
-        .nick-input { width: 100%; padding: 12px; font-size: 1.1rem; border: 2px solid #ddd; border-radius: 10px; margin: 15px 0; text-align: center; font-weight: bold; color: var(--dark); }
-        .btn-save-nick { background: var(--primary); color: white; border: none; padding: 12px 30px; border-radius: 30px; font-weight: bold; font-size: 1rem; cursor: pointer; width: 100%; }
-
-        .game-card { background: white; border-radius: 15px; overflow: hidden; box-shadow: 0 4px 0 #CFD8DC; margin-bottom: 20px; text-align: left; transition: transform 0.1s; position: relative; }
-        .game-card:active { transform: scale(0.99); }
-        .game-thumb { width: 100%; aspect-ratio: 16 / 11; background-color: #111; background-size: cover; background-position: center; }
-        .game-info { padding: 15px; display: flex; justify-content: space-between; align-items: center; }
-        .play-btn { background: var(--green); color: white; border: none; padding: 10px 25px; border-radius: 10px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 0 #2E7D32; font-family: 'Fredoka One'; }
-        .play-btn:active { transform: translateY(4px); box-shadow: none; }
-
-        .grid-games { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; padding: 5px; }
-        .card-grid { position: relative; border-radius: 15px; overflow: hidden; aspect-ratio: 16 / 11; cursor: pointer; box-shadow: 0 4px 5px rgba(0,0,0,0.2); transition: transform 0.2s; }
-        .card-grid:active { transform: scale(0.95); }
-        .card-grid-thumb { width: 100%; height: 100%; background-size: cover; background-position: center; }
-        .card-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.3); display: flex; justify-content: center; align-items: center; opacity: 0.8; transition: 0.3s; }
-        .card-grid:hover .card-overlay { background: rgba(0, 0, 0, 0.1); opacity: 1; }
-        .play-icon-overlay { font-size: 2.5rem; color: white; text-shadow: 0 0 10px rgba(0,0,0,0.8); filter: drop-shadow(0 4px 2px rgba(0,0,0,0.5)); }
-        
-        .card-grid-info { position: absolute; bottom: 0; left: 0; width: 100%; background: rgba(0,0,0,0.85); color: white; font-size: 0.6rem; padding: 3px; font-weight: bold; display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.2; text-align: center; }
-        .text-pts-hj { color: #4CAF50; font-size: 0.65rem; }
-
-        .news-card { background: white; border-radius: 15px; margin-bottom: 20px; box-shadow: 0 4px 0 #CFD8DC; overflow: hidden; text-align: left; }
-        .news-img { width: 100%; height: 150px; background-size: cover; background-position: center; }
-        .news-body { padding: 15px; }
-        .news-title { font-weight: bold; font-size: 1.1rem; margin-bottom: 5px; color: var(--primary); }
-        .news-text { font-size: 0.9rem; color: #555; line-height: 1.4; }
-        .news-date { font-size: 0.7rem; color: #999; margin-bottom: 10px; display: block; }
-
-        @media (max-width: 600px) { .grid-games { grid-template-columns: repeat(2, 1fr); } .game-window { height: 75vh; } }
-
-        #game-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.95); backdrop-filter: blur(5px); z-index: 3000; flex-direction: column; justify-content: center; align-items: center; }
-        .game-window { width: 95%; max-width: 900px; height: 65vh; background: #000; border: 2px solid var(--green); border-radius: 12px; box-shadow: 0 0 30px rgba(76, 175, 80, 0.3); overflow: hidden; position: relative; }
-        iframe { border: none; width: 100%; height: 100%; display: block; background: #000; }
-        .game-controls { margin-top: 20px; display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
-        .btn-control { border: none; padding: 10px 20px; border-radius: 30px; font-weight: bold; cursor: pointer; color: white; font-size: 0.9rem; display: flex; align-items: center; gap: 6px; transition: transform 0.1s; }
-        .btn-control:active { transform: scale(0.95); }
-        .btn-close { background: #D32F2F; }
-        .btn-restart { background: var(--secondary); color: #3E2723; }
-        .btn-fullscreen { background: #2196F3; }
-
-        .tab-content { display: none; padding: 15px; animation: fadeIn 0.3s; }
-        .tab-content.active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-        .bottom-nav { position: fixed; bottom: 0; width: 100%; background: white; display: flex; justify-content: space-around; padding: 10px 0; border-top-left-radius: 20px; border-top-right-radius: 20px; box-shadow: 0 -5px 15px rgba(0,0,0,0.05); z-index: 100; max-width: 600px; left: 50%; transform: translateX(-50%); }
-        .nav-btn { background: none; border: none; font-size: 0.75rem; color: #90A4AE; cursor: pointer; display: flex; flex-direction: column; align-items: center; font-weight: bold; width: 25%; }
-        .nav-btn.active { color: var(--primary); }
-        .nav-btn span { font-size: 1.4rem; margin-bottom: 2px; }
-        .notification { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: #333; color: white; padding: 10px 20px; border-radius: 30px; z-index: 4000; display: none; font-weight: bold; width: 80%; max-width: 300px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
-        
-        .rank-list { list-style: none; padding: 0; margin: 0; }
-        .rank-item { background: white; margin-bottom: 10px; padding: 10px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        .rank-item.me { border: 2px solid var(--primary); background: #FFF3E0; }
-        .rank-pos { font-weight: bold; color: var(--primary); width: 30px; font-size: 1.2rem; }
-        .rank-user { display: flex; align-items: center; gap: 10px; flex-grow: 1; text-align: left; }
-        .rank-user img { width: 30px; height: 30px; border-radius: 50%; }
-        .rank-score { font-weight: bold; color: var(--green); }
-        
-        .select-filter { padding: 10px; border-radius: 8px; border: 1px solid #ddd; font-family: 'Nunito', sans-serif; flex: 1; }
-        .btn-filter { padding: 10px 20px; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: bold; font-family: 'Nunito', sans-serif; cursor: pointer; }
-        .pagination-controls { display: flex; justify-content: center; gap: 15px; margin-top: 20px; }
-        .btn-page { background: white; border: 1px solid #ddd; padding: 8px 15px; border-radius: 20px; font-weight: bold; cursor: pointer; }
-    </style>
-</head>
-<body>
-
-    <div id="splash-screen">
-        <div class="loader"></div>
-        <h2 style="color:var(--primary);">KN Jogos</h2>
-        <p style="color:#666;">Carregando...</p>
-    </div>
-
-    <div id="notificacao" class="notification"></div>
-    
-    <!-- MODAL SHARE -->
-    <div id="share-modal" class="modal-overlay">
-        <div class="modal-box">
-            <span class="close-modal" onclick="fecharModalShare()">×</span>
-            <h2>📢 Ganhe Fichas!</h2>
-            <p>Convide amigos e ganhe recompensas.</p>
-            <div class="share-info">
-                <p>🔗 <strong>+10 Fichas:</strong> Por cada link enviado/copiado (1x/dia).</p>
-                <p>👥 <strong>+25 Fichas:</strong> Por cada amigo que se cadastrar.</p>
-            </div>
-            <div class="share-link-box">
-                <input type="text" id="share-link-input" class="share-link-input" readonly value="Carregando...">
-                <button class="btn-copy" onclick="copiarLinkGanharFichas()">COPIAR</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- MODAL NICK -->
-    <div id="nickname-modal" class="modal-overlay">
-        <div class="modal-box">
-            <span id="close-nick-modal" class="close-modal" style="display:none;" onclick="fecharModalApelido()">×</span>
-            <h2>👤 Como quer ser chamado?</h2>
-            <p>Escolha um apelido único para o Ranking.</p>
-            <input type="text" id="input-apelido" class="nick-input" placeholder="Ex: MestreDosGames" maxlength="12">
-            <button class="btn-save-nick" onclick="salvarApelido()">SALVAR APELIDO</button>
-        </div>
-    </div>
-
-    <!-- MODAL INBOX -->
-    <div id="inbox-modal" class="modal-overlay">
-        <div class="modal-box" style="text-align: left;">
-            <span class="close-modal" onclick="fecharModalInbox()">×</span>
-            <h2 style="text-align: center;">📬 Mensagens</h2>
-            <p style="text-align: center; color: #666; font-size: 0.9rem; margin-bottom: 15px;">
-                Prêmios e avisos do sistema.
-            </p>
-            <ul id="lista-mensagens" class="msg-list">
-                <div class="empty-inbox">Carregando...</div>
-            </ul>
-        </div>
-    </div>
-
-    <div id="login-screen">
-        <div class="login-box">
-            <h1>KN Jogos 🎮</h1>
-            <p>Faça login para salvar seu progresso!</p>
-            <button id="btn-login" class="btn-google"><span>G</span> Entrar com Google</button>
-        </div>
-    </div>
-
-    <div id="game-modal">
-        <div class="game-window">
-            <iframe id="game-frame" src="" allowfullscreen></iframe>
-        </div>
-        <div class="game-controls">
-            <button class="btn-control btn-close" onclick="fecharJogo()">❌ Sair</button>
-            <button class="btn-control btn-restart" onclick="reiniciarJogo()">🔄 Reiniciar (-1 🪙)</button>
-            <button class="btn-control btn-fullscreen" onclick="ativarTelaCheia()">⛶ Tela Cheia</button>
-        </div>
-    </div>
-
-    <div id="app-container" style="display:none; max-width: 600px; margin: 0 auto;">
-        <header>
-            <div class="user-info">
-                <img id="user-photo" src="" alt="Foto">
-                <div class="user-details">
-                    <div id="user-name" style="font-weight:bold; font-size:0.9rem;">...</div>
-                    <button class="btn-edit-nick" onclick="abrirModalApelido(false)">✏️</button>
-                </div>
-            </div>
-            
-            <div class="header-actions">
-                <div class="score-display">🏆 <span id="user-pontos-diario">0</span></div>
-                <div class="chips-display">🪙 <span id="user-fichas">0</span></div>
-                
-                <button class="btn-inbox" onclick="abrirModalInbox()">
-                    🔔<div id="inbox-badge" class="badge-count">0</div>
-                </button>
-                
-                <button class="btn-share-header" onclick="abrirModalShare()">📢</button>
-            </div>
-        </header>
-
-        <!-- ABA NOVIDADES (Feed Misto) -->
-        <div id="tab-novidades" class="tab-content active">
-            <div id="carousel-container" class="carousel-container" style="display:none;">
-                <div class="carousel-dots" id="carousel-dots"></div>
-            </div>
-
-            <div style="margin: 10px auto; max-width: 320px; text-align: center;">
-                <p style="font-size: 10px; color: #ccc;">Publicidade</p>
-            </div>
-
-            <h2>🔥 Novidades</h2>
-            <div id="loading-feed">Carregando feed...</div>
-            <div id="lista-feed"></div>
-            
-            <div class="pagination-controls" id="feed-pagination" style="display:none;">
-                <button class="btn-page" onclick="mudarPaginaFeed(-1)">⬅️ Anterior</button>
-                <span id="page-number" style="align-self: center;">Página 1</span>
-                <button class="btn-page" onclick="mudarPaginaFeed(1)">Próximo ➡️</button>
-            </div>
-        </div>
-
-        <div id="tab-populares" class="tab-content">
-            <h2>Todos os Jogos 🏆</h2>
-            <div class="filter-container" style="display:flex; gap:10px; margin-bottom:15px; justify-content:center;">
-                <select id="filter-tags" class="select-filter">
-                    <option value="all">Todas as Categorias</option>
-                </select>
-                <button onclick="filtrarJogos()" class="btn-filter">Filtrar</button>
-            </div>
-            <div id="lista-populares" class="grid-games"></div>
-        </div>
-
-        <div id="tab-favoritos" class="tab-content">
-            <h2>Seus Favoritos ❤️</h2>
-            <div class="filter-container" style="display:flex; gap:10px; margin-bottom:15px; justify-content:center;">
-                <select id="filter-tags-fav" class="select-filter">
-                    <option value="all">Todas as Categorias</option>
-                </select>
-                <button onclick="filtrarFavoritos()" class="btn-filter">Filtrar</button>
-            </div>
-            <div id="lista-favoritos" class="grid-games"></div>
-        </div>
-
-        <div id="tab-rank" class="tab-content">
-            <h2>⚡ Top do Dia</h2>
-            <p style="font-size:0.8rem; color:#666; margin-bottom:15px;">Reseta todo dia às 03:00 da manhã.</p>
-            <button class="btn-control btn-fullscreen" style="margin: 0 auto 5px auto; background: #9C27B0; width: 100%;" onclick="window.location.href='ranking.html'">📊 VER TEMPORADA MENSAL</button>
-            <p style="font-size:0.75rem; color:#999; margin-bottom:15px;">👆 O Ranking acima é a Temporada.</p>
-            <button class="btn-control btn-fullscreen" style="margin: 0 auto 15px auto; font-size: 0.8rem; background: var(--primary);" onclick="rolarAteMim()">📍 Onde eu estou hoje?</button>
-            <div id="loading-rank">Carregando...</div>
-            <ul id="lista-rank" class="rank-list"></ul>
-        </div>
-        
-        <nav class="bottom-nav">
-            <button class="nav-btn active" onclick="mudarAba('novidades', this)"><span>📰</span>News</button>
-            <button class="nav-btn" onclick="mudarAba('populares', this)"><span>🌎</span>Todos</button>
-            <button class="nav-btn" onclick="mudarAba('favoritos', this)"><span>❤️</span>Favs</button>
-            <button class="nav-btn" onclick="mudarAba('rank', this)"><span>📊</span>Rank</button>
-        </nav>
-        
-        <footer style="margin-top: 50px; font-size: 0.7rem; color: #999;">
-            <a href="politica.html" style="color: #999; text-decoration: none;">Política de Privacidade</a>
-        </footer>
-    </div>
-
-    <script type="module">
+<script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
         import { getFirestore, doc, getDoc, getDocs, setDoc, updateDoc, increment, collection, query, orderBy, limit, onSnapshot, arrayUnion, addDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
@@ -318,8 +15,12 @@
         };
 
         const app = initializeApp(firebaseConfig);
+        
         try {
-            const appCheck = initializeAppCheck(app, { provider: new ReCaptchaV3Provider('6Lc5vjgsAAAAANx2ia8s_Fh0_KS0_YNaAlSIYpJC'), isTokenAutoRefreshEnabled: true });
+            const appCheck = initializeAppCheck(app, {
+                provider: new ReCaptchaV3Provider('6Lc5vjgsAAAAANx2ia8s_Fh0_KS0_YNaAlSIYpJC'),
+                isTokenAutoRefreshEnabled: true
+            });
         } catch(e) { console.warn("App Check Warn:", e); }
 
         const auth = getAuth(app);
@@ -329,16 +30,23 @@
         let currentUser = null;
         let globalStats = {}; 
         let userStats = {}; 
-        let userPointsToday = {}; // NOVO: Armazena pontos de cada jogo hoje
+        let userPointsToday = {};
         let JOGOS_CONFIG = [];
         let NOTICIAS_CONFIG = [];
         let unsubscribeMsg = null;
+
+        // Váriaveis do Feed
+        let feedGlobal = [];
+        let paginaAtualFeed = 1;
+        const ITEMS_POR_PAGINA = 5;
 
         const urlParams = new URLSearchParams(window.location.search);
         const refID = urlParams.get('ref');
         if (refID) sessionStorage.setItem('kn_referrer', refID);
 
         document.getElementById('btn-login').addEventListener('click', () => { signInWithPopup(auth, provider).catch(alert); });
+
+        // --- FUNÇÕES DE SUPORTE ---
 
         async function registrarExtrato(userId, valor, motivo, tipo = "FICHA") {
             try {
@@ -375,19 +83,18 @@
                 document.getElementById('user-photo').src = user.photoURL;
                 document.getElementById('user-fichas').innerText = data.fichas;
 
-                // LOGICA PONTOS HOJE
                 const hoje = new Date().toLocaleDateString('pt-BR');
                 if(data.dataUltimoDiario === hoje) {
                     document.getElementById('user-pontos-diario').innerText = data.scoreDiario || 0;
-                    userPointsToday = data.pontosHojePorJogo || {}; // CARREGA DO BANCO
+                    userPointsToday = data.pontosHojePorJogo || {};
                 } else {
                     document.getElementById('user-pontos-diario').innerText = 0;
-                    userPointsToday = {}; // RESET VISUAL
+                    userPointsToday = {};
                 }
-
             } catch(e) { console.error("Erro perfil:", e); }
         }
 
+        // --- FILTROS ---
         window.carregarFiltros = function(id) {
             const select = document.getElementById(id);
             if(!select) return;
@@ -421,21 +128,14 @@
             else { container.innerHTML = listaFinal.map(j => criarCardFavorito(j, userStats[j.id])).join(''); }
         }
 
+        // --- CARDS HTML ---
         function criarCardComContador(jogo) {
             const img = `capas/${jogo.img}`;
             const url = `jogos/${(jogo.arquivo.startsWith('jogos/') ? jogo.arquivo.substring(6) : jogo.arquivo).replace(/^\//,'')}`;
             const plays = globalStats[jogo.id] || 0;
             const ptsHoje = userPointsToday[jogo.id] || 0;
-            const ptsClass = ptsHoje > 0 ? "color:#4CAF50;" : "color:#888;";
-            
-            return `<div class="card-grid" onclick="iniciarJogo('${url}', '${jogo.id}')">
-                <div class="card-grid-thumb" style="background-image: url('${img}');"></div>
-                <div class="card-overlay"><span class="play-icon-overlay">▶</span></div>
-                <div class="card-grid-info">
-                    <span>🔥 ${plays} Plays</span>
-                    <span style="${ptsClass}">📅 Hoje: ${ptsHoje}</span>
-                </div>
-            </div>`;
+            const ptsClass = ptsHoje > 0 ? "color:#4CAF50;" : "color:#ccc;";
+            return `<div class="card-grid" onclick="iniciarJogo('${url}', '${jogo.id}')"><div class="card-grid-thumb" style="background-image: url('${img}');"></div><div class="card-overlay"><span class="play-icon-overlay">▶</span></div><div class="card-grid-info"><span>🔥 ${plays} Plays</span><span style="${ptsClass}">📅 Hoje: ${ptsHoje}</span></div></div>`;
         }
 
         function criarCardFavorito(jogo, count) {
@@ -443,22 +143,10 @@
             const url = `jogos/${(jogo.arquivo.startsWith('jogos/') ? jogo.arquivo.substring(6) : jogo.arquivo).replace(/^\//,'')}`;
             const ptsHoje = userPointsToday[jogo.id] || 0;
             const ptsClass = ptsHoje > 0 ? "color:#A5D6A7;" : "color:#ccc;";
-
-            return `<div class="card-grid" onclick="iniciarJogo('${url}', '${jogo.id}')">
-                <div class="card-grid-thumb" style="background-image: url('${img}');"></div>
-                <div class="card-overlay"><span class="play-icon-overlay">▶</span></div>
-                <div class="card-grid-info" style="background: rgba(0,0,100,0.85);">
-                    <span>❤️ Você: ${count}x</span>
-                    <span style="${ptsClass}">📅 Hoje: ${ptsHoje}</span>
-                </div>
-            </div>`;
+            return `<div class="card-grid" onclick="iniciarJogo('${url}', '${jogo.id}')"><div class="card-grid-thumb" style="background-image: url('${img}');"></div><div class="card-overlay"><span class="play-icon-overlay">▶</span></div><div class="card-grid-info" style="background: rgba(0,0,100,0.85);"><span>❤️ Você: ${count}x</span><span style="${ptsClass}">📅 Hoje: ${ptsHoje}</span></div></div>`;
         }
 
-        // --- SISTEMA DE FEED (NOVIDADES + JOGOS) ---
-        let feedGlobal = [];
-        let paginaAtualFeed = 1;
-        const ITEMS_POR_PAGINA = 5;
-
+        // --- SISTEMA DE FEED (NOVIDADES + JOGOS) CORRIGIDO ---
         async function carregarFeedMisto() {
             try {
                 // 1. Carrega Notícias
@@ -466,16 +154,23 @@
                 NOTICIAS_CONFIG = [];
                 snapNews.forEach(d => NOTICIAS_CONFIG.push({...d.data(), tipoItem: 'news'}));
 
-                // 2. Mescla com Jogos (que não estão ocultos)
-                // Usamos a dataInclusao do jogo e a data da noticia para ordenar
-                const jogosPermitidos = JOGOS_CONFIG.filter(j => !j.ocultarNaHome).map(j => ({...j, tipoItem: 'jogo', data: j.dataInclusao}));
+                // 2. Mescla com Jogos (TRATAMENTO DE DADOS ANTIGOS)
+                const jogosPermitidos = JOGOS_CONFIG.filter(j => !j.ocultarNaHome).map(j => ({
+                    ...j, 
+                    tipoItem: 'jogo', 
+                    // Se o jogo não tiver data (antigo), usa a data de hoje para aparecer no topo, ou uma data fixa
+                    data: j.dataInclusao || new Date().toISOString()
+                }));
                 
                 feedGlobal = [...NOTICIAS_CONFIG, ...jogosPermitidos];
+                
                 // Ordena do mais recente pro mais antigo
                 feedGlobal.sort((a,b) => new Date(b.data) - new Date(a.data));
 
                 document.getElementById('loading-feed').style.display = 'none';
-                document.getElementById('feed-pagination').style.display = feedGlobal.length > ITEMS_POR_PAGINA ? 'flex' : 'none';
+                
+                const pagination = document.getElementById('feed-pagination');
+                if(pagination) pagination.style.display = feedGlobal.length > ITEMS_POR_PAGINA ? 'flex' : 'none';
                 
                 renderizarPaginaFeed(1);
             } catch(e) { console.error("Feed error:", e); }
@@ -491,16 +186,19 @@
 
         function renderizarPaginaFeed(pagina) {
             paginaAtualFeed = pagina;
-            document.getElementById('page-number').innerText = `Página ${pagina}`;
+            const elPag = document.getElementById('page-number');
+            if(elPag) elPag.innerText = `Página ${pagina}`;
             
             const start = (pagina - 1) * ITEMS_POR_PAGINA;
             const end = start + ITEMS_POR_PAGINA;
             const itensDaPagina = feedGlobal.slice(start, end);
             const container = document.getElementById('lista-feed');
             
+            if(!container) return;
+
             container.innerHTML = itensDaPagina.map(item => {
                 if(item.tipoItem === 'jogo') {
-                    // Renderiza Card de Jogo (Formato antigo da aba Novos)
+                    // Renderiza Card de Jogo
                     const img = `capas/${item.img}`;
                     const url = `jogos/${(item.arquivo.startsWith('jogos/') ? item.arquivo.substring(6) : item.arquivo).replace(/^\//,'')}`;
                     return `<div class="game-card"><div class="game-thumb" style="background-image: url('${img}');"></div><div class="game-info"><div><h3 style="margin:0; font-size:1.1rem;">🎮 ${item.nome}</h3><p style="margin:5px 0; font-size:0.8rem; color:#666;">${item.desc}</p></div><button class="play-btn" onclick="iniciarJogo('${url}', '${item.id}')">JOGAR</button></div></div>`;
@@ -514,13 +212,13 @@
         }
 
         function renderizarTodosJogos() {
-            carregarFeedMisto();
+            carregarFeedMisto(); // Carrega Novidades + Jogos
             carregarFiltros('filter-tags'); filtrarJogos(); 
             carregarFiltros('filter-tags-fav'); filtrarFavoritos();
         }
 
-        // --- FUNÇÕES DE ARQUIVOS (BANNERS E LISTAS) ---
-        async function carregarBanners() { /* ...Mantido do original... */ 
+        // --- DADOS GERAIS ---
+        async function carregarBanners() {
             try {
                 const querySnapshot = await getDocs(collection(db, "listaBanners"));
                 let banners = [];
@@ -561,8 +259,6 @@
                 const querySnapshot = await getDocs(collection(db, "listaJogos"));
                 JOGOS_CONFIG = [];
                 querySnapshot.forEach((doc) => { JOGOS_CONFIG.push(doc.data()); });
-                // Ordenação inicial, mas o Feed Misto sobrescreve na aba Novidades
-                JOGOS_CONFIG.sort((a, b) => (new Date(b.dataInclusao || 0) - new Date(a.dataInclusao || 0)));
             } catch (e) {}
         }
 
@@ -571,7 +267,29 @@
             if(snap.exists()) globalStats = snap.data();
         }
 
-        // --- AUTH E MENSAGENS (Fim do arquivo) ---
+        function iniciarMonitoramentoMensagens(user) {
+            const listaEl = document.getElementById('lista-mensagens');
+            if (!listaEl) return;
+            const msgsRef = collection(db, "users", user.uid, "mensagens");
+            const q = query(msgsRef, orderBy("data", "desc"), limit(20));
+            unsubscribeMsg = onSnapshot(q, (snapshot) => {
+                const badgeEl = document.getElementById('inbox-badge');
+                let naoLidas = 0;
+                let html = "";
+                if (snapshot.empty) { listaEl.innerHTML = '<div class="empty-inbox">Vazio.</div>'; if(badgeEl) badgeEl.style.display = 'none'; return; }
+                snapshot.forEach((doc) => {
+                    const msg = doc.data();
+                    if (!msg.lida) naoLidas++;
+                    let dataF = "Agora";
+                    try { dataF = msg.data.toDate().toLocaleDateString('pt-BR'); } catch(e){}
+                    html += `<li class="msg-item ${msg.lida ? '' : 'unread'}"><div class="msg-header"><span class="msg-title">${msg.titulo}</span><span class="msg-date">${dataF}</span></div><div class="msg-body">${msg.corpo}</div>${!msg.lida ? `<button class="msg-btn-read" onclick="marcarMensagemLida('${doc.id}')">✔ Lida</button>` : ''}</li>`;
+                });
+                listaEl.innerHTML = html;
+                if (badgeEl) { badgeEl.innerText = naoLidas; badgeEl.style.display = naoLidas > 0 ? 'flex' : 'none'; }
+            }, (error) => { console.warn("Inbox:", error); });
+        }
+
+        // --- AUTH START ---
         onAuthStateChanged(auth, async (user) => {
             const loginScreen = document.getElementById('login-screen');
             const appContainer = document.getElementById('app-container');
@@ -594,20 +312,16 @@
             finally { if(splash) splash.style.display = 'none'; }
         });
 
-        // --- MANIPULADORES UI RESTANTES (Slides, Abas, Modais) ---
+        // --- UI ---
         let currentSlide = 0;
         function iniciarRotacaoBanners(total) {
             if(total <= 1) return;
-            setInterval(() => {
-                let next = currentSlide + 1;
-                if(next >= total) next = 0;
-                mudarSlide(next);
-            }, 5000);
+            setInterval(() => { let next = currentSlide + 1; if(next >= total) next = 0; mudarSlide(next); }, 5000);
         }
         function mudarSlide(index) {
             const slides = document.querySelectorAll('.carousel-slide');
             const dots = document.querySelectorAll('.dot');
-            if(slides.length === 0 || dots.length === 0) return;
+            if(slides.length === 0) return;
             slides[currentSlide].classList.remove('active');
             dots[currentSlide].classList.remove('active');
             currentSlide = index;
@@ -625,27 +339,32 @@
             if(abaID === 'favoritos') { carregarFiltros('filter-tags-fav'); filtrarFavoritos(); }
         }
 
-        // Funções de Modal (Abre/Fecha) - Mantidas iguais
         window.abrirModalInbox = function() { document.getElementById('inbox-modal').style.display = 'flex'; }
         window.fecharModalInbox = function() { document.getElementById('inbox-modal').style.display = 'none'; }
-        window.abrirModalApelido = function(obrigatorio) {
-            document.getElementById('nickname-modal').style.display = 'flex';
-            if (!obrigatorio) document.getElementById('input-apelido').value = document.getElementById('user-name').innerText;
-            if(document.getElementById('close-nick-modal')) document.getElementById('close-nick-modal').style.display = obrigatorio ? 'none' : 'block';
-        }
+        window.abrirModalApelido = function(obrigatorio) { document.getElementById('nickname-modal').style.display = 'flex'; if (!obrigatorio) document.getElementById('input-apelido').value = document.getElementById('user-name').innerText; if(document.getElementById('close-nick-modal')) document.getElementById('close-nick-modal').style.display = obrigatorio ? 'none' : 'block'; }
         window.fecharModalApelido = function() { document.getElementById('nickname-modal').style.display = 'none'; }
-        window.salvarApelido = async function() {
-            const nick = document.getElementById('input-apelido').value.trim();
-            if (nick.length < 3) { alert("Mínimo 3 letras."); return; }
-            await updateDoc(doc(db, "users", currentUser.uid), { apelido: nick });
-            document.getElementById('user-name').innerText = nick;
-            fecharModalApelido();
-            if(document.getElementById('tab-rank').classList.contains('active')) carregarRanking();
-        }
         window.abrirModalShare = function() { document.getElementById('share-modal').style.display = 'flex'; }
         window.fecharModalShare = function() { document.getElementById('share-modal').style.display = 'none'; }
-        
-        // --- JOGO ---
+
+        window.marcarMensagemLida = async function(msgId) { if(!currentUser) return; await updateDoc(doc(db, "users", currentUser.uid, "mensagens", msgId), { lida: true }); }
+        window.salvarApelido = async function() { const nick = document.getElementById('input-apelido').value.trim(); if (nick.length < 3) return alert("Mínimo 3 letras."); await updateDoc(doc(db, "users", currentUser.uid), { apelido: nick }); document.getElementById('user-name').innerText = nick; fecharModalApelido(); if(document.getElementById('tab-rank').classList.contains('active')) carregarRanking(); }
+        window.copiarLinkGanharFichas = async function() {
+            const input = document.getElementById('share-link-input');
+            if(!input) return; input.select(); navigator.clipboard.writeText(input.value);
+            if (currentUser) {
+                const userRef = doc(db, "users", currentUser.uid);
+                const data = (await getDoc(userRef)).data();
+                const hoje = new Date().toLocaleDateString('pt-BR');
+                if (data.ultimoResgateShare !== hoje) {
+                    await updateDoc(userRef, { fichas: increment(10), ultimoResgateShare: hoje });
+                    document.getElementById('user-fichas').innerText = (data.fichas||0) + 10;
+                    registrarExtrato(currentUser.uid, 10, "Bônus Diário", "FICHA");
+                    mostrarNotificacao("+10 Fichas! 🎉");
+                } else mostrarNotificacao("Já resgatou hoje ✅");
+            }
+            setTimeout(fecharModalShare, 2000);
+        }
+
         window.iniciarJogo = async function(urlArquivo, idJogo) {
             if(!currentUser) return;
             const userRef = doc(db, "users", currentUser.uid);
@@ -658,10 +377,9 @@
             window.jogoAtualID = idJogo;
             const modal = document.getElementById('game-modal');
             const iframe = document.getElementById('game-frame');
-            modal.style.display = 'flex';
-            iframe.src = urlArquivo; 
+            if(modal && iframe) { modal.style.display = 'flex'; iframe.src = urlArquivo; }
         }
-        
+
         window.reiniciarJogo = async function() {
             if(!currentUser) return;
             if(!confirm("⚠️ JOGAR NOVAMENTE: Custo 1 Ficha 🪙")) return;
@@ -672,21 +390,17 @@
             setDoc(doc(db, "config", "gameStats"), { [window.jogoAtualID]: increment(1) }, { merge: true });
             document.getElementById('user-fichas').innerText = (snap.data().fichas || 0) - 1;
             registrarExtrato(currentUser.uid, -1, `Rejogou: ${window.jogoAtualID}`, "FICHA");
-            document.getElementById('game-frame').src = document.getElementById('game-frame').src;
+            const iframe = document.getElementById('game-frame');
+            if(iframe) iframe.src = iframe.src;
             mostrarNotificacao("🔄 Recarregando...");
         }
-        
-        window.fecharJogo = function() { document.getElementById('game-modal').style.display = 'none'; document.getElementById('game-frame').src = ""; location.reload(); }
-        window.ativarTelaCheia = function() {
-            const iframe = document.getElementById('game-frame');
-            if (iframe.requestFullscreen) iframe.requestFullscreen();
-            else if (iframe.webkitRequestFullscreen) iframe.webkitRequestFullscreen();
-        }
 
-        // --- LISTENER PONTOS (COM LOGICA DE SALVAR PONTOS POR JOGO HOJE) ---
+        window.fecharJogo = function() { document.getElementById('game-modal').style.display = 'none'; document.getElementById('game-frame').src = ""; location.reload(); }
+        window.ativarTelaCheia = function() { const iframe = document.getElementById('game-frame'); if (iframe) { if (iframe.requestFullscreen) iframe.requestFullscreen(); else if (iframe.webkitRequestFullscreen) iframe.webkitRequestFullscreen(); } }
+        window.rolarAteMim = function() { const el = document.getElementById('meu-rank'); if(el) { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); el.style.border = "3px solid red"; setTimeout(() => el.style.border = "2px solid var(--primary)", 2000); } else alert("Você ainda não pontuou hoje!"); }
+
         window.addEventListener('message', async function(event) {
-            let pontos = 0;
-            let isGameOver = false;
+            let pontos = 0; let isGameOver = false;
             if (event.data && event.data.type === 'GAME_OVER') { pontos = parseInt(event.data.score) || 0; isGameOver = true; }
             else if (typeof event.data === 'number') { pontos = parseInt(event.data); isGameOver = true; }
             if (!isGameOver) { if (event.data === 'RESTART_REQUEST' || (event.data && event.data.type === 'RESTART_REQUEST')) reiniciarJogo(); return; }
@@ -694,7 +408,7 @@
             mostrarNotificacao(`Fim! Pontos: ${pontos}`);
             if (!currentUser) return;
 
-            try { const spanPts = document.getElementById('user-pontos-diario'); spanPts.innerText = (parseInt(spanPts.innerText)||0) + pontos; } catch(e) {}
+            try { const spanPts = document.getElementById('user-pontos-diario'); if(spanPts) spanPts.innerText = (parseInt(spanPts.innerText)||0) + pontos; } catch(e) {}
 
             const userRef = doc(db, "users", currentUser.uid);
             try {
@@ -710,15 +424,9 @@
                 } else { 
                     updates.scoreDiario = pontos; 
                     updates.dataUltimoDiario = hoje;
-                    // Se o dia mudou, o mapa de pontos por jogo deve resetar na gravação
                     updates.pontosHojePorJogo = {}; 
                 }
                 
-                // ATUALIZA MAPA DE PONTOS POR JOGO
-                // Se for o primeiro jogo do dia, updates.pontosHojePorJogo já é {} pelo 'else' acima.
-                // Se já existir, pega o atual. Se não, cria.
-                // Mas não podemos ler 'updates.pontosHojePorJogo' diretamente se for increment.
-                // Logica segura:
                 let mapAtual = data.dataUltimoDiario === hoje ? (data.pontosHojePorJogo || {}) : {};
                 mapAtual[window.jogoAtualID] = (mapAtual[window.jogoAtualID] || 0) + pontos;
                 updates.pontosHojePorJogo = mapAtual;
@@ -735,9 +443,37 @@
 
         function mostrarNotificacao(msg) {
             const el = document.getElementById('notificacao');
-            el.innerText = msg; el.style.display = 'block'; setTimeout(() => el.style.display = 'none', 4000);
+            if(el) { el.innerText = msg; el.style.display = 'block'; setTimeout(() => el.style.display = 'none', 4000); }
         }
-        async function carregarRanking() { /* ...Mantido igual... */ }
+
+        // --- RANKING (COM FUNÇÃO RECUPERADA) ---
+        async function carregarRanking() {
+            const list = document.getElementById('lista-rank');
+            if(!list) return;
+            list.innerHTML = "";
+            const loading = document.getElementById('loading-rank');
+            if(loading) loading.style.display = 'block';
+            try {
+                const q = query(collection(db, "users"), orderBy("scoreDiario", "desc"), limit(50));
+                const querySnapshot = await getDocs(q);
+                if(loading) loading.style.display = 'none';
+                let rank = 1;
+                const hoje = new Date().toLocaleDateString('pt-BR');
+
+                querySnapshot.forEach((docSnap) => {
+                    const u = docSnap.data();
+                    const isMe = docSnap.id === currentUser.uid;
+                    const nome = u.apelido || u.nome.split(' ')[0];
+                    const pontos = (u.dataUltimoDiario === hoje) ? (u.scoreDiario || 0) : 0;
+                    list.innerHTML += `<li id="${isMe ? 'meu-rank' : ''}" class="rank-item ${isMe ? 'me' : ''}"><div class="rank-pos">#${rank}</div><div class="rank-user"><img src="${u.foto}"><div><strong>${nome}</strong></div></div><div class="rank-score">${pontos}</div></li>`;
+                    rank++;
+                });
+            } catch (error) { 
+                console.error(error); 
+                if(loading) loading.style.display = 'none';
+                list.innerHTML = "<li>Erro ao carregar ranking.</li>";
+            }
+        }
     </script>
 </body>
 </html>
