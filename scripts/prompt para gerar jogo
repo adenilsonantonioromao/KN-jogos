@@ -1,0 +1,31 @@
+Atue como um Desenvolvedor de Jogos Sênior.
+Vamos criar um **Protótipo de Alta Fidelidade** para o projeto "KN Jogos" usando **React e TypeScript (.tsx)**.
+
+### OJETIVO
+Quero ver o jogo rodando AGORA na janela de Preview/Renderização.
+
+### 1. REQUISITOS TÉCNICOS CRÍTICOS (Delta Time)
+- **Engine:** Use HTML5 Canvas `<canvas>` dentro de um componente React.
+- **Loop:** Use `requestAnimationFrame` dentro de um `useEffect`.
+- **FÍSICA ESTÁVEL (Importante):** Implemente lógica de **Delta Time (dt)**.
+  - Calcule o tempo passado entre frames (`now - lastTime`).
+  - Multiplique TODAS as velocidades e movimentos por `dt` (ou use um acumulador de tempo).
+  - Garanta que o jogo rode na mesma velocidade em monitores 60Hz, 120Hz, 144Hz e celulares lentos.
+
+- **Tela:** MOBILE FIRST (Portrait).
+  - Mobile: 100% largura/altura.
+  - PC: Centralize (`max-width: 480px`) e mantenha a proporção vertical.
+
+### 2. PROTOCOLO DE PORTAL
+Implemente a comunicação via iframe:
+- **Ao Perder (Game Over):** `window.parent.postMessage({ type: 'GAME_OVER', score: pontos }, '*')`
+- **Ao Reiniciar:** `window.parent.postMessage({ type: 'RESTART_REQUEST' }, '*')`
+
+### 3. ÁUDIO (Web Audio API)
+- Use síntese procedural (Oscillators). Sem arquivos externos.
+- Crie sons distintos para ações e uma trilha de fundo suave.
+
+### 4. A IDEIA DO JOGO
+**[ESCREVA AQUI SUA IDEIA]**
+
+Gere o código completo do `App.tsx` agora, usando **Delta Time** para a física.
