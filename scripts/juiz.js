@@ -16,102 +16,106 @@ const FICHAS_DIARIO = [3, 2, 1];
 const FICHAS_SEMANAL = [10, 7, 3];
 const FICHAS_MENSAL = [50, 30, 10];
 
-// --- O CONTADOR (AUDITORIA E LIMPEZA) ---
+// --- AUDITORIA GERAL (FICHAS + PONTOS) ---
 async function auditoriaConsolidada(usuarios) {
-    console.log("\n🕵️‍♂️ INICIANDO AUDITORIA E LIMPEZA...");
+    console.log("\n🕵️‍♂️ INICIANDO AUDITORIA DUPLA...");
     let suspeitos = 0;
-    let totalExtratosApagados = 0;
+    let logsApagados = 0;
 
     for (const user of usuarios) {
         try {
-            // 1. Pega o Saldo Auditado Anterior (O "Cofre" do Juiz)
-            let saldoSeguro = user.saldo_auditado !== undefined ? user.saldo_auditado : 5;
+            // Saldos Seguros Anteriores
+            let saldoSeguroFichas = user.saldo_auditado !== undefined ? user.saldo_auditado : 5;
+            let saldoSeguroPontos = user.pontos_auditados !== undefined ? user.pontos_auditados : 0;
 
-            // 2. Busca os novos extratos
             const extratosRef = db.collection('users').doc(user.id).collection('extrato');
             const snapshot = await extratosRef.get();
 
-            // --- CORREÇÃO AQUI: Lógica para quem NÃO tem extrato novo ---
-            if (snapshot.empty) {
-                // Se o saldo atual não bate com o saldo seguro
-                if (Math.abs(user.fichas - saldoSeguro) > 5) {
-                    console.warn(`🚨 SUSPEITO SEM EXTRATO: ${user.id}`);
-                    console.warn(`   Real: ${user.fichas} | Seguro: ${saldoSeguro}`);
-                    
-                    // CORREÇÃO: Agora forçamos o reset aqui também!
-                    await db.collection('users').doc(user.id).update({
-                        fichas: saldoSeguro 
-                    });
-
-                    await reportarSuspeito(user, saldoSeguro, "Saldo alterado sem extrato (Corrigido)");
-                    suspeitos++;
-                }
-                continue; // Vai para o próximo usuário
-            }
-            // -------------------------------------------------------------
-
-            // 3. Soma os novos movimentos (Para quem TEM extrato)
-            let somaNovos = 0;
+            let somaNovasFichas = 0;
+            let somaNovosPontos = 0;
             const batch = db.batch();
 
-            snapshot.forEach(doc => {
-                somaNovos += (doc.data().valor || 0);
-                batch.delete(doc.ref); 
-            });
-
-            // 4. Calcula o Novo Saldo Seguro
-            const novoSaldoSeguro = saldoSeguro + somaNovos;
-
-            // 5. Teste de Divergência
-            if (Math.abs(user.fichas - novoSaldoSeguro) > 5) {
-                console.warn(`🚨 SUSPEITO: ${user.id}`);
-                
-                batch.update(db.collection('users').doc(user.id), { 
-                    fichas: novoSaldoSeguro, // Reseta para o valor real
-                    saldo_auditado: novoSaldoSeguro 
-                });
-                
-                await reportarSuspeito(user, novoSaldoSeguro, "Divergência Financeira Detectada (Corrigido)");
-                suspeitos++;
-            } else {
-                // Tudo certo!
-                batch.update(db.collection('users').doc(user.id), { 
-                    saldo_auditado: novoSaldoSeguro 
+            if (!snapshot.empty) {
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    const valor = data.valor || 0;
+                    
+                    if (data.tipo === 'PONTO') {
+                        somaNovosPontos += valor;
+                    } else {
+                        // Assume FICHA se não tiver tipo ou for FICHA
+                        somaNovasFichas += valor;
+                    }
+                    batch.delete(doc.ref); // Marca para deletar
                 });
             }
 
-            // 6. Executa Limpeza
+            // Calculando novos totais seguros
+            const novoSeguroFichas = saldoSeguroFichas + somaNovasFichas;
+            const novoSeguroPontos = saldoSeguroPontos + somaNovosPontos;
+
+            // --- VALIDAÇÃO 1: FICHAS ---
+            if (Math.abs(user.fichas - novoSeguroFichas) > 5) {
+                console.warn(`🚨 SUSPEITO FICHAS: ${user.id} | Real: ${user.fichas} vs Seguro: ${novoSeguroFichas}`);
+                batch.update(db.collection('users').doc(user.id), { 
+                    fichas: novoSeguroFichas,
+                    saldo_auditado: novoSeguroFichas 
+                });
+                await reportarSuspeito(user, novoSeguroFichas, user.fichas, "Fichas alteradas sem log");
+                suspeitos++;
+            } else {
+                batch.update(db.collection('users').doc(user.id), { saldo_auditado: novoSeguroFichas });
+            }
+
+            // --- VALIDAÇÃO 2: PONTOS TOTAIS (Lifetime) ---
+            // Nota: Pontos totais nunca diminuem. Se diminuir, é bug ou reset manual, ignoramos.
+            if (Math.abs(user.pontuacaoTotal - novoSeguroPontos) > 200) { // Margem maior para pontos
+                console.warn(`🚨 SUSPEITO PONTOS: ${user.id} | Real: ${user.pontuacaoTotal} vs Seguro: ${novoSeguroPontos}`);
+                batch.update(db.collection('users').doc(user.id), { 
+                    pontuacaoTotal: novoSeguroPontos,
+                    pontos_auditados: novoSeguroPontos 
+                });
+                await reportarSuspeito(user, novoSeguroPontos, user.pontuacaoTotal, "Pontos alterados sem log");
+                suspeitos++;
+            } else {
+                batch.update(db.collection('users').doc(user.id), { pontos_auditados: novoSeguroPontos });
+            }
+
+            // Executa tudo (Limpeza + Correções + Atualização de Saldos Seguros)
             await batch.commit();
-            totalExtratosApagados += snapshot.size;
+            logsApagados += snapshot.size;
 
         } catch (error) {
             console.error(`Erro ao auditar ${user.id}:`, error.message);
         }
     }
-    console.log(`✅ Auditoria finalizada. ${suspeitos} correções feitas. ${totalExtratosApagados} extratos arquivados.`);
+    console.log(`✅ Auditoria finalizada. ${suspeitos} correções. ${logsApagados} logs arquivados.`);
 }
 
-async function reportarSuspeito(user, saldoCalculado, motivo) {
+async function reportarSuspeito(user, real, falso, motivo) {
     await db.collection('admin_auditoria').add({
         userId: user.id,
         nome: user.nome || "Desconhecido",
         data: admin.firestore.FieldValue.serverTimestamp(),
-        saldoFalso: user.fichas,
-        saldoReal: saldoCalculado,
+        saldoFalso: falso,
+        saldoReal: real,
         motivo: motivo
     });
 }
 
-// --- FUNÇÕES DE PREMIAÇÃO (Mantidas Iguais) ---
+// ... (Resto do código de premiação: gerarExtrato, processarRanking, startJuiz... MANTENHA IGUAL AO ANTERIOR) ...
+// IMPORTANTE: Ao premiar, use tipo: 'FICHA' no gerarExtrato para o auditor saber somar certo.
+
 async function gerarExtrato(userId, valor, motivo) {
     try {
-        const serial = `JUIZ-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
+        const serial = `JUIZ-${Date.now()}`;
         await db.collection('users').doc(userId).collection('extrato').add({
             data: admin.firestore.FieldValue.serverTimestamp(),
             valor: valor,
             motivo: motivo,
+            tipo: 'FICHA', // Juiz sempre dá fichas (Pontos de campeão não somam no pontuacaoTotal, são separados)
             serial: serial,
-            origem: "SISTEMA AUTOMATICO"
+            origem: "SISTEMA"
         });
     } catch (e) { console.error(`Erro extrato ${userId}:`, e.message); }
 }
@@ -131,64 +135,44 @@ async function processarRanking(listaUsuarios, campoScore, arrayPontos, arrayFic
 
     const top5 = classificados.slice(0, 5);
     for (let i = 0; i < top5.length; i++) {
-        const user = top5[i];
+        const u = top5[i];
         const pts = arrayPontos[i] || 0;
         const fichas = arrayFichas[i] || 0;
 
-        console.log(`   #${i + 1} ${user.nome}: +${pts}pts / +${fichas}fichas`);
         const updates = { pontosCampeao: admin.firestore.FieldValue.increment(pts) };
-        
-        if (fichas > 0) {
+        if(fichas > 0) {
             updates.fichas = admin.firestore.FieldValue.increment(fichas);
-            await gerarExtrato(user.id, fichas, `Prêmio ${nomeRanking} (#${i+1})`);
+            await gerarExtrato(u.id, fichas, `Prêmio ${nomeRanking}`);
         }
-        await db.collection('users').doc(user.id).update(updates);
-        let txtFichas = fichas > 0 ? ` e <strong>${fichas} Fichas</strong>` : ``;
-        await enviarNotificacao(user.id, `🏆 Top ${i+1} ${nomeRanking}!`, `Parabéns! Venceu com ${user[campoScore]} pontos.<br>Ganhou: ⭐ +${pts}${txtFichas}.`);
+        await db.collection('users').doc(u.id).update(updates);
+        let txt = fichas > 0 ? ` e <strong>${fichas} Fichas</strong>` : ``;
+        await enviarNotificacao(u.id, `🏆 Top ${i+1} ${nomeRanking}!`, `Ganhou: ⭐ +${pts}${txt}.`);
     }
 
-    console.log(`   🧹 Resetando ${campoScore}...`);
-    const batchSize = 500;
+    // Reset
     let batch = db.batch();
-    let count = 0;
-    for (const user of classificados) {
-        batch.update(db.collection('users').doc(user.id), { [campoScore]: 0 });
-        count++;
-        if (count >= batchSize) { await batch.commit(); batch = db.batch(); count = 0; }
-    }
-    if (count > 0) await batch.commit();
+    classificados.forEach(u => batch.update(db.collection('users').doc(u.id), { [campoScore]: 0 }));
+    await batch.commit();
 }
 
-async function lixeiro() {
-    const dataLimite = new Date();
-    dataLimite.setDate(dataLimite.getDate() - 3);
-    const snapshot = await db.collectionGroup('mensagens').where('lida', '==', true).where('lidaEm', '<', dataLimite).get();
-    // (Lógica simplificada de limpeza se necessário, mas o foco é auditoria agora)
-}
-
-// --- START ---
 async function startJuiz() {
-    console.log("⚖️ Juiz v5.1 (Correção Reset Sem Extrato) Iniciado...");
+    console.log("⚖️ Juiz v6.0 (Auditoria Dupla) Iniciado...");
     const snapshot = await db.collection('users').get();
-    if (snapshot.empty) return;
-
     let usuarios = [];
     snapshot.forEach(doc => usuarios.push({ id: doc.id, ...doc.data() }));
 
-    const agora = new Date();
-    agora.setHours(agora.getHours() - 3); 
-    const diaSemana = agora.getDay();
-    const diaMes = agora.getDate();
-
-    // 1. Auditoria e Limpeza (Agora corrige TODOS os casos)
+    // 1. Auditoria
     await auditoriaConsolidada(usuarios);
 
     // 2. Rankings
+    const agora = new Date(); agora.setHours(agora.getHours() - 3);
+    const diaSemana = agora.getDay(); const diaMes = agora.getDate();
+
     await processarRanking([...usuarios], 'scoreDiario', PONTOS_DIARIO, FICHAS_DIARIO, 'Diário');
     if (diaSemana === 5) await processarRanking([...usuarios], 'scoreSemanal', PONTOS_SEMANAL, FICHAS_SEMANAL, 'Semanal');
     if (diaMes === 1) await processarRanking([...usuarios], 'scoreMensal', PONTOS_MENSAL, FICHAS_MENSAL, 'Mensal');
 
-    console.log("\n🏁 Fim da execução.");
+    console.log("🏁 Fim.");
 }
 
-startJuiz().catch(err => { console.error("❌ Erro fatal:", err); process.exit(1); });
+startJuiz().catch(err => { console.error(err); process.exit(1); });
