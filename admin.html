@@ -38,6 +38,7 @@
         .item-list { background: white; padding: 15px; border-radius: 10px; margin-bottom: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; cursor: pointer; border: 1px solid transparent; }
         .item-list:hover { border-color: #2196F3; transform: translateX(5px); }
         .date-badge { font-size: 0.75rem; color: #666; background: #eee; padding: 2px 8px; border-radius: 10px; margin-top: 4px; display: inline-block; }
+        .tag-badge { background: #FF5722; color: white; font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; margin-left: 5px; }
     </style>
 </head>
 <body>
@@ -67,15 +68,22 @@
         <div id="tab-jogos" class="tab-content active">
             <div class="editor-card">
                 <h3>Novo/Editar Jogo</h3>
-                <label>ID do Jogo (Único)</label>
+                <label>ID do Jogo (Único e sem espaços)</label>
                 <input type="text" id="idJogo" placeholder="ex: neonrunner">
+                
                 <label>Nome Visível</label>
                 <input type="text" id="nome" placeholder="ex: Neon Runner 3D">
+                
                 <label>Descrição</label>
                 <input type="text" id="desc" placeholder="ex: Desvie dos obstáculos...">
+
+                <!-- CAMPO NOVO: TAG -->
+                <label>Categoria / Tag</label>
+                <input type="text" id="tagJogo" placeholder="ex: Ação, Corrida, Puzzle (Use apenas uma principal)">
+
                 <div style="display:flex; gap:10px;">
-                    <div style="flex:1;"><label>Arquivo (/jogos)</label><input type="text" id="arquivo" placeholder="ex: neon.html"></div>
-                    <div style="flex:1;"><label>Imagem (/capas)</label><input type="text" id="img" placeholder="ex: neon.jpg"></div>
+                    <div style="flex:1;"><label>Arquivo (Link Completo)</label><input type="text" id="arquivo" placeholder="ex: jogos/pasta/index.html"></div>
+                    <div style="flex:1;"><label>Imagem (Link Completo)</label><input type="text" id="img" placeholder="ex: capas/neon.jpg"></div>
                 </div>
                 <div class="btn-row">
                     <button class="btn-clear" onclick="limparFormulario()">🧹 Limpar</button>
@@ -100,7 +108,6 @@
                     <div style="flex:1;"><label>Ordem</label><input type="number" id="ordemBanner" placeholder="1"></div>
                 </div>
 
-                <!-- NOVO CAMPO DE LINK -->
                 <label>Link de Destino (Opcional)</label>
                 <input type="text" id="linkBanner" placeholder="ex: #tab-rank ou https://google.com">
                 <p style="font-size:0.8rem; color:#666; margin-top:5px;">Dica: Use <b>#tab-rank</b>, <b>#tab-populares</b> ou ID de jogo.</p>
@@ -123,8 +130,6 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
         import { getFirestore, doc, getDoc, setDoc, deleteDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-        
-        // --- NOVO: IMPORT DO APP CHECK ---
         import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app-check.js";
 
         const firebaseConfig = {
@@ -139,15 +144,12 @@
 
         const app = initializeApp(firebaseConfig);
 
-        // --- NOVO: ATIVAR APP CHECK NO ADMIN ---
         try {
             const appCheck = initializeAppCheck(app, {
                 provider: new ReCaptchaV3Provider('6Lc5vjgsAAAAANx2ia8s_Fh0_KS0_YNaAlSIYpJC'),
                 isTokenAutoRefreshEnabled: true
             });
-        } catch (e) {
-            console.warn("App Check Error:", e);
-        }
+        } catch (e) { console.warn("App Check:", e); }
 
         const auth = getAuth(app);
         const db = getFirestore(app);
@@ -193,20 +195,20 @@
                     const item = document.createElement('div');
                     item.className = 'item-list';
                     const dataInc = data.dataInclusao ? new Date(data.dataInclusao).toLocaleDateString('pt-BR') : 'Sem data';
-                    item.innerHTML = `<div><span style="font-family:monospace; background:#eee; padding:2px;">${data.id}</span> <strong>${data.nome}</strong><br><span class="date-badge">${dataInc}</span></div><span>✏️</span>`;
+                    const tagHtml = data.tag ? `<span class="tag-badge">${data.tag}</span>` : '';
+                    
+                    item.innerHTML = `<div><span style="font-family:monospace; background:#eee; padding:2px;">${data.id}</span> <strong>${data.nome}</strong>${tagHtml}<br><span class="date-badge">${dataInc}</span></div><span>✏️</span>`;
                     item.onclick = () => preencherEditorJogo(data);
                     divLista.appendChild(item);
                 });
-            } catch (e) { 
-                console.error(e);
-                divLista.innerHTML = "Erro ao carregar (Veja Console). Verifique se seu UID está nas Regras do Firestore."; 
-            }
+            } catch (e) { divLista.innerHTML = "Erro."; console.error(e); }
         }
 
         function preencherEditorJogo(data) {
             document.getElementById('idJogo').value = data.id;
             document.getElementById('nome').value = data.nome;
             document.getElementById('desc').value = data.desc;
+            document.getElementById('tagJogo').value = data.tag || ""; // CARREGA A TAG
             document.getElementById('arquivo').value = data.arquivo;
             document.getElementById('img').value = data.img;
             mostrarStatus(`Editando Jogo: ${data.nome}`);
@@ -216,25 +218,26 @@
             const id = document.getElementById('idJogo').value.toLowerCase().trim();
             const nome = document.getElementById('nome').value;
             const desc = document.getElementById('desc').value;
+            const tag = document.getElementById('tagJogo').value.trim(); // PEGA A TAG
             const arquivo = document.getElementById('arquivo').value;
             const img = document.getElementById('img').value;
+            
             if(!id) return alert("ID obrigatório");
             
             try {
                 const docRef = doc(db, "listaJogos", id);
                 const docSnap = await getDoc(docRef);
                 const agora = new Date().toISOString();
-                let dados = { id, nome, desc, arquivo, img, dataAtualizacao: agora };
+                let dados = { id, nome, desc, tag, arquivo, img, dataAtualizacao: agora };
                 if (!docSnap.exists()) dados.dataInclusao = agora;
                 
                 await setDoc(docRef, dados, { merge: true });
+                // Garante que existe no stat para contagem de plays
                 await setDoc(doc(db, "config", "gameStats"), { [id]: 0 }, { merge: true });
+                
                 mostrarStatus("✅ Jogo Salvo!");
                 carregarListaJogos();
-            } catch(e) {
-                alert("Erro ao salvar! Verifique se seu UID de Admin está configurado nas Regras do Firestore.");
-                console.error(e);
-            }
+            } catch(e) { alert("Erro ao salvar."); console.error(e); }
         }
 
         // --- BANNERS ---
@@ -252,24 +255,18 @@
                     const item = document.createElement('div');
                     item.className = 'item-list';
                     const linkInfo = data.link ? `<br><span style="font-size:0.75rem; color:blue;">🔗 ${data.link}</span>` : '';
-                    item.innerHTML = `
-                        <div style="display:flex; align-items:center;">
-                            <span style="font-weight:bold; font-size:1.2rem; margin-right:15px; color:#9C27B0;">#${data.ordem}</span>
-                            <div><strong>${data.arquivo}</strong>${linkInfo}</div>
-                        </div>
-                        <span>✏️</span>
-                    `;
+                    item.innerHTML = `<div style="display:flex; align-items:center;"><span style="font-weight:bold; font-size:1.2rem; margin-right:15px; color:#9C27B0;">#${data.ordem}</span><div><strong>${data.arquivo}</strong>${linkInfo}</div></div><span>✏️</span>`;
                     item.onclick = () => preencherEditorBanner(data);
                     divLista.appendChild(item);
                 });
-            } catch (e) { console.error(e); divLista.innerHTML = "Erro."; }
+            } catch (e) { console.error(e); }
         }
 
         function preencherEditorBanner(data) {
             document.getElementById('idBanner').value = data.id;
             document.getElementById('arquivoBanner').value = data.arquivo;
             document.getElementById('ordemBanner').value = data.ordem;
-            document.getElementById('linkBanner').value = data.link || ""; 
+            document.getElementById('linkBanner').value = data.link || "";
             mostrarStatus(`Editando Banner: ${data.id}`);
         }
 
@@ -277,31 +274,27 @@
             let id = document.getElementById('idBanner').value.trim();
             const arquivo = document.getElementById('arquivoBanner').value;
             const ordem = parseInt(document.getElementById('ordemBanner').value) || 99;
-            const link = document.getElementById('linkBanner').value.trim(); 
-            
-            if(!arquivo) return alert("Nome do arquivo é obrigatório");
+            const link = document.getElementById('linkBanner').value.trim();
+            if(!arquivo) return alert("Arquivo obrigatório");
             if(!id) id = "banner_" + Date.now();
-
             try {
                 await setDoc(doc(db, "listaBanners", id), { id, arquivo, ordem, link }, { merge: true });
                 mostrarStatus("✅ Banner Salvo!");
                 carregarListaBanners();
                 limparFormularioBanner();
-            } catch(e) {
-                alert("Erro ao salvar banner. Permissão negada.");
-            }
+            } catch(e) { alert("Erro ao salvar banner."); }
         }
 
         window.deletarBanner = async function() {
             const id = document.getElementById('idBanner').value.trim();
             if(!id) return;
-            if(confirm("Tem certeza que quer apagar este banner?")) {
+            if(confirm("Apagar banner?")) {
                 try {
                     await deleteDoc(doc(db, "listaBanners", id));
                     mostrarStatus("🗑️ Banner Removido.");
                     carregarListaBanners();
                     limparFormularioBanner();
-                } catch(e) { alert("Erro ao deletar."); }
+                } catch(e) {}
             }
         }
 
