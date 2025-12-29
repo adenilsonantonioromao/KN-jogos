@@ -4,8 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>KN Jogos Online - Portal Oficial</title>
-    
-    <!-- META TAGS -->
     <meta property="og:title" content="KN Jogos - O Arcade Online com Prêmios!">
     <meta property="og:description" content="Jogue, suba no ranking e ganhe recompensas. Entre pelo meu link para ganhar bônus!">
     <meta property="og:image" content="https://adenilsonantonioromao.github.io/KN-jogos/capas/neon.jpg">
@@ -13,22 +11,17 @@
     <meta property="og:type" content="website">
     <link rel="icon" type="image/x-icon" href="favicon.ico">
 
-    <!-- SCRIPT DE EMERGÊNCIA (CORRIGIDO) -->
+    <!-- SCRIPT DE EMERGÊNCIA -->
     <script>
         window.addEventListener('load', function() {
             setTimeout(function() {
                 var splash = document.getElementById('splash-screen');
                 var app = document.getElementById('app-container');
                 var login = document.getElementById('login-screen');
-                
-                if (splash && getComputedStyle(splash).display !== 'none') {
+                if (splash && splash.style.display !== 'none') {
                     console.warn("⚠️ Forçando abertura via Paraquedas.");
                     splash.style.display = 'none';
-                    if (app && login) {
-                        if (getComputedStyle(app).display === 'none') { 
-                            login.style.display = 'flex'; 
-                        }
-                    }
+                    if (app.style.display === 'none') { login.style.display = 'flex'; }
                 }
             }, 4000);
         });
@@ -41,12 +34,10 @@
         body { font-family: 'Nunito', sans-serif; background-color: var(--bg); margin: 0; padding: 0; text-align: center; color: var(--dark); padding-bottom: 80px; }
         h1, h2, h3 { font-family: 'Fredoka One', cursive; color: var(--primary); margin: 10px 0; }
         
-        /* TELA DE CARREGAMENTO */
         #splash-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg); z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; transition: opacity 0.5s ease; }
         .loader { border: 5px solid #f3f3f3; border-top: 5px solid var(--primary); border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin-bottom: 20px; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        /* CARROSSEL */
         .carousel-container { width: 100%; max-width: 600px; height: 200px; margin: 10px auto 20px auto; border-radius: 15px; overflow: hidden; position: relative; box-shadow: 0 5px 15px rgba(0,0,0,0.2); background: #ddd; }
         .carousel-slide { width: 100%; height: 100%; background-size: cover; background-position: center; position: absolute; top: 0; left: 0; opacity: 0; transition: opacity 1s ease-in-out; }
         .carousel-slide.active { opacity: 1; }
@@ -55,12 +46,10 @@
         .dot { width: 10px; height: 10px; background: rgba(255,255,255,0.5); border-radius: 50%; cursor: pointer; }
         .dot.active { background: white; transform: scale(1.2); }
 
-        /* LOGIN */
         #login-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, #2196F3, #9C27B0); display: none; flex-direction: column; justify-content: center; align-items: center; z-index: 2000; }
         .login-box { background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); width: 85%; max-width: 350px; }
         .btn-google { background: white; border: 1px solid #ddd; padding: 12px 25px; border-radius: 50px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 15px; display: flex; align-items: center; justify-content: center; gap: 10px; }
         
-        /* HEADER */
         header { background: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 10px rgba(0,0,0,0.05); position: sticky; top: 0; z-index: 100; }
         .user-info { display: flex; align-items: center; gap: 10px; }
         .user-info img { width: 45px; height: 45px; border-radius: 50%; border: 2px solid var(--secondary); }
@@ -69,15 +58,12 @@
         .btn-edit-nick:hover { color: var(--primary); }
 
         .header-actions { display: flex; align-items: center; gap: 8px; }
-        
-        /* MOSTRADORES */
         .score-display { background: #E1F5FE; padding: 5px 10px; border-radius: 20px; font-weight: bold; color: #0277BD; display: flex; align-items: center; gap: 4px; cursor: default; border: 1px solid #B3E5FC; font-size: 0.9rem; }
         .chips-display { background: var(--secondary); padding: 5px 15px; border-radius: 20px; font-weight: bold; color: #3E2723; display: flex; align-items: center; gap: 5px; cursor: default; } 
         
         .btn-share-header { background: #25D366; color: white; border: none; width: 35px; height: 35px; border-radius: 50%; cursor: pointer; font-size: 1.2rem; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.2); transition: transform 0.1s; }
         .btn-share-header:active { transform: scale(0.9); }
 
-        /* INBOX */
         .btn-inbox { background: white; border: none; font-size: 1.4rem; cursor: pointer; position: relative; margin-right: 5px; padding: 5px; }
         .badge-count { position: absolute; top: 0; right: 0; background: #FF0000; color: white; font-size: 0.65rem; font-weight: bold; width: 18px; height: 18px; border-radius: 50%; display: flex; justify-content: center; align-items: center; border: 2px solid white; display: none; }
         .msg-list { list-style: none; padding: 0; margin: 0; max-height: 400px; overflow-y: auto; }
@@ -91,7 +77,6 @@
         .msg-btn-read:hover { background: #2196F3; color: white; }
         .empty-inbox { color: #999; font-style: italic; padding: 20px; text-align: center; }
 
-        /* MODAIS */
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 5000; justify-content: center; align-items: center; padding: 20px; }
         .modal-box { background: white; padding: 25px; border-radius: 20px; max-width: 400px; width: 100%; text-align: center; position: relative; animation: popIn 0.3s; }
         .close-modal { position: absolute; top: 10px; right: 15px; font-size: 1.5rem; cursor: pointer; color: #999; }
@@ -105,11 +90,12 @@
         .nick-input { width: 100%; padding: 12px; font-size: 1.1rem; border: 2px solid #ddd; border-radius: 10px; margin: 15px 0; text-align: center; font-weight: bold; color: var(--dark); }
         .btn-save-nick { background: var(--primary); color: white; border: none; padding: 12px 30px; border-radius: 30px; font-weight: bold; font-size: 1rem; cursor: pointer; width: 100%; }
 
-        /* CARDS DE JOGO */
         .game-card { background: white; border-radius: 15px; overflow: hidden; box-shadow: 0 4px 0 #CFD8DC; margin-bottom: 20px; text-align: left; transition: transform 0.1s; position: relative; }
         .game-card:active { transform: scale(0.99); }
         .game-thumb { width: 100%; aspect-ratio: 16 / 11; background-color: #111; background-size: cover; background-position: center; }
         .game-info { padding: 15px; display: flex; justify-content: space-between; align-items: center; }
+        .game-dates { font-size: 0.7rem; color: #888; margin-top: 8px; border-top: 1px solid #f0f0f0; padding-top: 5px; display: flex; flex-direction: column; gap: 2px; }
+        .game-dates span { display: flex; align-items: center; gap: 5px; }
         .play-btn { background: var(--green); color: white; border: none; padding: 10px 25px; border-radius: 10px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 0 #2E7D32; font-family: 'Fredoka One'; }
         .play-btn:active { transform: translateY(4px); box-shadow: none; }
 
@@ -130,7 +116,6 @@
 
         @media (max-width: 600px) { .grid-games { grid-template-columns: repeat(2, 1fr); } .game-window { height: 75vh; } }
 
-        /* JANELA DO JOGO */
         #game-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.95); backdrop-filter: blur(5px); z-index: 3000; flex-direction: column; justify-content: center; align-items: center; }
         .game-window { width: 95%; max-width: 900px; height: 65vh; background: #000; border: 2px solid var(--green); border-radius: 12px; box-shadow: 0 0 30px rgba(76, 175, 80, 0.3); overflow: hidden; position: relative; }
         iframe { border: none; width: 100%; height: 100%; display: block; background: #000; }
@@ -141,7 +126,6 @@
         .btn-restart { background: var(--secondary); color: #3E2723; }
         .btn-fullscreen { background: #2196F3; }
 
-        /* ABAS E NAVEGAÇÃO */
         .tab-content { display: none; padding: 15px; animation: fadeIn 0.3s; }
         .tab-content.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
@@ -151,7 +135,6 @@
         .nav-btn span { font-size: 1.4rem; margin-bottom: 2px; }
         .notification { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: #333; color: white; padding: 10px 20px; border-radius: 30px; z-index: 4000; display: none; font-weight: bold; width: 80%; max-width: 300px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
         
-        /* RANKING */
         .rank-list { list-style: none; padding: 0; margin: 0; }
         .rank-item { background: white; margin-bottom: 10px; padding: 10px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         .rank-item.me { border: 2px solid var(--primary); background: #FFF3E0; }
@@ -160,7 +143,6 @@
         .rank-user img { width: 30px; height: 30px; border-radius: 50%; }
         .rank-score { font-weight: bold; color: var(--green); }
         
-        /* FILTROS */
         .select-filter { padding: 10px; border-radius: 8px; border: 1px solid #ddd; font-family: 'Nunito', sans-serif; flex: 1; }
         .btn-filter { padding: 10px 20px; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: bold; font-family: 'Nunito', sans-serif; cursor: pointer; }
     </style>
@@ -247,9 +229,7 @@
             </div>
             
             <div class="header-actions">
-                <!-- PONTOS DIÁRIOS -->
                 <div class="score-display">🏆 <span id="user-pontos-diario">0</span></div>
-                <!-- FICHAS -->
                 <div class="chips-display">🪙 <span id="user-fichas">0</span></div>
                 
                 <button class="btn-inbox" onclick="abrirModalInbox()">
@@ -360,8 +340,6 @@
 
         document.getElementById('btn-login').addEventListener('click', () => { signInWithPopup(auth, provider).catch(alert); });
 
-        // --- FUNÇÕES GLOBAIS (DEFINIDAS ANTES DO USO) ---
-
         async function registrarExtrato(userId, valor, motivo, tipo = "FICHA") {
             try {
                 const serial = `${tipo}-${Date.now().toString(36)}`;
@@ -374,6 +352,39 @@
                 });
             } catch(e) { console.error("Erro log:", e); }
         }
+
+        onAuthStateChanged(auth, async (user) => {
+            const loginScreen = document.getElementById('login-screen');
+            const appContainer = document.getElementById('app-container');
+            const splash = document.getElementById('splash-screen');
+
+            try {
+                if (user) {
+                    currentUser = user;
+                    loginScreen.style.display = 'none';
+                    appContainer.style.display = 'block';
+                    
+                    const meuLink = `${window.location.origin}${window.location.pathname}?ref=${user.uid}`;
+                    if(document.getElementById('share-link-input')) document.getElementById('share-link-input').value = meuLink;
+
+                    await carregarUsuario(user);
+                    try { iniciarMonitoramentoMensagens(user); } catch(e) {}
+                    await carregarListaDeJogos(); 
+                    await carregarBanners(); 
+                    await carregarStatsGlobais();
+                    renderizarTodosJogos();
+                } else {
+                    if(unsubscribeMsg) unsubscribeMsg();
+                    loginScreen.style.display = 'flex';
+                    appContainer.style.display = 'none';
+                }
+            } catch (error) {
+                console.error("Erro auth:", error);
+                loginScreen.style.display = 'flex';
+            } finally {
+                if(splash) splash.style.display = 'none';
+            }
+        });
 
         async function carregarUsuario(user) {
             try {
@@ -459,6 +470,7 @@
             return `<div class="card-grid" onclick="iniciarJogo('${caminhoArquivo}', '${jogo.id}')"><div class="card-grid-thumb" style="background-image: url('${caminhoImg}');"></div><div class="card-overlay"><span class="play-icon-overlay">▶</span></div><div class="card-grid-info">🔥 Global: ${plays}</div></div>`;
         }
 
+        // NOVO: CARD ESPECÍFICO PARA FAVORITOS (MOSTRA CONTAGEM PESSOAL)
         function criarCardFavorito(jogo, count) {
             const caminhoImg = `capas/${jogo.img}`;
             let arquivoLimpo = jogo.arquivo.startsWith('jogos/') ? jogo.arquivo.substring(6) : jogo.arquivo;
@@ -477,141 +489,165 @@
 
         function renderizarTodosJogos() {
             document.getElementById('lista-novos').innerHTML = JOGOS_CONFIG.map(j => criarCardHTML(j)).join('');
+            
+            // Populares (Global)
             carregarFiltros(); 
             filtrarJogos(); 
+
+            // Favoritos (Pessoal com Contador)
             const favoritos = [...JOGOS_CONFIG].filter(j => (userStats[j.id] || 0) > 0).sort((a,b) => (userStats[b.id] || 0) - (userStats[a.id] || 0));
             document.getElementById('lista-favoritos').innerHTML = favoritos.length ? 
                 favoritos.map(j => criarCardFavorito(j, userStats[j.id])).join('') : 
                 "<p style='color:#666; width:100%; grid-column: 1/-1;'>Ainda não jogou nada.</p>";
         }
 
-        async function carregarBanners() {
+        window.mudarAba = async function(abaID, btn) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById('tab-' + abaID).classList.add('active');
+            btn.classList.add('active');
+            if(abaID === 'rank') carregarRanking();
+        }
+
+        async function carregarRanking() {
+            const list = document.getElementById('lista-rank');
+            list.innerHTML = "";
+            document.getElementById('loading-rank').style.display = 'block';
             try {
-                const querySnapshot = await getDocs(collection(db, "listaBanners"));
-                let banners = [];
-                querySnapshot.forEach((doc) => banners.push(doc.data()));
-                if(banners.length === 0) return;
-                banners.sort((a, b) => a.ordem - b.ordem);
-                const container = document.getElementById('carousel-container');
-                const dotsContainer = document.getElementById('carousel-dots');
-                container.style.display = 'block';
-                banners.forEach((b, index) => {
-                    const slide = document.createElement('div');
-                    slide.className = `carousel-slide ${index === 0 ? 'active' : ''}`;
-                    slide.style.backgroundImage = `url('banners/${b.arquivo}')`;
-                    if (b.link) {
-                        slide.classList.add('clickable');
-                        slide.onclick = () => {
-                            if (b.link === '#share') abrirModalShare();
-                            else if (b.link.startsWith('#')) {
-                                const btn = document.querySelector(`.nav-btn[onclick*="${b.link.replace('#tab-', '')}"]`);
-                                if (btn) btn.click();
-                            } else window.open(b.link, '_blank');
-                        };
-                    }
-                    container.appendChild(slide);
-                    const dot = document.createElement('div');
-                    dot.className = `dot ${index === 0 ? 'active' : ''}`;
-                    dot.onclick = () => mudarSlide(index);
-                    dotsContainer.appendChild(dot);
+                // RANKING DIARIO
+                const q = query(collection(db, "users"), orderBy("scoreDiario", "desc"), limit(50));
+                const querySnapshot = await getDocs(q);
+                document.getElementById('loading-rank').style.display = 'none';
+                let rank = 1;
+                const hoje = new Date().toLocaleDateString('pt-BR');
+
+                querySnapshot.forEach((docSnap) => {
+                    const u = docSnap.data();
+                    const isMe = docSnap.id === currentUser.uid;
+                    const nome = u.apelido || u.nome.split(' ')[0];
+                    const pontos = (u.dataUltimoDiario === hoje) ? (u.scoreDiario || 0) : 0;
+                    list.innerHTML += `<li id="${isMe ? 'meu-rank' : ''}" class="rank-item ${isMe ? 'me' : ''}"><div class="rank-pos">#${rank}</div><div class="rank-user"><img src="${u.foto}"><div><strong>${nome}</strong></div></div><div class="rank-score">${pontos}</div></li>`;
+                    rank++;
                 });
-                iniciarRotacaoBanners(banners.length);
-            } catch (e) {}
+            } catch (error) { console.error(error); }
+        }
+        window.rolarAteMim = function() {
+            const el = document.getElementById('meu-rank');
+            if(el) { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); el.style.border = "3px solid red"; setTimeout(() => el.style.border = "2px solid var(--primary)", 2000); }
+            else alert("Você ainda não pontuou hoje!");
         }
 
-        async function carregarListaDeJogos() {
-            try {
-                const querySnapshot = await getDocs(collection(db, "listaJogos"));
-                JOGOS_CONFIG = [];
-                querySnapshot.forEach((doc) => { JOGOS_CONFIG.push(doc.data()); });
-                JOGOS_CONFIG.sort((a, b) => (new Date(b.dataInclusao || 0) - new Date(a.dataInclusao || 0)));
-                document.getElementById('loading-games').style.display = 'none';
-            } catch (e) {}
+        window.iniciarJogo = async function(urlArquivo, idJogo) {
+            if(!currentUser) return;
+            const userRef = doc(db, "users", currentUser.uid);
+            const snap = await getDoc(userRef);
+            if (snap.data().fichas < 1) { mostrarNotificacao("🚫 Sem fichas!"); return; }
+            await updateDoc(userRef, { fichas: increment(-1), [`jogosJogados.${idJogo}`]: increment(1) });
+            setDoc(doc(db, "config", "gameStats"), { [idJogo]: increment(1) }, { merge: true });
+            document.getElementById('user-fichas').innerText = snap.data().fichas - 1;
+            
+            // LOG DE GASTO
+            registrarExtrato(currentUser.uid, -1, `Jogou: ${idJogo}`, "FICHA");
+            
+            window.jogoAtualID = idJogo;
+            const modal = document.getElementById('game-modal');
+            const iframe = document.getElementById('game-frame');
+            modal.style.display = 'flex';
+            iframe.src = urlArquivo; 
         }
 
-        async function carregarStatsGlobais() {
-            const snap = await getDoc(doc(db, "config", "gameStats"));
-            if(snap.exists()) globalStats = snap.data();
+        window.reiniciarJogo = async function() {
+            if(!currentUser) return;
+            if(!confirm("⚠️ JOGAR NOVAMENTE: Custo 1 Ficha 🪙")) return;
+            const userRef = doc(db, "users", currentUser.uid);
+            const snap = await getDoc(userRef);
+            if (snap.data().fichas < 1) { mostrarNotificacao("🚫 Sem fichas!"); return; }
+            await updateDoc(userRef, { fichas: increment(-1), [`jogosJogados.${window.jogoAtualID}`]: increment(1) });
+            setDoc(doc(db, "config", "gameStats"), { [window.jogoAtualID]: increment(1) }, { merge: true });
+            document.getElementById('user-fichas').innerText = snap.data().fichas - 1;
+            
+            // LOG DE GASTO
+            registrarExtrato(currentUser.uid, -1, `Rejogou: ${window.jogoAtualID}`, "FICHA");
+
+            document.getElementById('game-frame').src = document.getElementById('game-frame').src;
+            mostrarNotificacao("🔄 Recarregando...");
         }
 
-        function iniciarMonitoramentoMensagens(user) {
-            const listaEl = document.getElementById('lista-mensagens');
-            if (!listaEl) return;
-            const msgsRef = collection(db, "users", user.uid, "mensagens");
-            const q = query(msgsRef, orderBy("data", "desc"), limit(20));
-
-            unsubscribeMsg = onSnapshot(q, (snapshot) => {
-                const badgeEl = document.getElementById('inbox-badge');
-                let naoLidas = 0;
-                let html = "";
-                if (snapshot.empty) { listaEl.innerHTML = '<div class="empty-inbox">Vazio.</div>'; if(badgeEl) badgeEl.style.display = 'none'; return; }
-                
-                snapshot.forEach((doc) => {
-                    const msg = doc.data();
-                    if (!msg.lida) naoLidas++;
-                    let dataF = "Agora";
-                    try { dataF = msg.data.toDate().toLocaleDateString('pt-BR'); } catch(e){}
-                    html += `<li class="msg-item ${msg.lida ? '' : 'unread'}"><div class="msg-header"><span class="msg-title">${msg.titulo}</span><span class="msg-date">${dataF}</span></div><div class="msg-body">${msg.corpo}</div>${!msg.lida ? `<button class="msg-btn-read" onclick="marcarMensagemLida('${doc.id}')">✔ Lida</button>` : ''}</li>`;
-                });
-                listaEl.innerHTML = html;
-                if (badgeEl) { badgeEl.innerText = naoLidas; badgeEl.style.display = naoLidas > 0 ? 'flex' : 'none'; }
-            }, (error) => { console.warn("Inbox:", error); });
+        window.fecharJogo = function() {
+            document.getElementById('game-modal').style.display = 'none';
+            document.getElementById('game-frame').src = "";
+            location.reload(); 
+        }
+        window.ativarTelaCheia = function() {
+            const iframe = document.getElementById('game-frame');
+            if (iframe.requestFullscreen) iframe.requestFullscreen();
+            else if (iframe.webkitRequestFullscreen) iframe.webkitRequestFullscreen();
         }
 
-        // --- LISTENER DE AUTH (AGORA NO FINAL) ---
-        onAuthStateChanged(auth, async (user) => {
-            const loginScreen = document.getElementById('login-screen');
-            const appContainer = document.getElementById('app-container');
-            const splash = document.getElementById('splash-screen');
+        window.addEventListener('message', async function(event) {
+            let pontos = 0;
+            let isGameOver = false;
 
-            try {
-                if (user) {
-                    currentUser = user;
-                    loginScreen.style.display = 'none';
-                    appContainer.style.display = 'block';
-                    
-                    const meuLink = `${window.location.origin}${window.location.pathname}?ref=${user.uid}`;
-                    if(document.getElementById('share-link-input')) document.getElementById('share-link-input').value = meuLink;
-
-                    // AGORA AS FUNÇÕES JÁ EXISTEM!
-                    await carregarUsuario(user);
-                    try { iniciarMonitoramentoMensagens(user); } catch(e) {}
-                    await carregarListaDeJogos(); 
-                    await carregarBanners(); 
-                    await carregarStatsGlobais();
-                    renderizarTodosJogos();
-                } else {
-                    if(unsubscribeMsg) unsubscribeMsg();
-                    loginScreen.style.display = 'flex';
-                    appContainer.style.display = 'none';
-                }
-            } catch (error) {
-                console.error("Erro auth:", error);
-                loginScreen.style.display = 'flex';
-            } finally {
-                if(splash) splash.style.display = 'none';
+            if (event.data && event.data.type === 'GAME_OVER') {
+                pontos = parseInt(event.data.score) || 0;
+                isGameOver = true;
             }
+            else if (typeof event.data === 'number') {
+                pontos = parseInt(event.data);
+                isGameOver = true;
+            }
+
+            if (!isGameOver) {
+                if (event.data === 'RESTART_REQUEST' || (event.data && event.data.type === 'RESTART_REQUEST')) {
+                    reiniciarJogo();
+                }
+                return;
+            }
+
+            mostrarNotificacao(`Fim! Pontos: ${pontos}`);
+            
+            if (!currentUser) return;
+
+            try {
+                const spanPts = document.getElementById('user-pontos-diario');
+                const atual = parseInt(spanPts.innerText) || 0;
+                spanPts.innerText = atual + pontos;
+            } catch(e) {}
+
+            const userRef = doc(db, "users", currentUser.uid);
+
+            try {
+                const data = (await getDoc(userRef)).data();
+                let updates = { pontuacaoTotal: increment(pontos) };
+                const hoje = new Date().toLocaleDateString('pt-BR');
+                
+                const d = new Date(); d.setHours(0,0,0,0); d.setDate(d.getDate()+3-(d.getDay()+6)%7);
+                const sem = 1+Math.round(((d.getTime()-new Date(d.getFullYear(),0,4).getTime())/86400000-3+(new Date(d.getFullYear(),0,4).getDay()+6)%7)/7);
+                const mes = `${d.getMonth()+1}/${d.getFullYear()}`;
+
+                if (data.dataUltimoDiario === hoje) updates.scoreDiario = increment(pontos); else { updates.scoreDiario = pontos; updates.dataUltimoDiario = hoje; }
+                if (data.dataUltimoSemanal === sem) updates.scoreSemanal = increment(pontos); else { updates.scoreSemanal = pontos; updates.dataUltimoSemanal = sem; }
+                if (data.dataUltimoMensal === mes) updates.scoreMensal = increment(pontos); else { updates.scoreMensal = pontos; updates.dataUltimoMensal = mes; }
+                
+                let recordes = data.recordes || {};
+                if (pontos > (recordes[window.jogoAtualID] || 0)) { 
+                    recordes[window.jogoAtualID] = pontos; 
+                    updates.recordes = recordes; 
+                    mostrarNotificacao(`🏆 NOVO RECORDE!`); 
+                }
+                
+                registrarExtrato(currentUser.uid, pontos, `Score: ${window.jogoAtualID}`, "PONTO");
+
+                await updateDoc(userRef, updates);
+            } catch (e) { console.error("Erro ao salvar pontos:", e); }
         });
 
-        // --- OUTRAS FUNÇÕES DE UI ---
-        let currentSlide = 0;
-        function iniciarRotacaoBanners(total) {
-            if(total <= 1) return;
-            setInterval(() => {
-                let next = currentSlide + 1;
-                if(next >= total) next = 0;
-                mudarSlide(next);
-            }, 5000);
+        function mostrarNotificacao(msg) {
+            const el = document.getElementById('notificacao');
+            el.innerText = msg;
+            el.style.display = 'block';
+            setTimeout(() => el.style.display = 'none', 4000);
         }
-        function mudarSlide(index) {
-            const slides = document.querySelectorAll('.carousel-slide');
-            const dots = document.querySelectorAll('.dot');
-            slides[currentSlide].classList.remove('active');
-            dots[currentSlide].classList.remove('active');
-            currentSlide = index;
-            slides[currentSlide].classList.add('active');
-            dots[currentSlide].classList.add('active');
-        }
-
-        window.mudarAba = async function(abaID, btn) {
-            document.querySelectorAll('.tab-content').forEach(el
+    </script>
+</body>
+</html>
