@@ -1,0 +1,8 @@
+
+{
+  "name": "Laboratório das Palavras",
+  "description": "Um jogo educativo de alfabetização focado na fusão fonética de sílabas através de uma temática de laboratório de poções mágicas.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}

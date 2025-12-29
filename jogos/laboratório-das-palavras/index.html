@@ -1,0 +1,45 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Laboratório das Palavras - KN JOGOS</title>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="/index.css">
+</head>
+<body>
+    <div id="root">
+        <div id="ui-container">
+            <!-- Overlay de Início -->
+            <div id="start-screen" class="overlay">
+                <div class="icon-bounce">🧪</div>
+                <h1 class="title">LABORATÓRIO</h1>
+                <p class="subtitle">DAS PALAVRAS</p>
+                <div class="icon-row">
+                    <span>🥼</span><span>👓</span><span>⚗️</span>
+                </div>
+                <button id="btn-start" class="game-button">JOGAR!</button>
+            </div>
+
+            <!-- Overlay de Game Over -->
+            <div id="game-over-screen" class="overlay hidden">
+                <div class="icon-bounce">💥</div>
+                <h1 class="title" style="text-shadow: 4px 4px 0px #ff595e;">OOPS!</h1>
+                <p id="final-score" class="subtitle"></p>
+                <button id="btn-restart" class="game-button" style="background: #ff595e;">TENTAR DE NOVO</button>
+            </div>
+
+            <!-- HUD de Pontos -->
+            <div id="hud" class="hidden">
+                <div id="score-display">✨ 0</div>
+                <div id="label-display">LABORATÓRIO</div>
+            </div>
+        </div>
+        <canvas id="game-canvas"></canvas>
+    </div>
+    <script type="module" src="game.js"></script>
+<script type="module" src="/index.tsx"></script>
+</body>
+</html>
