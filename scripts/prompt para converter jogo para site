@@ -1,0 +1,32 @@
+O jogo está APROVADO! 🏆
+Agora, preciso prepará-lo para a hospedagem final no GitHub Pages (que não suporta React/Build).
+
+**SUA MISSÃO CRÍTICA:**
+Converta o código React (.tsx) atual para **Vanilla Javascript Moderno (ES Modules)** separado em arquivos.
+
+**REGRAS ABSOLUTAS DE FIDELIDADE:**
+1. **NÃO altere a mecânica:** A física, velocidade, cores e lógica devem ser IDÊNTICAS ao original.
+2. **NÃO remova a integração:** Mantenha os `postMessage` (GAME_OVER e RESTART) exatamente como estão.
+3. **Áudio:** Mantenha a mesma classe de áudio procedural (Web Audio API).
+
+### FORMATO DE ENTREGA (4 Arquivos)
+
+#### 1. `index.html`
+- Estrutura simples.
+- Importe o script: `<script type="module" src="game.js"></script>`.
+- Importe o estilo: `<link rel="stylesheet" href="style.css">`.
+
+#### 2. `style.css`
+- Extraia todo o estilo do React/Tailwind para CSS puro.
+- Garanta que a centralização no PC e o full-screen no Mobile continuem iguais.
+
+#### 3. `game.js`
+- Traduza o componente React para uma Classe `Game` ou funções.
+- Remova `hooks` (useRef, useEffect) e use variáveis normais.
+- O loop `requestAnimationFrame` deve funcionar nativamente.
+
+#### 4. `audio.js`
+- Exporte a classe de áudio: `export class SoundManager { ... }`
+- Importe ela no `game.js`.
+
+**Traduza agora. Quero o código pronto para copiar e colar.**
