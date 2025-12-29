@@ -1,0 +1,114 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
+    <title>1945 Logistic War - Edição de Comando</title>
+    <link href="https://fonts.googleapis.com/css2?family=Special+Elite&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+<script type="importmap">
+{
+  "imports": {
+    "react": "https://esm.sh/react@^19.2.3",
+    "react/": "https://esm.sh/react@^19.2.3/"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+<body class="camo-bg">
+    <!-- TELA INICIAL -->
+    <div id="intro-screen" class="overlay">
+        <div class="briefing-box">
+            <div class="classified-tag">ALTAMENTE CONFIDENCIAL // 1945</div>
+            <div class="title-header">
+                <h1 class="stencil-text main-title flicker">1945<br><span class="subtitle">Logistic War</span></h1>
+            </div>
+            <div class="divider"></div>
+            <div class="briefing-content">
+                <div class="rules-box">
+                    <h3 class="rules-title">MANUAL DE OPERAÇÕES</h3>
+                    <ul class="rules-list">
+                        <li><span>COMBINE:</span> Junte anos iguais para avançar na tecnologia.</li>
+                        <li><span>MANOBRE:</span> Use as SETAS ou DESLIZE no mapa.</li>
+                        <li><span>ALVO:</span> Alcance 1945 para vencer a guerra.</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="start-btn-container">
+                <button id="start-game-btn" class="btn-primary animate-pulse">MOBILIZAR TROPAS</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- INTERFACE DO JOGO -->
+    <div id="game-ui" class="hidden">
+        <!-- TOP: TÍTULO E PONTOS -->
+        <header class="game-header">
+            <div class="brand">
+                <h1 class="stencil-text">1945 LW</h1>
+                <div class="led-status"><span class="led on"></span> <small>LIVE</small></div>
+            </div>
+            <div class="score-group">
+                <div class="score-box">
+                    <span class="label">PONTOS</span>
+                    <span id="current-score" class="value">0</span>
+                </div>
+                <div class="score-box">
+                    <span class="label">RECORDE</span>
+                    <span id="best-score" class="value">0</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- CENTER: TABULEIRO -->
+        <main class="board-wrapper">
+            <div id="game-board-container">
+                <div id="grid-background">
+                    <!-- 16 células -->
+                    <div class="grid-cell"><div class="radar-dot"></div></div><div class="grid-cell"><div class="radar-dot"></div></div><div class="grid-cell"><div class="radar-dot"></div></div><div class="grid-cell"><div class="radar-dot"></div></div>
+                    <div class="grid-cell"><div class="radar-dot"></div></div><div class="grid-cell"><div class="radar-dot"></div></div><div class="grid-cell"><div class="radar-dot"></div></div><div class="grid-cell"><div class="radar-dot"></div></div>
+                    <div class="grid-cell"><div class="radar-dot"></div></div><div class="grid-cell"><div class="radar-dot"></div></div><div class="grid-cell"><div class="radar-dot"></div></div><div class="grid-cell"><div class="radar-dot"></div></div>
+                    <div class="grid-cell"><div class="radar-dot"></div></div><div class="grid-cell"><div class="radar-dot"></div></div><div class="grid-cell"><div class="radar-dot"></div></div><div class="grid-cell"><div class="radar-dot"></div></div>
+                </div>
+                <div id="tile-container"></div>
+
+                <!-- Overlays -->
+                <div id="game-over-overlay" class="overlay-game hidden">
+                    <div class="msg-box failure">
+                        <h2 class="stencil-text">FRACASSO</h2>
+                        <button class="retry-btn btn-primary-alt">RENOVAR ESFORÇO</button>
+                    </div>
+                </div>
+                <div id="victory-overlay" class="overlay-game hidden">
+                    <div class="msg-box success">
+                        <h2 class="stencil-text">VITÓRIA</h2>
+                        <button id="keep-playing-btn" class="btn-tertiary">CONTINUAR</button>
+                        <button class="retry-btn btn-primary-alt">NOVA CAMPANHA</button>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- BOTTOM: CONTROLES -->
+        <footer class="control-panel">
+            <div class="status-indicator">
+                <span class="label">RADAR:</span>
+                <span class="value flicker">ATIVO // SCANNING...</span>
+            </div>
+            
+            <div class="action-btns">
+                <button id="toggle-audio" class="btn-compact">
+                    <div class="led on"></div>
+                    <span class="label">RÁDIO</span>
+                </button>
+                <button id="restart-btn" class="btn-compact-alt">REINICIAR</button>
+            </div>
+        </footer>
+    </div>
+
+    <script type="module" src="game.js"></script>
+<script type="module" src="/index.tsx"></script>
+</body>
+</html>
