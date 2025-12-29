@@ -38,7 +38,7 @@
         .item-list { background: white; padding: 15px; border-radius: 10px; margin-bottom: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; cursor: pointer; border: 1px solid transparent; }
         .item-list:hover { border-color: #2196F3; transform: translateX(5px); }
         .date-badge { font-size: 0.75rem; color: #666; background: #eee; padding: 2px 8px; border-radius: 10px; margin-top: 4px; display: inline-block; }
-        .tag-badge { background: #FF5722; color: white; font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; margin-left: 5px; }
+        .tag-badge { background: #FF5722; color: white; font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; margin-left: 5px; margin-top: 2px; display: inline-block; }
     </style>
 </head>
 <body>
@@ -77,9 +77,10 @@
                 <label>Descrição</label>
                 <input type="text" id="desc" placeholder="ex: Desvie dos obstáculos...">
 
-                <!-- CAMPO NOVO: TAG -->
-                <label>Categoria / Tag</label>
-                <input type="text" id="tagJogo" placeholder="ex: Ação, Corrida, Puzzle (Use apenas uma principal)">
+                <!-- CAMPO TAG MÚLTIPLA -->
+                <label>Categorias / Tags (Separe por vírgula)</label>
+                <input type="text" id="tagJogo" placeholder="ex: Ação, Corrida, 3D">
+                <p style="font-size:0.8rem; color:#666; margin-top:2px;">O jogo aparecerá em todas essas categorias.</p>
 
                 <div style="display:flex; gap:10px;">
                     <div style="flex:1;"><label>Arquivo (Link Completo)</label><input type="text" id="arquivo" placeholder="ex: jogos/pasta/index.html"></div>
@@ -143,13 +144,12 @@
         };
 
         const app = initializeApp(firebaseConfig);
-
         try {
-            const appCheck = initializeAppCheck(app, {
+            initializeAppCheck(app, {
                 provider: new ReCaptchaV3Provider('6Lc5vjgsAAAAANx2ia8s_Fh0_KS0_YNaAlSIYpJC'),
                 isTokenAutoRefreshEnabled: true
             });
-        } catch (e) { console.warn("App Check:", e); }
+        } catch (e) { console.warn("AppCheck:", e); }
 
         const auth = getAuth(app);
         const db = getFirestore(app);
@@ -183,7 +183,7 @@
             if(aba === 'jogos') btns[0].classList.add('active'); else btns[1].classList.add('active');
         }
 
-        // --- JOGOS ---
+        // --- JOGOS (COM MÚLTIPLAS TAGS) ---
         window.carregarListaJogos = async function() {
             const divLista = document.getElementById('lista-jogos');
             divLista.innerHTML = "Lendo...";
@@ -195,9 +195,16 @@
                     const item = document.createElement('div');
                     item.className = 'item-list';
                     const dataInc = data.dataInclusao ? new Date(data.dataInclusao).toLocaleDateString('pt-BR') : 'Sem data';
-                    const tagHtml = data.tag ? `<span class="tag-badge">${data.tag}</span>` : '';
                     
-                    item.innerHTML = `<div><span style="font-family:monospace; background:#eee; padding:2px;">${data.id}</span> <strong>${data.nome}</strong>${tagHtml}<br><span class="date-badge">${dataInc}</span></div><span>✏️</span>`;
+                    // Exibir as tags
+                    let tagsHtml = "";
+                    if (data.tags && Array.isArray(data.tags)) {
+                        tagsHtml = data.tags.map(t => `<span class="tag-badge">${t}</span>`).join(' ');
+                    } else if (data.tag) {
+                        tagsHtml = `<span class="tag-badge">${data.tag}</span>`;
+                    }
+                    
+                    item.innerHTML = `<div><span style="font-family:monospace; background:#eee; padding:2px;">${data.id}</span> <strong>${data.nome}</strong> ${tagsHtml}<br><span class="date-badge">${dataInc}</span></div><span>✏️</span>`;
                     item.onclick = () => preencherEditorJogo(data);
                     divLista.appendChild(item);
                 });
@@ -208,7 +215,16 @@
             document.getElementById('idJogo').value = data.id;
             document.getElementById('nome').value = data.nome;
             document.getElementById('desc').value = data.desc;
-            document.getElementById('tagJogo').value = data.tag || ""; // CARREGA A TAG
+            
+            // Logica para carregar array como string separada por virgula
+            let tagsTexto = "";
+            if (data.tags && Array.isArray(data.tags)) {
+                tagsTexto = data.tags.join(', ');
+            } else {
+                tagsTexto = data.tag || "";
+            }
+
+            document.getElementById('tagJogo').value = tagsTexto;
             document.getElementById('arquivo').value = data.arquivo;
             document.getElementById('img').value = data.img;
             mostrarStatus(`Editando Jogo: ${data.nome}`);
@@ -218,7 +234,11 @@
             const id = document.getElementById('idJogo').value.toLowerCase().trim();
             const nome = document.getElementById('nome').value;
             const desc = document.getElementById('desc').value;
-            const tag = document.getElementById('tagJogo').value.trim(); // PEGA A TAG
+            
+            // TRANSFORMA TEXTO "Ação, RPG" EM ARRAY ["Ação", "RPG"]
+            const tagInput = document.getElementById('tagJogo').value;
+            const tagsArray = tagInput.split(',').map(t => t.trim()).filter(t => t.length > 0);
+
             const arquivo = document.getElementById('arquivo').value;
             const img = document.getElementById('img').value;
             
@@ -228,19 +248,29 @@
                 const docRef = doc(db, "listaJogos", id);
                 const docSnap = await getDoc(docRef);
                 const agora = new Date().toISOString();
-                let dados = { id, nome, desc, tag, arquivo, img, dataAtualizacao: agora };
+                
+                let dados = { 
+                    id, 
+                    nome, 
+                    desc, 
+                    tags: tagsArray, // Salva Lista
+                    tag: tagsArray[0] || "", // Compatibilidade
+                    arquivo, 
+                    img, 
+                    dataAtualizacao: agora 
+                };
+                
                 if (!docSnap.exists()) dados.dataInclusao = agora;
                 
                 await setDoc(docRef, dados, { merge: true });
-                // Garante que existe no stat para contagem de plays
-                await setDoc(doc(db, "config", "gameStats"), { [id]: 0 }, { merge: true });
+                await setDoc(doc(db, "config", "gameStats"), { [id]: 0 }, { merge: true }); // Garante contador
                 
-                mostrarStatus("✅ Jogo Salvo!");
+                mostrarStatus("✅ Jogo Salvo com Tags!");
                 carregarListaJogos();
             } catch(e) { alert("Erro ao salvar."); console.error(e); }
         }
 
-        // --- BANNERS ---
+        // --- BANNERS (Mantido igual) ---
         window.carregarListaBanners = async function() {
             const divLista = document.getElementById('lista-banners');
             divLista.innerHTML = "Lendo...";
