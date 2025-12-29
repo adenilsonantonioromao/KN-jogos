@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
+    <title>1945 Logistic War - Edição de Comando</title>
+    <link href="https://fonts.googleapis.com/css2?family=Special+Elite&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+<script type="importmap">
+{
+  "imports": {
+    "react": "https://esm.sh/react@^19.2.3",
+    "react/": "https://esm.sh/react@^19.2.3/"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+<body class="camo-bg">
+    <!-- TELA INICIAL: BRIEFING DE COMANDO -->
+    <div id="intro-screen" class="overlay">
+        <div class="briefing-box">
+            <div class="classified-tag">ALTAMENTE CONFIDENCIAL // 1945</div>
+            
+            <div class="title-header">
+                <h1 class="stencil-text main-title flicker">1945<br><span class="subtitle">Logistic War</span></h1>
+                <div class="mission-id">OPERAÇÃO: OVERLORD LOGÍSTICO</div>
+            </div>
+
+            <div class="divider"></div>
+            
+            <div class="briefing-content">
+                <p class="quote">"As guerras são vencidas pelo amador na tática e pelo profissional na logística."</p>
+                
+                <div class="rules-box">
+                    <h3 class="rules-title">MANUAL DE OPERAÇÕES</h3>
+                    <ul class="rules-list">
+                        <li><span>COMBINE:</span> Junte dois anos iguais para avançar na tecnologia.</li>
+                        <li><span>MANOBRE:</span> Use as SETAS ou DESLIZE para mover divisões.</li>
+                        <li><span>ALVO:</span> Alcance o ano de 1945 para vencer a guerra.</li>
+                        <li><span>DICA:</span> Mantenha sua peça maior nos cantos estratégicos.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="start-btn-container">
+                <button id="start-game-btn" class="btn-primary animate-pulse">MOBILIZAR TROPAS</button>
+            </div>
+            
+            <p class="footer-tag">COMANDO GERAL ALIADO // MCMXLV // LINHA SEGURA</p>
+        </div>
+    </div>
+
+    <!-- INTERFACE DO JOGO -->
+    <div id="game-ui" class="hidden">
+        <header class="game-header">
+            <div class="title-group">
+                <h1 class="stencil-text">1945 LW</h1>
+                <p class="sub-tag">Divisão Logística</p>
+            </div>
+            <div class="score-group">
+                <div class="score-box">
+                    <span class="label">PONTOS</span>
+                    <span id="current-score" class="value">0</span>
+                </div>
+                <div class="score-box">
+                    <span class="label">RECORDE</span>
+                    <span id="best-score" class="value">0</span>
+                </div>
+            </div>
+        </header>
+
+        <div class="control-panel">
+            <div class="status-indicator">
+                <span class="label">ESTADO:</span>
+                <span class="value flicker">OPERACIONAL // MCMXLV</span>
+            </div>
+            
+            <div class="action-btns">
+                <button id="toggle-audio" class="btn-radio">
+                    <div class="led on"></div>
+                    <span class="label">RÁDIO<br><small id="radio-status">LIG</small></span>
+                </button>
+                <button id="restart-btn" class="btn-secondary">NOVA CAMPANHA</button>
+            </div>
+        </div>
+
+        <div id="game-board-container">
+            <!-- Grade de Fundo Estilizada (Radar) -->
+            <div id="grid-background">
+                <!-- 16 células -->
+                <div class="grid-cell"><div class="radar-dot"></div></div><div class="grid-cell"><div class="radar-dot"></div></div><div class="grid-cell"><div class="radar-dot"></div></div><div class="grid-cell"><div class="radar-dot"></div></div>
+                <div class="grid-cell"><div class="radar-dot"></div></div><div class="grid-cell"><div class="radar-dot"></div></div><div class="grid-cell"><div class="radar-dot"></div></div><div class="grid-cell"><div class="radar-dot"></div></div>
+                <div class="grid-cell"><div class="radar-dot"></div></div><div class="grid-cell"><div class="radar-dot"></div></div><div class="grid-cell"><div class="radar-dot"></div></div><div class="grid-cell"><div class="radar-dot"></div></div>
+                <div class="grid-cell"><div class="radar-dot"></div></div><div class="grid-cell"><div class="radar-dot"></div></div><div class="grid-cell"><div class="radar-dot"></div></div><div class="grid-cell"><div class="radar-dot"></div></div>
+            </div>
+            <div id="tile-container"></div>
+
+            <!-- Overlays -->
+            <div id="game-over-overlay" class="overlay-game hidden">
+                <div class="msg-box failure">
+                    <h2 class="stencil-text">FRACASSO</h2>
+                    <p>O front colapsou. Reorganize suas divisões.</p>
+                    <button class="retry-btn btn-primary-alt">RENOVAR ESFORÇO</button>
+                </div>
+            </div>
+
+            <div id="victory-overlay" class="overlay-game hidden">
+                <div class="msg-box success">
+                    <h2 class="stencil-text">VITÓRIA 1945</h2>
+                    <p>Vitória absoluta. O mundo celebra a paz!</p>
+                    <div class="btn-row">
+                        <button id="keep-playing-btn" class="btn-tertiary">MANTER OCUPAÇÃO</button>
+                        <button class="retry-btn btn-primary-alt">NOVA CAMPANHA</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <section class="briefing-footer">
+            <h4 class="footer-title">BRIEFING TÁTICO</h4>
+            <div class="briefing-text">
+                <p>Navegue as divisões usando as <strong>SETAS</strong> ou <strong>DESLIZE</strong>. Una anos idênticos para avançar tecnologicamente do <strong>Verde (1935)</strong> ao <strong>Vermelho (1945)</strong>.</p>
+            </div>
+        </section>
+        
+        <footer class="final-signature">
+            COMANDO LOGÍSTICO ALIADO // LINHA SEGURA 0945 // FIM
+        </footer>
+    </div>
+
+    <script type="module" src="game.js"></script>
+<script type="module" src="/index.tsx"></script>
+</body>
+</html>
