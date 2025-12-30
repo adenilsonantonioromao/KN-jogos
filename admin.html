@@ -35,6 +35,7 @@
         .item-list:hover { border-color: #2196F3; transform: translateX(5px); }
         .date-badge { font-size: 0.75rem; color: #666; background: #eee; padding: 2px 8px; border-radius: 10px; margin-top: 4px; display: inline-block; }
         .tag-badge { background: #FF5722; color: white; font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; margin-left: 5px; margin-top: 2px; display: inline-block; }
+        .versao-badge { background: #607D8B; color: white; font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; margin-left: 5px; }
     </style>
 </head>
 <body>
@@ -67,12 +68,20 @@
                 <h3>Novo/Editar Jogo</h3>
                 <label>ID do Jogo (Único)</label>
                 <input type="text" id="idJogo" placeholder="ex: neonrunner">
-                <label>Nome Visível</label>
-                <input type="text" id="nome" placeholder="ex: Neon Runner 3D">
+                
+                <div style="display:flex; gap:10px;">
+                    <div style="flex:2;"><label>Nome Visível</label><input type="text" id="nome" placeholder="ex: Neon Runner 3D"></div>
+                    <div style="flex:1;"><label>Versão</label><input type="text" id="versao" placeholder="v1.0"></div>
+                </div>
+
                 <label>Descrição</label>
                 <input type="text" id="desc" placeholder="ex: Desvie dos obstáculos...">
+                
                 <label>Categorias / Tags (Separe por vírgula)</label>
                 <input type="text" id="tagJogo" placeholder="ex: Ação, Corrida, 3D">
+                
+                <label>Data de Inclusão (Para ordenar em Novidades)</label>
+                <input type="datetime-local" id="dataInclusao">
                 
                 <div style="margin-top:15px; display:flex; align-items:center; gap:10px;">
                     <input type="checkbox" id="ocultarNovidade" style="width:20px; height:20px;">
@@ -217,9 +226,10 @@
                     if (data.tags && Array.isArray(data.tags)) tagsHtml = data.tags.map(t => `<span class="tag-badge">${t}</span>`).join(' ');
                     else if (data.tag) tagsHtml = `<span class="tag-badge">${data.tag}</span>`;
                     
+                    const versaoHtml = data.versao ? `<span class="versao-badge">${data.versao}</span>` : "";
                     const hiddenIcon = data.ocultarNaHome ? "👁️‍🗨️ (Oculto)" : "";
 
-                    item.innerHTML = `<div><span style="font-family:monospace; background:#eee; padding:2px;">${data.id}</span> <strong>${data.nome}</strong> ${hiddenIcon} ${tagsHtml}<br><span class="date-badge">${dataInc}</span></div><span>✏️</span>`;
+                    item.innerHTML = `<div><span style="font-family:monospace; background:#eee; padding:2px;">${data.id}</span> <strong>${data.nome}</strong> ${versaoHtml} ${hiddenIcon} ${tagsHtml}<br><span class="date-badge">${dataInc}</span></div><span>✏️</span>`;
                     item.onclick = () => preencherEditorJogo(data);
                     divLista.appendChild(item);
                 });
@@ -229,9 +239,23 @@
         function preencherEditorJogo(data) {
             document.getElementById('idJogo').value = data.id;
             document.getElementById('nome').value = data.nome;
+            document.getElementById('versao').value = data.versao || "";
             document.getElementById('desc').value = data.desc;
             let tagsTexto = (data.tags && Array.isArray(data.tags)) ? data.tags.join(', ') : (data.tag || "");
             document.getElementById('tagJogo').value = tagsTexto;
+            
+            // Converte data ISO para formato do input datetime-local (YYYY-MM-DDTHH:MM)
+            if(data.dataInclusao) {
+                try {
+                    const dateObj = new Date(data.dataInclusao);
+                    // Ajuste fuso horário simples para exibir no input
+                    dateObj.setMinutes(dateObj.getMinutes() - dateObj.getTimezoneOffset());
+                    document.getElementById('dataInclusao').value = dateObj.toISOString().slice(0,16);
+                } catch(e) { document.getElementById('dataInclusao').value = ""; }
+            } else {
+                document.getElementById('dataInclusao').value = "";
+            }
+
             document.getElementById('arquivo').value = data.arquivo;
             document.getElementById('img').value = data.img;
             document.getElementById('ocultarNovidade').checked = data.ocultarNaHome || false;
@@ -241,12 +265,22 @@
         window.salvarJogo = async function() {
             const id = document.getElementById('idJogo').value.toLowerCase().trim();
             const nome = document.getElementById('nome').value;
+            const versao = document.getElementById('versao').value;
             const desc = document.getElementById('desc').value;
             const tagInput = document.getElementById('tagJogo').value;
             const tagsArray = tagInput.split(',').map(t => t.trim()).filter(t => t.length > 0);
             const arquivo = document.getElementById('arquivo').value;
             const img = document.getElementById('img').value;
             const ocultar = document.getElementById('ocultarNovidade').checked;
+            
+            // Data de Inclusão Manual ou Automática
+            let dataInclusao = document.getElementById('dataInclusao').value;
+            if (dataInclusao) {
+                dataInclusao = new Date(dataInclusao).toISOString();
+            } else {
+                // Se não preencheu, usa a data atual (apenas se for novo jogo, idealmente, mas aqui atualiza se vazio)
+                dataInclusao = new Date().toISOString();
+            }
             
             if(!id) return alert("ID obrigatório");
             
@@ -256,19 +290,22 @@
                 const agora = new Date().toISOString();
                 
                 let dados = { 
-                    id, nome, desc, 
+                    id, nome, versao, desc, 
                     tags: tagsArray, tag: tagsArray[0] || "",
                     arquivo, img, ocultarNaHome: ocultar,
+                    dataInclusao: dataInclusao, // Salva a data escolhida
                     dataAtualizacao: agora 
                 };
-                if (!docSnap.exists()) dados.dataInclusao = agora;
+                
+                // Se o jogo já existe e o campo data estava vazio no form, tenta manter a data original se não quiser mudar
+                // Mas como queremos poder alterar, o valor do input manda.
                 
                 await setDoc(docRef, dados, { merge: true });
                 await setDoc(doc(db, "config", "gameStats"), { [id]: 0 }, { merge: true });
                 
                 mostrarStatus("✅ Jogo Salvo!");
                 carregarListaJogos();
-            } catch(e) { alert("Erro ao salvar."); }
+            } catch(e) { alert("Erro ao salvar: " + e.message); }
         }
 
         // --- NOTÍCIAS ---
@@ -307,24 +344,31 @@
             
             if(!titulo) return alert("Título obrigatório");
 
-            await setDoc(doc(db, "listaNoticias", uid), {
-                titulo, texto, imagem,
-                data: new Date().toISOString(),
-                tipo: 'news' // Marcador para o feed
-            });
-            mostrarStatus("✅ Notícia Publicada!");
-            limparNoticia();
-            carregarListaNoticias();
+            try {
+                await setDoc(doc(db, "listaNoticias", uid), {
+                    titulo, texto, imagem,
+                    data: new Date().toISOString(),
+                    tipo: 'news' 
+                });
+                mostrarStatus("✅ Notícia Publicada!");
+                window.limparNoticia();
+                window.carregarListaNoticias();
+            } catch(e) {
+                console.error(e);
+                alert("Erro ao publicar: " + e.message);
+            }
         }
 
         window.deletarNoticia = async function() {
             const uid = document.getElementById('idNoticia').value;
             if(!uid) return;
             if(confirm("Apagar notícia?")) {
-                await deleteDoc(doc(db, "listaNoticias", uid));
-                limparNoticia();
-                carregarListaNoticias();
-                mostrarStatus("🗑️ Notícia Apagada.");
+                try {
+                    await deleteDoc(doc(db, "listaNoticias", uid));
+                    window.limparNoticia();
+                    window.carregarListaNoticias();
+                    mostrarStatus("🗑️ Notícia Apagada.");
+                } catch(e) { alert("Erro ao apagar: " + e.message); }
             }
         }
         
@@ -335,7 +379,7 @@
             document.getElementById('imgNoticia').value = "";
         }
 
-        // --- BANNERS (Mantido igual) ---
+        // --- BANNERS ---
         window.carregarListaBanners = async function() {
             const divLista = document.getElementById('lista-banners');
             divLista.innerHTML = "Lendo...";
@@ -386,7 +430,10 @@
             s.style.display = 'block'; s.innerText = msg; s.style.background = '#d4edda';
             setTimeout(() => s.style.display = 'none', 3000);
         }
-        window.limparFormulario = () => { document.querySelectorAll('#tab-jogos input').forEach(i => i.value = ''); document.getElementById('ocultarNovidade').checked = false; }
+        window.limparFormulario = () => { 
+            document.querySelectorAll('#tab-jogos input').forEach(i => i.value = ''); 
+            document.getElementById('ocultarNovidade').checked = false; 
+        }
         window.limparFormularioBanner = () => { document.querySelectorAll('#tab-banners input').forEach(i => i.value = ''); }
 
     </script>
