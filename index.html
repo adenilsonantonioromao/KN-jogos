@@ -580,7 +580,81 @@
             const snap = await getDoc(doc(db, "config", "gameStats"));
             if(snap.exists()) globalStats = snap.data();
         }
+// --- FUNÇÃO QUE FALTAVA: SISTEMA DE MENSAGENS ---
+        function iniciarMonitoramentoMensagens(user) {
+            // Busca as últimas 20 mensagens
+            const q = query(collection(db, "users", user.uid, "mensagens"), orderBy("data", "desc"), limit(20));
+            
+            // O unsubscribeMsg serve para parar de escutar quando deslogar
+            unsubscribeMsg = onSnapshot(q, (snapshot) => {
+                const lista = document.getElementById('lista-mensagens');
+                const badge = document.getElementById('inbox-badge');
+                
+                if(!lista || !badge) return;
 
+                // Se não tiver mensagens
+                if (snapshot.empty) {
+                    lista.innerHTML = '<div class="empty-inbox" style="text-align:center; padding:20px; color:#999;">Nada por aqui. 🦗</div>';
+                    badge.style.display = 'none';
+                    return;
+                }
+
+                let unreadCount = 0;
+                lista.innerHTML = '';
+
+                snapshot.forEach((docSnap) => {
+                    const msg = docSnap.data();
+                    const id = docSnap.id;
+                    
+                    // Conta quantas não foram lidas
+                    if (!msg.lida) unreadCount++;
+
+                    // Cria o visual da mensagem
+                    const item = document.createElement('li');
+                    item.style.cssText = `
+                        background: ${msg.lida ? '#f9f9f9' : '#E3F2FD'}; 
+                        padding: 15px; 
+                        border-radius: 10px; 
+                        margin-bottom: 10px; 
+                        border: 1px solid ${msg.lida ? '#eee' : '#90CAF9'}; 
+                        list-style:none; text-align:left;
+                    `;
+                    
+                    // Formata a data (se existir)
+                    const dataFormatada = msg.data ? new Date(msg.data.seconds * 1000).toLocaleDateString('pt-BR') : 'Hoje';
+
+                    item.innerHTML = `
+                        <div style="display:flex; justify-content:space-between; font-size:0.75rem; color:#888; margin-bottom:5px;">
+                            <span>📅 ${dataFormatada}</span>
+                            ${!msg.lida ? '<span style="color:#2196F3; font-weight:bold;">● NOVA</span>' : '<span>Lida</span>'}
+                        </div>
+                        <div style="font-weight:bold; color:#333; font-size:1rem; margin-bottom:5px;">${msg.titulo}</div>
+                        <div style="font-size:0.9rem; color:#555; line-height:1.4;">${msg.corpo}</div>
+                        ${!msg.lida ? `<button onclick="marcarComoLida('${id}')" style="margin-top:10px; width:100%; padding:8px; border:none; background:#2196F3; color:white; border-radius:5px; cursor:pointer; font-weight:bold;">Marcar como Lida ✔️</button>` : ''}
+                    `;
+                    lista.appendChild(item);
+                });
+
+                // Atualiza a bolinha vermelha no sino
+                if (unreadCount > 0) {
+                    badge.style.display = 'flex';
+                    badge.innerText = unreadCount > 9 ? '9+' : unreadCount;
+                } else {
+                    badge.style.display = 'none';
+                }
+            });
+        }
+
+        // Função Global para o botão funcionar
+        window.marcarComoLida = async function(msgId) {
+            if(!currentUser) return;
+            try {
+                // Atualiza no banco que a mensagem foi lida
+                await updateDoc(doc(db, "users", currentUser.uid, "mensagens", msgId), { lida: true });
+            } catch(e) { console.error("Erro ao ler msg:", e); }
+        }
+
+        // --- FIM DA FUNÇÃO DE MENSAGENS ---
         onAuthStateChanged(auth, async (user) => {
             const loginScreen = document.getElementById('login-screen');
             const appContainer = document.getElementById('app-container');
@@ -860,3 +934,4 @@
     </script>
 </body>
 </html>
+
