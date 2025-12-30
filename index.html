@@ -315,7 +315,8 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc, getDocs, setDoc, updateDoc, increment, collection, query, orderBy, limit, onSnapshot, arrayUnion, addDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        // ADICIONADO: writeBatch e serverTimestamp para segurança
+        import { getFirestore, doc, getDoc, getDocs, setDoc, updateDoc, increment, collection, query, orderBy, limit, onSnapshot, arrayUnion, addDoc, writeBatch, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
         import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app-check.js";
 
         const firebaseConfig = {
@@ -340,7 +341,7 @@
         let currentUser = null;
         let globalStats = {}; 
         let userStats = {}; 
-        let userPointsToday = {}; // NOVO: Armazena pontos de cada jogo hoje
+        let userPointsToday = {}; 
         let JOGOS_CONFIG = [];
         let NOTICIAS_CONFIG = [];
         let unsubscribeMsg = null;
@@ -357,6 +358,8 @@
         document.getElementById('btn-login').addEventListener('click', () => { signInWithPopup(auth, provider).catch(alert); });
 
         async function registrarExtrato(userId, valor, motivo, tipo = "FICHA") {
+            // Função auxiliar para logs que NÃO envolvem o jogo (ex: Bônus Share)
+            // Para o jogo, usamos o Batch Write direto.
             try {
                 await addDoc(collection(db, "users", userId, "extrato"), {
                     data: new Date(), valor: valor, motivo: motivo, tipo: tipo, serial: `${tipo}-${Date.now().toString(36)}`
@@ -377,8 +380,16 @@
                     const referrerID = sessionStorage.getItem('kn_referrer');
                     if (referrerID && referrerID !== user.uid) {
                         try { 
-                            await updateDoc(doc(db, "users", referrerID), { fichas: increment(25), historicoIndicacoes: arrayUnion(user.uid) });
-                            registrarExtrato(referrerID, 25, "Indicação", "FICHA");
+                            // Batch para garantir integridade da indicação
+                            const batch = writeBatch(db);
+                            const refDoc = doc(db, "users", referrerID);
+                            const extratoRef = doc(collection(db, "users", referrerID, "extrato"));
+                            
+                            batch.update(refDoc, { fichas: increment(25), historicoIndicacoes: arrayUnion(user.uid) });
+                            batch.set(extratoRef, {
+                                data: new Date(), valor: 25, motivo: "Indicação", tipo: "FICHA", serial: `REF-${Date.now()}`
+                            });
+                            await batch.commit();
                         } catch (e) {}
                     }
                     snap = await getDoc(userRef);
@@ -391,14 +402,13 @@
                 document.getElementById('user-photo').src = user.photoURL;
                 document.getElementById('user-fichas').innerText = data.fichas;
 
-                // LOGICA PONTOS HOJE
                 const hoje = new Date().toLocaleDateString('pt-BR');
                 if(data.dataUltimoDiario === hoje) {
                     document.getElementById('user-pontos-diario').innerText = data.scoreDiario || 0;
-                    userPointsToday = data.pontosHojePorJogo || {}; // CARREGA DO BANCO
+                    userPointsToday = data.pontosHojePorJogo || {}; 
                 } else {
                     document.getElementById('user-pontos-diario').innerText = 0;
-                    userPointsToday = {}; // RESET VISUAL
+                    userPointsToday = {}; 
                 }
 
             } catch(e) { console.error("Erro perfil:", e); }
@@ -473,17 +483,13 @@
         // --- SISTEMA DE FEED (NOVIDADES + JOGOS) ---
         async function carregarFeedMisto() {
             try {
-                // 1. Carrega Notícias
                 const snapNews = await getDocs(collection(db, "listaNoticias"));
                 NOTICIAS_CONFIG = [];
                 snapNews.forEach(d => NOTICIAS_CONFIG.push({...d.data(), tipoItem: 'news'}));
 
-                // 2. Mescla com Jogos (que não estão ocultos)
-                // Usamos a dataInclusao do jogo e a data da noticia para ordenar
                 const jogosPermitidos = JOGOS_CONFIG.filter(j => !j.ocultarNaHome).map(j => ({...j, tipoItem: 'jogo', data: j.dataInclusao || new Date().toISOString()}));
                 
                 feedGlobal = [...NOTICIAS_CONFIG, ...jogosPermitidos];
-                // Ordena do mais recente pro mais antigo
                 feedGlobal.sort((a,b) => new Date(b.data) - new Date(a.data));
 
                 document.getElementById('loading-feed').style.display = 'none';
@@ -512,13 +518,11 @@
             
             container.innerHTML = itensDaPagina.map(item => {
                 if(item.tipoItem === 'jogo') {
-                    // Renderiza Card de Jogo (Formato antigo da aba Novos)
                     const img = `capas/${item.img}`;
                     const url = `jogos/${(item.arquivo.startsWith('jogos/') ? item.arquivo.substring(6) : item.arquivo).replace(/^\//,'')}`;
                     const versaoHtml = item.versao ? `<span class="version-badge">${item.versao}</span>` : '';
                     return `<div class="game-card"><div class="game-thumb" style="background-image: url('${img}');"></div><div class="game-info"><div><h3 style="margin:0; font-size:1.1rem;">🎮 ${item.nome} ${versaoHtml}</h3><p style="margin:5px 0; font-size:0.8rem; color:#666;">${item.desc}</p></div><button class="play-btn" onclick="iniciarJogo('${url}', '${item.id}')">JOGAR</button></div></div>`;
                 } else {
-                    // Renderiza Card de Notícia
                     const imgHtml = item.imagem ? `<div class="news-img" style="background-image: url('${item.imagem}');"></div>` : '';
                     const dataF = new Date(item.data).toLocaleDateString('pt-BR');
                     return `<div class="news-card">${imgHtml}<div class="news-body"><span class="news-date">📅 ${dataF}</span><div class="news-title">${item.titulo}</div><div class="news-text">${item.texto}</div></div></div>`;
@@ -533,7 +537,7 @@
         }
 
         // --- FUNÇÕES DE ARQUIVOS (BANNERS E LISTAS) ---
-        async function carregarBanners() { /* ...Mantido do original... */ 
+        async function carregarBanners() {
             try {
                 const querySnapshot = await getDocs(collection(db, "listaBanners"));
                 let banners = [];
@@ -574,7 +578,6 @@
                 const querySnapshot = await getDocs(collection(db, "listaJogos"));
                 JOGOS_CONFIG = [];
                 querySnapshot.forEach((doc) => { JOGOS_CONFIG.push(doc.data()); });
-                // Ordenação inicial, mas o Feed Misto sobrescreve na aba Novidades
                 JOGOS_CONFIG.sort((a, b) => (new Date(b.dataInclusao || 0) - new Date(a.dataInclusao || 0)));
             } catch (e) {}
         }
@@ -584,7 +587,6 @@
             if(snap.exists()) globalStats = snap.data();
         }
 
-        // --- AUTH E MENSAGENS (Fim do arquivo) ---
         onAuthStateChanged(auth, async (user) => {
             const loginScreen = document.getElementById('login-screen');
             const appContainer = document.getElementById('app-container');
@@ -607,7 +609,6 @@
             finally { if(splash) splash.style.display = 'none'; }
         });
 
-        // --- MANIPULADORES UI RESTANTES (Slides, Abas, Modais) ---
         let currentSlide = 0;
         function iniciarRotacaoBanners(total) {
             if(total <= 1) return;
@@ -638,7 +639,6 @@
             if(abaID === 'favoritos') { carregarFiltros('filter-tags-fav'); filtrarFavoritos(); }
         }
 
-        // Funções de Modal (Abre/Fecha) - Mantidas iguais
         window.abrirModalInbox = function() { document.getElementById('inbox-modal').style.display = 'flex'; }
         window.fecharModalInbox = function() { document.getElementById('inbox-modal').style.display = 'none'; }
         window.abrirModalApelido = function(obrigatorio) {
@@ -660,74 +660,77 @@
         window.copiarLinkGanharFichas = async function() {
             const input = document.getElementById('share-link-input');
             const btn = document.querySelector('.btn-copy');
-            
             if(!input) return;
-
-            // --- 1. TENTATIVA DE CÓPIA ROBUSTA ---
             try {
-                // Tenta o método moderno
                 await navigator.clipboard.writeText(input.value);
             } catch (err) {
-                // Se falhar (celulares antigos ou http), usa o método clássico
-                input.select();
-                input.setSelectionRange(0, 99999); // Para mobile
-                document.execCommand('copy');
+                input.select(); input.setSelectionRange(0, 99999); document.execCommand('copy');
             }
-
-            // Feedback visual no botão
             if(btn) {
                 const textoOriginal = btn.innerText;
                 btn.innerText = "COPIADO!";
                 setTimeout(() => btn.innerText = textoOriginal, 2000);
             }
-
-            // --- 2. ENTREGA DE FICHAS (BLINDADA) ---
             if (currentUser) {
                 try {
                     const userRef = doc(db, "users", currentUser.uid);
                     const data = (await getDoc(userRef)).data();
                     const hoje = new Date().toLocaleDateString('pt-BR');
-                    
-                    // Verifica se já resgatou hoje
                     if (data.ultimoResgateShare !== hoje) {
                         await updateDoc(userRef, { 
                             fichas: increment(10), 
                             ultimoResgateShare: hoje 
                         });
-                        
-                        // Atualiza visualmente
                         const userFichas = document.getElementById('user-fichas');
                         if(userFichas) userFichas.innerText = (data.fichas || 0) + 10;
-                        
                         registrarExtrato(currentUser.uid, 10, "Bônus Diário", "FICHA");
                         mostrarNotificacao("+10 Fichas! 🎉");
-                    } else {
-                        mostrarNotificacao("Já resgatou hoje ✅");
-                    }
-                } catch (e) {
-                    console.error("Erro ao dar fichas:", e);
-                    mostrarNotificacao("Erro ao validar bônus.");
-                }
+                    } else { mostrarNotificacao("Já resgatou hoje ✅"); }
+                } catch (e) { console.error("Erro ao dar fichas:", e); mostrarNotificacao("Erro ao validar bônus."); }
             }
-            
-            // Fecha o modal depois de um tempinho
             setTimeout(fecharModalShare, 2500);
         }
-        // --- JOGO ---
+
+        // --- JOGO COM BATCH WRITE (SEGURANÇA ATÔMICA) ---
         window.iniciarJogo = async function(urlArquivo, idJogo) {
             if(!currentUser) return;
             const userRef = doc(db, "users", currentUser.uid);
             const snap = await getDoc(userRef);
             if ((snap.data().fichas || 0) < 1) { mostrarNotificacao("🚫 Sem fichas!"); return; }
-            await updateDoc(userRef, { fichas: increment(-1), [`jogosJogados.${idJogo}`]: increment(1) });
-            setDoc(doc(db, "config", "gameStats"), { [idJogo]: increment(1) }, { merge: true });
-            document.getElementById('user-fichas').innerText = (snap.data().fichas || 0) - 1;
-            registrarExtrato(currentUser.uid, -1, `Jogou: ${idJogo}`, "FICHA");
-            window.jogoAtualID = idJogo;
-            const modal = document.getElementById('game-modal');
-            const iframe = document.getElementById('game-frame');
-            modal.style.display = 'flex';
-            iframe.src = urlArquivo; 
+
+            // 🔴 SEGURANÇA: Batch Write (Tudo ou Nada)
+            const batch = writeBatch(db);
+            const extratoRef = doc(collection(db, "users", currentUser.uid, "extrato"));
+            
+            // 1. Desconta Ficha e Aumenta Jogos Jogados e Atualiza Timestamp de Score (para rate limit)
+            batch.update(userRef, { 
+                fichas: increment(-1), 
+                [`jogosJogados.${idJogo}`]: increment(1),
+                ultimoScoreData: serverTimestamp() // Prepara o terreno para o envio de pontos
+            });
+            
+            // 2. Cria o Extrato OBRIGATÓRIO (Regras do Firestore vão exigir isso futuramente)
+            batch.set(extratoRef, {
+                data: new Date(),
+                valor: -1,
+                motivo: `Jogou: ${idJogo}`,
+                tipo: "FICHA",
+                serial: `GAME-${Date.now()}`
+            });
+
+            try {
+                await batch.commit(); // Executa tudo junto
+                setDoc(doc(db, "config", "gameStats"), { [idJogo]: increment(1) }, { merge: true });
+                document.getElementById('user-fichas').innerText = (snap.data().fichas || 0) - 1;
+                window.jogoAtualID = idJogo;
+                const modal = document.getElementById('game-modal');
+                const iframe = document.getElementById('game-frame');
+                modal.style.display = 'flex';
+                iframe.src = urlArquivo; 
+            } catch (e) {
+                console.error(e);
+                mostrarNotificacao("Erro ao iniciar jogo.");
+            }
         }
         
         window.reiniciarJogo = async function() {
@@ -736,12 +739,39 @@
             const userRef = doc(db, "users", currentUser.uid);
             const snap = await getDoc(userRef);
             if ((snap.data().fichas || 0) < 1) { mostrarNotificacao("🚫 Sem fichas!"); return; }
-            await updateDoc(userRef, { fichas: increment(-1), [`jogosJogados.${window.jogoAtualID}`]: increment(1) });
-            setDoc(doc(db, "config", "gameStats"), { [window.jogoAtualID]: increment(1) }, { merge: true });
-            document.getElementById('user-fichas').innerText = (snap.data().fichas || 0) - 1;
-            registrarExtrato(currentUser.uid, -1, `Rejogou: ${window.jogoAtualID}`, "FICHA");
-            document.getElementById('game-frame').src = document.getElementById('game-frame').src;
-            mostrarNotificacao("🔄 Recarregando...");
+
+            // 🔴 SEGURANÇA: Batch Write
+            const batch = writeBatch(db);
+            const extratoRef = doc(collection(db, "users", currentUser.uid, "extrato"));
+
+            batch.update(userRef, { 
+                fichas: increment(-1), 
+                [`jogosJogados.${window.jogoAtualID}`]: increment(1),
+                ultimoScoreData: serverTimestamp()
+            });
+            batch.set(extratoRef, {
+                data: new Date(),
+                valor: -1,
+                motivo: `Rejogou: ${window.jogoAtualID}`,
+                tipo: "FICHA",
+                serial: `REPLAY-${Date.now()}`
+            });
+
+            try {
+                await batch.commit();
+                setDoc(doc(db, "config", "gameStats"), { [window.jogoAtualID]: increment(1) }, { merge: true });
+                document.getElementById('user-fichas').innerText = (snap.data().fichas || 0) - 1;
+                // Envia mensagem de RESET para o iframe em vez de recarregar (Melhor performance)
+                const iframe = document.getElementById('game-frame');
+                if(iframe && iframe.contentWindow) {
+                    iframe.contentWindow.postMessage({ type: 'RESET' }, '*');
+                } else {
+                    iframe.src = iframe.src; // Fallback
+                }
+                mostrarNotificacao("🔄 Recarregando...");
+            } catch (e) {
+                mostrarNotificacao("Erro ao reiniciar.");
+            }
         }
         
         window.fecharJogo = function() { document.getElementById('game-modal').style.display = 'none'; document.getElementById('game-frame').src = ""; location.reload(); }
@@ -751,7 +781,6 @@
             else if (iframe.webkitRequestFullscreen) iframe.webkitRequestFullscreen();
         }
 
-        // --- LISTENER PONTOS (COM LOGICA DE SALVAR PONTOS POR JOGO HOJE) ---
         window.addEventListener('message', async function(event) {
             let pontos = 0;
             let isGameOver = false;
@@ -767,7 +796,10 @@
             const userRef = doc(db, "users", currentUser.uid);
             try {
                 const data = (await getDoc(userRef)).data();
-                let updates = { pontuacaoTotal: increment(pontos) };
+                let updates = { 
+                    pontuacaoTotal: increment(pontos),
+                    ultimoScoreData: serverTimestamp() // Importante para o Rate Limit
+                };
                 const hoje = new Date().toLocaleDateString('pt-BR');
                 const d = new Date(); d.setHours(0,0,0,0); d.setDate(d.getDate()+3-(d.getDay()+6)%7);
                 const sem = 1+Math.round(((d.getTime()-new Date(d.getFullYear(),0,4).getTime())/86400000-3+(new Date(d.getFullYear(),0,4).getDay()+6)%7)/7);
@@ -778,15 +810,9 @@
                 } else { 
                     updates.scoreDiario = pontos; 
                     updates.dataUltimoDiario = hoje;
-                    // Se o dia mudou, o mapa de pontos por jogo deve resetar na gravação
                     updates.pontosHojePorJogo = {}; 
                 }
                 
-                // ATUALIZA MAPA DE PONTOS POR JOGO
-                // Se for o primeiro jogo do dia, updates.pontosHojePorJogo já é {} pelo 'else' acima.
-                // Se já existir, pega o atual. Se não, cria.
-                // Mas não podemos ler 'updates.pontosHojePorJogo' diretamente se for increment.
-                // Logica segura:
                 let mapAtual = data.dataUltimoDiario === hoje ? (data.pontosHojePorJogo || {}) : {};
                 mapAtual[window.jogoAtualID] = (mapAtual[window.jogoAtualID] || 0) + pontos;
                 updates.pontosHojePorJogo = mapAtual;
@@ -796,6 +822,8 @@
                 
                 let recordes = data.recordes || {};
                 if (pontos > (recordes[window.jogoAtualID] || 0)) { recordes[window.jogoAtualID] = pontos; updates.recordes = recordes; mostrarNotificacao(`🏆 NOVO RECORDE!`); }
+                
+                // Nota: Extrato de PONTO não precisa ser em Batch com Ficha, pois não envolve dinheiro real
                 registrarExtrato(currentUser.uid, pontos, `Score: ${window.jogoAtualID}`, "PONTO");
                 await updateDoc(userRef, updates);
             } catch (e) { console.error("Erro ao salvar pontos:", e); }
@@ -806,7 +834,6 @@
             el.innerText = msg; el.style.display = 'block'; setTimeout(() => el.style.display = 'none', 4000);
         }
         
-        // --- RANKING DIÁRIO (RESTAURADO) ---
         async function carregarRanking() {
             const list = document.getElementById('lista-rank');
             if(!list) return;
@@ -814,7 +841,6 @@
             const loading = document.getElementById('loading-rank');
             if(loading) loading.style.display = 'block';
             try {
-                // Consulta ordenada pelo Score Diário
                 const q = query(collection(db, "users"), orderBy("scoreDiario", "desc"), limit(50));
                 const querySnapshot = await getDocs(q);
                 if(loading) loading.style.display = 'none';
@@ -825,10 +851,7 @@
                     const u = docSnap.data();
                     const isMe = docSnap.id === currentUser.uid;
                     const nome = u.apelido || u.nome.split(' ')[0];
-                    
-                    // Só mostra os pontos se a data do último jogo for HOJE
                     const pontos = (u.dataUltimoDiario === hoje) ? (u.scoreDiario || 0) : 0;
-                    
                     list.innerHTML += `<li id="${isMe ? 'meu-rank' : ''}" class="rank-item ${isMe ? 'me' : ''}"><div class="rank-pos">#${rank}</div><div class="rank-user"><img src="${u.foto}"><div><strong>${nome}</strong></div></div><div class="rank-score">${pontos}</div></li>`;
                     rank++;
                 });
@@ -841,5 +864,3 @@
     </script>
 </body>
 </html>
-
-
