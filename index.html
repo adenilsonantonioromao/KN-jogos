@@ -657,7 +657,62 @@
         }
         window.abrirModalShare = function() { document.getElementById('share-modal').style.display = 'flex'; }
         window.fecharModalShare = function() { document.getElementById('share-modal').style.display = 'none'; }
-        
+        window.copiarLinkGanharFichas = async function() {
+            const input = document.getElementById('share-link-input');
+            const btn = document.querySelector('.btn-copy');
+            
+            if(!input) return;
+
+            // --- 1. TENTATIVA DE CÓPIA ROBUSTA ---
+            try {
+                // Tenta o método moderno
+                await navigator.clipboard.writeText(input.value);
+            } catch (err) {
+                // Se falhar (celulares antigos ou http), usa o método clássico
+                input.select();
+                input.setSelectionRange(0, 99999); // Para mobile
+                document.execCommand('copy');
+            }
+
+            // Feedback visual no botão
+            if(btn) {
+                const textoOriginal = btn.innerText;
+                btn.innerText = "COPIADO!";
+                setTimeout(() => btn.innerText = textoOriginal, 2000);
+            }
+
+            // --- 2. ENTREGA DE FICHAS (BLINDADA) ---
+            if (currentUser) {
+                try {
+                    const userRef = doc(db, "users", currentUser.uid);
+                    const data = (await getDoc(userRef)).data();
+                    const hoje = new Date().toLocaleDateString('pt-BR');
+                    
+                    // Verifica se já resgatou hoje
+                    if (data.ultimoResgateShare !== hoje) {
+                        await updateDoc(userRef, { 
+                            fichas: increment(10), 
+                            ultimoResgateShare: hoje 
+                        });
+                        
+                        // Atualiza visualmente
+                        const userFichas = document.getElementById('user-fichas');
+                        if(userFichas) userFichas.innerText = (data.fichas || 0) + 10;
+                        
+                        registrarExtrato(currentUser.uid, 10, "Bônus Diário", "FICHA");
+                        mostrarNotificacao("+10 Fichas! 🎉");
+                    } else {
+                        mostrarNotificacao("Já resgatou hoje ✅");
+                    }
+                } catch (e) {
+                    console.error("Erro ao dar fichas:", e);
+                    mostrarNotificacao("Erro ao validar bônus.");
+                }
+            }
+            
+            // Fecha o modal depois de um tempinho
+            setTimeout(fecharModalShare, 2500);
+        }
         // --- JOGO ---
         window.iniciarJogo = async function(urlArquivo, idJogo) {
             if(!currentUser) return;
@@ -786,3 +841,4 @@
     </script>
 </body>
 </html>
+
