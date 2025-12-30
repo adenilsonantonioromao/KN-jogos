@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Teste Avatar Esqueletal</title>
+    <style>
+        body { background: #222; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; color: white; font-family: sans-serif; }
+        canvas { background: #333; border-radius: 10px; box-shadow: 0 10px 20px rgba(0,0,0,0.5); }
+        .controls { position: absolute; bottom: 20px; text-align: center; }
+    </style>
+</head>
+<body>
+
+    <canvas id="avatarCanvas" width="400" height="300"></canvas>
+    
+    <div class="controls">
+        <p>O boneco anda sozinho (IA) e respira.</p>
+        <button onclick="mudarCor()">🎨 Trocar Roupa</button>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('avatarCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Configurações do Avatar
+        let avatar = {
+            x: 200,
+            y: 200,
+            dir: 1, // 1 = direita, -1 = esquerda
+            state: 'idle', // idle, walk
+            timer: 0,
+            colors: {
+                pele: '#FFCCAA',
+                camisa: '#FF5722',
+                calca: '#37474F'
+            }
+        };
+
+        // Função para desenhar uma parte do corpo (osso)
+        function drawBone(ctx, x, y, w, h, angle, color) {
+            ctx.save();
+            ctx.translate(x, y);   // Move para o ponto de pivô (junta)
+            ctx.rotate(angle);     // Gira
+            ctx.fillStyle = color;
+            ctx.fillRect(-w/2, 0, w, h); // Desenha centralizado no X, crescendo para baixo no Y
+            ctx.restore();
+        }
+
+        function update(dt) {
+            avatar.timer += dt * 5; // Velocidade da animação
+
+            // IA Simples: Anda de um lado pro outro
+            if (avatar.state === 'walk') {
+                avatar.x += avatar.dir * 1.5;
+                if (avatar.x > 350) { avatar.dir = -1; avatar.state = 'idle'; setTimeout(() => avatar.state='walk', 1000); }
+                if (avatar.x < 50)  { avatar.dir = 1;  avatar.state = 'idle'; setTimeout(() => avatar.state='walk', 1000); }
+            } else {
+                // Aleatoriamente começa a andar
+                if (Math.random() < 0.01) avatar.state = 'walk';
+            }
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Chão
+            ctx.fillStyle = '#111';
+            ctx.fillRect(0, 200, 400, 100);
+
+            // --- DESENHANDO O BONECO ESQUELETAL ---
+            ctx.save();
+            ctx.translate(avatar.x, avatar.y);
+            ctx.scale(avatar.dir, 1); // Espelha se estiver indo para esquerda
+
+            // Váriaveis de Animação (Matemática Mágica)
+            // Math.sin(avatar.timer) cria uma onda suave que vai de -1 a 1
+            let breathe = Math.sin(avatar.timer * 0.5) * 0.05; // Respiração lenta
+            let walkCycle = Math.sin(avatar.timer) * 0.5;      // Ciclo de caminhada rápido
+            
+            if (avatar.state === 'idle') walkCycle = 0; // Se parado, pernas não mexem
+
+            // 1. PERNA DE TRÁS (Mais escura pra dar profundidade)
+            drawBone(ctx, -5, -10, 8, 25, -walkCycle, '#263238'); 
+
+            // 2. BRAÇO DE TRÁS
+            drawBone(ctx, -8, -35, 8, 22, walkCycle, '#BF360C');
+
+            // 3. CORPO (Sobe e desce um pouco ao andar)
+            let bob = Math.abs(walkCycle) * 5; 
+            drawBone(ctx, 0, -50 - bob, 20, 40, breathe, avatar.colors.camisa);
+
+            // 4. CABEÇA (Balança um pouco)
+            ctx.fillStyle = avatar.colors.pele;
+            ctx.fillRect(-10, -75 - bob + (breathe*10), 20, 20); // Cabeça quadrada
+            
+            // Rosto (Olhos)
+            ctx.fillStyle = 'black';
+            ctx.fillRect(2, -70 - bob + (breathe*10), 4, 4); // Olho
+
+            // Boné (Exemplo de item cosmético)
+            ctx.fillStyle = avatar.colors.camisa;
+            ctx.fillRect(-12, -78 - bob + (breathe*10), 24, 5); // Base
+            ctx.fillRect(0, -78 - bob + (breathe*10), 18, 5);   // Aba
+
+            // 5. PERNA DA FRENTE
+            drawBone(ctx, 5, -10, 8, 25, walkCycle, avatar.colors.calca);
+
+            // 6. BRAÇO DA FRENTE
+            drawBone(ctx, 8, -35, 8, 22, -walkCycle, avatar.colors.camisa);
+
+            ctx.restore();
+
+            requestAnimationFrame(draw);
+        }
+
+        // Loop principal
+        let lastTime = 0;
+        function loop(timestamp) {
+            let dt = (timestamp - lastTime) / 1000;
+            lastTime = timestamp;
+            update(dt);
+            draw();
+            requestAnimationFrame(loop);
+        }
+        requestAnimationFrame(loop);
+
+        // Função extra pra testar customização
+        window.mudarCor = function() {
+            const cores = ['#FF5722', '#2196F3', '#4CAF50', '#FFC107', '#9C27B0'];
+            avatar.colors.camisa = cores[Math.floor(Math.random() * cores.length)];
+        }
+    </script>
+</body>
+</html>
