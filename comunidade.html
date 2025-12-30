@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Comunidade KN - Ava-Arcade</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;700&display=swap');
+        
+        body { 
+            margin: 0; 
+            overflow: hidden; 
+            background: linear-gradient(to bottom, #87CEEB, #E0F7FA); 
+            font-family: 'Nunito', sans-serif;
+            touch-action: none; /* Impede zoom no celular */
+        }
+
+        /* UI SOBREPOSTA */
+        .ui-layer {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; /* Deixa clicar no canvas se precisar */
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 10px;
+            box-sizing: border-box;
+        }
+
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            pointer-events: auto;
+        }
+
+        .btn-back {
+            background: #FF5722;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 30px;
+            font-family: 'Fredoka One';
+            font-size: 1rem;
+            cursor: pointer;
+            box-shadow: 0 4px 0 #D84315;
+            text-decoration: none;
+        }
+
+        .status-box {
+            background: rgba(0,0,0,0.6);
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+
+        .chat-area {
+            pointer-events: auto;
+            background: rgba(255,255,255,0.9);
+            height: 150px;
+            border-radius: 15px;
+            margin-bottom: 10px;
+            padding: 10px;
+            overflow-y: auto;
+            box-shadow: 0 -5px 20px rgba(0,0,0,0.1);
+        }
+
+        /* CANVAS */
+        canvas { display: block; }
+    </style>
+</head>
+<body>
+
+    <!-- O CENÁRIO -->
+    <canvas id="arcadeCanvas"></canvas>
+
+    <!-- INTERFACE -->
+    <div class="ui-layer">
+        <div class="top-bar">
+            <a href="index.html" class="btn-back">⬅️ VOLTAR</a>
+            <div class="status-box">🟢 Online: <span id="online-count">1</span></div>
+        </div>
+
+        <!-- AQUI ENTRARÁ O CHAT FUTURAMENTE -->
+        <div class="chat-area">
+            <p style="color:#999; font-size:0.8rem; text-align:center;">Bem-vindo à Praça KN! <br> Converse para seu avatar aparecer.</p>
+            <div style="text-align:center; margin-top:20px;">
+                <button onclick="spawnarAvatarTeste()" style="padding:10px; background:#4CAF50; color:white; border:none; border-radius:5px; cursor:pointer;">➕ Testar Avatar</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        // --- 1. CONFIGURAÇÃO DO AVATAR (SEUS DADOS) ---
+        const AVATAR_CONFIG = {
+            scale: 0.45, 
+            offsets: {
+                headY: -86, armY: -55, legY: 50, spreadX: -42, legSpread: -19
+            },
+            pivots: {
+                cabeca: { x: 0.501, y: 0.892 },
+                tronco: { x: 0.471, y: 0.585 },
+                braco_frente: { x: 0.266, y: 0.125 },
+                braco_tras: { x: 0.764, y: 0.118 },
+                perna_frente: { x: 0.293, y: 0.135 },
+                perna_tras: { x: 0.672, y: 0.118 }
+            }
+        };
+
+        // --- 2. CARREGAMENTO DE IMAGENS ---
+        const avatarImages = {};
+        const partsList = ['cabeca', 'tronco', 'braco_frente', 'braco_tras', 'perna_frente', 'perna_tras'];
+        // CAMINHO RELATIVO (Funciona no GitHub Pages)
+        const BASE_URL = 'assets/avatar/base/'; 
+
+        let assetsLoaded = 0;
+        function carregarAssets() {
+            partsList.forEach(name => {
+                const img = new Image();
+                img.src = `${BASE_URL}${name}.png`;
+                img.onload = () => {
+                    assetsLoaded++;
+                    if(assetsLoaded === partsList.length) initArcade();
+                };
+                avatarImages[name] = img;
+            });
+        }
+
+        // --- 3. CLASSE AVATAR ---
+        class Avatar {
+            constructor(nome) {
+                this.x = Math.random() * window.innerWidth;
+                this.y = window.innerHeight - 180; // Altura do chão
+                this.nome = nome;
+                
+                // Física
+                this.dir = Math.random() > 0.5 ? 1 : -1;
+                this.speed = Math.random() * 0.8 + 0.5;
+                this.state = 'walk';
+                this.timer = Math.random() * 100;
+                this.targetX = this.x;
+                this.escolherNovoAlvo();
+            }
+
+            escolherNovoAlvo() {
+                const margem = 50;
+                this.targetX = Math.random() * (window.innerWidth - margem*2) + margem;
+                this.dir = this.targetX > this.x ? 1 : -1;
+                this.state = 'walk';
+                
+                setTimeout(() => {
+                    this.state = 'idle';
+                    setTimeout(() => this.escolherNovoAlvo(), Math.random() * 2000 + 1000);
+                }, Math.random() * 4000 + 2000);
+            }
+
+            update(dt) {
+                this.timer += dt * 5;
+                if (this.state === 'walk') {
+                    this.x += this.dir * this.speed;
+                    if (Math.abs(this.x - this.targetX) < 10) this.state = 'idle';
+                }
+            }
+
+            draw(ctx) {
+                const cfg = AVATAR_CONFIG;
+                const s = cfg.scale;
+                
+                let walk = 0;
+                let bob = 0;
+                let breathe = Math.sin(this.timer * 0.5) * 0.05;
+
+                if (this.state === 'walk') {
+                    walk = Math.sin(this.timer);
+                    bob = Math.abs(Math.sin(this.timer)) * 10;
+                }
+
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                
+                // Nome
+                ctx.fillStyle = 'white';
+                ctx.font = 'bold 14px Nunito';
+                ctx.textAlign = 'center';
+                ctx.shadowColor = 'black';
+                ctx.shadowBlur = 4;
+                ctx.fillText(this.nome, 0, -140 * s);
+                ctx.shadowBlur = 0;
+
+                ctx.scale(this.dir, 1); 
+
+                // Desenho das Partes (Ordem de Camadas)
+                ctx.filter = "brightness(0.8)";
+                this.drawPart(ctx, 'perna_tras', cfg.offsets.legSpread, cfg.offsets.legY - bob, -walk * 0.5);
+                ctx.filter = "none";
+
+                ctx.filter = "brightness(0.9)";
+                this.drawPart(ctx, 'braco_tras', cfg.offsets.spreadX * 0.8, cfg.offsets.armY - bob, walk * 0.6);
+                ctx.filter = "none";
+
+                this.drawPart(ctx, 'tronco', 0, -bob, 0);
+                this.drawPart(ctx, 'cabeca', 0, cfg.offsets.headY - bob + (breathe * 5), breathe * 0.2);
+                this.drawPart(ctx, 'perna_frente', -cfg.offsets.legSpread, cfg.offsets.legY - bob, walk * 0.5);
+                this.drawPart(ctx, 'braco_frente', -cfg.offsets.spreadX, cfg.offsets.armY - bob, -walk * 0.6);
+
+                ctx.restore();
+            }
+
+            drawPart(ctx, name, x, y, rot) {
+                const img = avatarImages[name];
+                if (!img) return;
+                const piv = AVATAR_CONFIG.pivots[name];
+                const s = AVATAR_CONFIG.scale;
+
+                ctx.save();
+                ctx.translate(x * s, y * s);
+                ctx.rotate(rot);
+                ctx.drawImage(img, -img.width * s * piv.x, -img.height * s * piv.y, img.width * s, img.height * s);
+                ctx.restore();
+            }
+        }
+
+        // --- 4. ENGINE DO JOGO ---
+        const canvas = document.getElementById('arcadeCanvas');
+        const ctx = canvas.getContext('2d');
+        let avatares = [];
+        let lastTime = 0;
+
+        function initArcade() {
+            resize();
+            window.addEventListener('resize', resize);
+            
+            // Cria um avatar inicial (Eu)
+            avatares.push(new Avatar("Eu"));
+            
+            requestAnimationFrame(loop);
+        }
+
+        function resize() {
+            const dpr = window.devicePixelRatio || 1;
+            canvas.width = window.innerWidth * dpr;
+            canvas.height = window.innerHeight * dpr;
+            canvas.style.width = window.innerWidth + 'px';
+            canvas.style.height = window.innerHeight + 'px';
+            ctx.scale(dpr, dpr);
+        }
+
+        function loop(timestamp) {
+            if (!lastTime) lastTime = timestamp;
+            const dt = (timestamp - lastTime) / 1000;
+            lastTime = timestamp;
+
+            // Limpa e desenha fundo
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Chão simples
+            ctx.fillStyle = '#4CAF50';
+            ctx.fillRect(0, window.innerHeight - 150, window.innerWidth, 150);
+            ctx.fillStyle = '#388E3C'; // Borda da grama
+            ctx.fillRect(0, window.innerHeight - 150, window.innerWidth, 10);
+
+            // Ordena por profundidade (Y)
+            avatares.sort((a, b) => a.y - b.y);
+
+            avatares.forEach(av => {
+                av.update(dt);
+                av.draw(ctx);
+            });
+
+            requestAnimationFrame(loop);
+        }
+
+        // Função Global de Teste
+        window.spawnarAvatarTeste = function() {
+            const nomes = ["Visitante", "Gamer", "Noob", "Pro", "Hacker"];
+            const nome = nomes[Math.floor(Math.random() * nomes.length)] + Math.floor(Math.random()*100);
+            avatares.push(new Avatar(nome));
+            document.getElementById('online-count').innerText = avatares.length;
+        }
+
+        // Inicia
+        carregarAssets();
+
+    </script>
+</body>
+</html>
