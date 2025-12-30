@@ -18,7 +18,7 @@ const FICHAS_MENSAL = [50, 30, 10];
 
 // --- AUDITORIA GERAL (FICHAS + PONTOS) ---
 async function auditoriaConsolidada(usuarios) {
-    console.log("\n🕵️‍♂️ INICIANDO AUDITORIA DUPLA...");
+    console.log("\n🕵️‍♂️ INICIANDO AUDITORIA DUPLA (V2 - Strict)...");
     let suspeitos = 0;
     let logsApagados = 0;
 
@@ -40,13 +40,26 @@ async function auditoriaConsolidada(usuarios) {
                     const data = doc.data();
                     const valor = data.valor || 0;
                     
-                    if (data.tipo === 'PONTO') {
-                        somaNovosPontos += valor;
-                    } else {
-                        // Assume FICHA se não tiver tipo ou for FICHA
-                        somaNovasFichas += valor;
+                    // --- VALIDAÇÃO DE ORIGEM (NOVO) ---
+                    let logValido = true;
+                    if (data.tipo === 'FICHA' && valor > 0) {
+                        // Se ganhou ficha, tem que ter explicação
+                        const motivosValidos = ["Indicação", "Bônus Diário", "Prêmio Diário", "Prêmio Semanal", "Prêmio Mensal"];
+                        if (!motivosValidos.some(m => data.motivo.includes(m)) && data.origem !== "SISTEMA") {
+                            console.warn(`⚠️ Log Rejeitado (Origem Duvidosa): ${user.id} | Motivo: ${data.motivo}`);
+                            logValido = false;
+                        }
                     }
-                    batch.delete(doc.ref); // Marca para deletar
+
+                    if (logValido) {
+                        if (data.tipo === 'PONTO') {
+                            somaNovosPontos += valor;
+                        } else {
+                            somaNovasFichas += valor;
+                        }
+                    }
+                    
+                    batch.delete(doc.ref); // Arquiva/Limpa o log processado
                 });
             }
 
@@ -55,21 +68,23 @@ async function auditoriaConsolidada(usuarios) {
             const novoSeguroPontos = saldoSeguroPontos + somaNovosPontos;
 
             // --- VALIDAÇÃO 1: FICHAS ---
-            if (Math.abs(user.fichas - novoSeguroFichas) > 5) {
+            // Margem de erro ZERO agora, pois usamos Batch Writes no front
+            if (Math.abs(user.fichas - novoSeguroFichas) > 0) {
                 console.warn(`🚨 SUSPEITO FICHAS: ${user.id} | Real: ${user.fichas} vs Seguro: ${novoSeguroFichas}`);
+                
+                // Punição: Volta para o saldo seguro
                 batch.update(db.collection('users').doc(user.id), { 
                     fichas: novoSeguroFichas,
                     saldo_auditado: novoSeguroFichas 
                 });
-                await reportarSuspeito(user, novoSeguroFichas, user.fichas, "Fichas alteradas sem log");
+                await reportarSuspeito(user, novoSeguroFichas, user.fichas, "Fichas alteradas sem log válido");
                 suspeitos++;
             } else {
                 batch.update(db.collection('users').doc(user.id), { saldo_auditado: novoSeguroFichas });
             }
 
-            // --- VALIDAÇÃO 2: PONTOS TOTAIS (Lifetime) ---
-            // Nota: Pontos totais nunca diminuem. Se diminuir, é bug ou reset manual, ignoramos.
-            if (Math.abs(user.pontuacaoTotal - novoSeguroPontos) > 200) { // Margem maior para pontos
+            // --- VALIDAÇÃO 2: PONTOS TOTAIS ---
+            if (Math.abs(user.pontuacaoTotal - novoSeguroPontos) > 200) { 
                 console.warn(`🚨 SUSPEITO PONTOS: ${user.id} | Real: ${user.pontuacaoTotal} vs Seguro: ${novoSeguroPontos}`);
                 batch.update(db.collection('users').doc(user.id), { 
                     pontuacaoTotal: novoSeguroPontos,
@@ -81,7 +96,6 @@ async function auditoriaConsolidada(usuarios) {
                 batch.update(db.collection('users').doc(user.id), { pontos_auditados: novoSeguroPontos });
             }
 
-            // Executa tudo (Limpeza + Correções + Atualização de Saldos Seguros)
             await batch.commit();
             logsApagados += snapshot.size;
 
@@ -103,9 +117,6 @@ async function reportarSuspeito(user, real, falso, motivo) {
     });
 }
 
-// ... (Resto do código de premiação: gerarExtrato, processarRanking, startJuiz... MANTENHA IGUAL AO ANTERIOR) ...
-// IMPORTANTE: Ao premiar, use tipo: 'FICHA' no gerarExtrato para o auditor saber somar certo.
-
 async function gerarExtrato(userId, valor, motivo) {
     try {
         const serial = `JUIZ-${Date.now()}`;
@@ -113,9 +124,9 @@ async function gerarExtrato(userId, valor, motivo) {
             data: admin.firestore.FieldValue.serverTimestamp(),
             valor: valor,
             motivo: motivo,
-            tipo: 'FICHA', // Juiz sempre dá fichas (Pontos de campeão não somam no pontuacaoTotal, são separados)
+            tipo: 'FICHA', 
             serial: serial,
-            origem: "SISTEMA"
+            origem: "SISTEMA" // Marca d'água do servidor
         });
     } catch (e) { console.error(`Erro extrato ${userId}:`, e.message); }
 }
@@ -149,7 +160,6 @@ async function processarRanking(listaUsuarios, campoScore, arrayPontos, arrayFic
         await enviarNotificacao(u.id, `🏆 Top ${i+1} ${nomeRanking}!`, `Ganhou: ⭐ +${pts}${txt}.`);
     }
 
-    // Reset
     let batch = db.batch();
     classificados.forEach(u => batch.update(db.collection('users').doc(u.id), { [campoScore]: 0 }));
     await batch.commit();
@@ -161,10 +171,8 @@ async function startJuiz() {
     let usuarios = [];
     snapshot.forEach(doc => usuarios.push({ id: doc.id, ...doc.data() }));
 
-    // 1. Auditoria
     await auditoriaConsolidada(usuarios);
 
-    // 2. Rankings
     const agora = new Date(); agora.setHours(agora.getHours() - 3);
     const diaSemana = agora.getDay(); const diaMes = agora.getDate();
 
