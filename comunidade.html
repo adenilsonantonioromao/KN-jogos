@@ -7,97 +7,225 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;700&display=swap');
         
+        * { box-sizing: border-box; }
+
         body { 
             margin: 0; 
-            overflow: hidden; 
-            background: linear-gradient(to bottom, #87CEEB, #E0F7FA); 
+            height: 100vh;
+            background: #263238; 
             font-family: 'Nunito', sans-serif;
-            touch-action: none; /* Impede zoom no celular */
-        }
-
-        /* UI SOBREPOSTA */
-        .ui-layer {
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            pointer-events: none; /* Deixa clicar no canvas se precisar */
+            overflow: hidden;
             display: flex;
             flex-direction: column;
-            justify-content: space-between;
-            padding: 10px;
-            box-sizing: border-box;
         }
 
-        .top-bar {
+        /* LAYOUT PRINCIPAL (GRID) */
+        .main-layout {
             display: flex;
-            justify-content: space-between;
-            pointer-events: auto;
+            flex: 1;
+            height: 100%;
+            overflow: hidden;
         }
 
+        /* COLUNA DA ESQUERDA (JOGO + CONTROLES) */
+        .game-column {
+            flex: 2; /* Ocupa 2/3 da tela no PC */
+            display: flex;
+            flex-direction: column;
+            background: #1e1e1e;
+            position: relative;
+        }
+
+        /* ÁREA DO CANVAS */
+        .canvas-wrapper {
+            flex: 1; /* Ocupa o espaço disponível */
+            position: relative;
+            background: linear-gradient(to bottom, #87CEEB, #E0F7FA);
+            overflow: hidden;
+            border-bottom: 4px solid #111;
+        }
+        
+        canvas { display: block; width: 100%; height: 100%; }
+
+        /* UI SOBRE O CANVAS */
+        .overlay-ui {
+            position: absolute;
+            top: 10px; left: 10px;
+            display: flex;
+            gap: 10px;
+            pointer-events: none;
+        }
         .btn-back {
+            background: #FF5722; color: white; text-decoration: none;
+            padding: 8px 15px; border-radius: 20px; font-weight: bold;
+            pointer-events: auto; box-shadow: 0 3px 0 #bf360c;
+            font-size: 0.8rem;
+        }
+        .online-badge {
+            background: rgba(0,0,0,0.6); color: #4CAF50;
+            padding: 8px 15px; border-radius: 20px; font-weight: bold;
+            font-size: 0.8rem; display: flex; align-items: center; gap: 5px;
+        }
+
+        /* ÁREA DE CONTROLES (ABAIXO DO JOGO) */
+        .controls-area {
+            height: 140px; /* Altura fixa para controles */
+            background: #263238;
+            padding: 10px;
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            align-items: center;
+            border-top: 2px solid #37474F;
+        }
+
+        .action-btn {
+            background: #37474F;
+            color: white;
+            border: 2px solid #455A64;
+            border-radius: 10px;
+            min-width: 80px;
+            height: 80px;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.1s;
+        }
+        .action-btn:active { transform: scale(0.95); background: #263238; }
+        .action-btn span { font-size: 1.5rem; margin-bottom: 5px; }
+        .action-btn label { font-size: 0.7rem; font-weight: bold; }
+
+        /* COLUNA DA DIREITA (CHAT) */
+        .chat-column {
+            flex: 1; /* Ocupa 1/3 da tela no PC */
+            background: #fff;
+            display: flex;
+            flex-direction: column;
+            border-left: 4px solid #111;
+            min-width: 300px;
+        }
+
+        .chat-header {
             background: #FF5722;
             color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 30px;
+            padding: 15px;
             font-family: 'Fredoka One';
-            font-size: 1rem;
-            cursor: pointer;
-            box-shadow: 0 4px 0 #D84315;
-            text-decoration: none;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
         }
 
-        .status-box {
-            background: rgba(0,0,0,0.6);
-            color: white;
-            padding: 5px 15px;
-            border-radius: 20px;
-            font-weight: bold;
-            font-size: 0.9rem;
-        }
-
-        .chat-area {
-            pointer-events: auto;
-            background: rgba(255,255,255,0.9);
-            height: 150px;
-            border-radius: 15px;
-            margin-bottom: 10px;
-            padding: 10px;
+        .chat-history {
+            flex: 1;
+            padding: 15px;
             overflow-y: auto;
-            box-shadow: 0 -5px 20px rgba(0,0,0,0.1);
+            background: #f5f5f5;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
         }
 
-        /* CANVAS */
-        canvas { display: block; }
+        .msg {
+            background: white;
+            padding: 8px 12px;
+            border-radius: 10px;
+            border-bottom-left-radius: 0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            font-size: 0.9rem;
+            animation: fadeIn 0.2s;
+        }
+        .msg strong { color: #FF5722; display: block; font-size: 0.75rem; margin-bottom: 2px; }
+        .msg.me { align-self: flex-end; background: #E3F2FD; border-bottom-left-radius: 10px; border-bottom-right-radius: 0; }
+
+        .chat-input-area {
+            padding: 10px;
+            background: white;
+            border-top: 1px solid #ddd;
+            display: flex;
+            gap: 5px;
+        }
+        .chat-input {
+            flex: 1;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 20px;
+            outline: none;
+        }
+        .btn-send {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.2rem;
+        }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* MOBILE (TELA PEQUENA) */
+        @media (max-width: 768px) {
+            .main-layout { flex-direction: column; }
+            .game-column { flex: 1; height: 60%; }
+            .chat-column { flex: 1; height: 40%; min-width: auto; border-left: none; border-top: 4px solid #111; }
+            .controls-area { height: 100px; }
+            .action-btn { min-width: 70px; height: 70px; }
+        }
     </style>
 </head>
 <body>
 
-    <!-- O CENÁRIO -->
-    <canvas id="arcadeCanvas"></canvas>
+    <div class="main-layout">
+        
+        <!-- ESQUERDA: JOGO E LOJA -->
+        <div class="game-column">
+            <div class="canvas-wrapper" id="canvasContainer">
+                <canvas id="arcadeCanvas"></canvas>
+                
+                <div class="overlay-ui">
+                    <a href="index.html" class="btn-back">⬅️ Sair</a>
+                    <div class="online-badge">🟢 <span id="online-count">1</span> Online</div>
+                </div>
+            </div>
 
-    <!-- INTERFACE -->
-    <div class="ui-layer">
-        <div class="top-bar">
-            <a href="index.html" class="btn-back">⬅️ VOLTAR</a>
-            <div class="status-box">🟢 Online: <span id="online-count">1</span></div>
-        </div>
-
-        <!-- AQUI ENTRARÁ O CHAT FUTURAMENTE -->
-        <div class="chat-area">
-            <p style="color:#999; font-size:0.8rem; text-align:center;">Bem-vindo à Praça KN! <br> Converse para seu avatar aparecer.</p>
-            <div style="text-align:center; margin-top:20px;">
-                <button onclick="spawnarAvatarTeste()" style="padding:10px; background:#4CAF50; color:white; border:none; border-radius:5px; cursor:pointer;">➕ Testar Avatar</button>
+            <!-- BOTÕES DE AÇÃO / LOJA -->
+            <div class="controls-area">
+                <button class="action-btn" onclick="alert('Loja em breve!')">
+                    <span>🏪</span><label>Loja</label>
+                </button>
+                <button class="action-btn" onclick="alert('Mochila em breve!')">
+                    <span>🎒</span><label>Mochila</label>
+                </button>
+                <button class="action-btn" onclick="spawnarAvatarTeste()">
+                    <span>➕</span><label>Add Bot</label>
+                </button>
+                <button class="action-btn" onclick="mudarCorAvatar()">
+                    <span>🎨</span><label>Cor</label>
+                </button>
             </div>
         </div>
+
+        <!-- DIREITA: CHAT -->
+        <div class="chat-column">
+            <div class="chat-header">💬 Chat Global</div>
+            <div class="chat-history" id="chatHistory">
+                <div class="msg"><strong>Sistema</strong>Bem-vindo ao Chat KN!</div>
+            </div>
+            <div class="chat-input-area">
+                <input type="text" id="msgInput" class="chat-input" placeholder="Digite aqui..." maxlength="50">
+                <button class="btn-send" onclick="enviarMensagem()">➤</button>
+            </div>
+        </div>
+
     </div>
 
     <script type="module">
         // --- 1. CONFIGURAÇÃO DO AVATAR (SEUS DADOS) ---
         const AVATAR_CONFIG = {
             scale: 0.45, 
-            offsets: {
-                headY: -86, armY: -55, legY: 50, spreadX: -42, legSpread: -19
-            },
+            offsets: { headY: -86, armY: -55, legY: 50, spreadX: -42, legSpread: -19 },
             pivots: {
                 cabeca: { x: 0.501, y: 0.892 },
                 tronco: { x: 0.471, y: 0.585 },
@@ -111,7 +239,6 @@
         // --- 2. CARREGAMENTO DE IMAGENS ---
         const avatarImages = {};
         const partsList = ['cabeca', 'tronco', 'braco_frente', 'braco_tras', 'perna_frente', 'perna_tras'];
-        // CAMINHO RELATIVO (Funciona no GitHub Pages)
         const BASE_URL = 'assets/avatar/base/'; 
 
         let assetsLoaded = 0;
@@ -129,11 +256,16 @@
 
         // --- 3. CLASSE AVATAR ---
         class Avatar {
-            constructor(nome) {
-                this.x = Math.random() * window.innerWidth;
-                this.y = window.innerHeight - 180; // Altura do chão
+            constructor(nome, isMe = false) {
+                this.x = Math.random() * 300;
+                this.y = 300; // Será ajustado no resize
                 this.nome = nome;
+                this.isMe = isMe;
                 
+                // Balão de Fala
+                this.msg = "";
+                this.msgTimer = 0;
+
                 // Física
                 this.dir = Math.random() > 0.5 ? 1 : -1;
                 this.speed = Math.random() * 0.8 + 0.5;
@@ -143,9 +275,17 @@
                 this.escolherNovoAlvo();
             }
 
+            falar(texto) {
+                this.msg = texto;
+                this.msgTimer = 300; // 5 segundos (60fps * 5)
+                // Pula de alegria
+                this.timer = 0; 
+            }
+
             escolherNovoAlvo() {
+                const canvasW = document.getElementById('arcadeCanvas').width / (window.devicePixelRatio||1);
                 const margem = 50;
-                this.targetX = Math.random() * (window.innerWidth - margem*2) + margem;
+                this.targetX = Math.random() * (canvasW - margem*2) + margem;
                 this.dir = this.targetX > this.x ? 1 : -1;
                 this.state = 'walk';
                 
@@ -157,6 +297,11 @@
 
             update(dt) {
                 this.timer += dt * 5;
+                
+                // Timer do Balão
+                if(this.msgTimer > 0) this.msgTimer--;
+                else this.msg = "";
+
                 if (this.state === 'walk') {
                     this.x += this.dir * this.speed;
                     if (Math.abs(this.x - this.targetX) < 10) this.state = 'idle';
@@ -180,7 +325,7 @@
                 ctx.translate(this.x, this.y);
                 
                 // Nome
-                ctx.fillStyle = 'white';
+                ctx.fillStyle = this.isMe ? '#FFC107' : 'white';
                 ctx.font = 'bold 14px Nunito';
                 ctx.textAlign = 'center';
                 ctx.shadowColor = 'black';
@@ -188,9 +333,32 @@
                 ctx.fillText(this.nome, 0, -140 * s);
                 ctx.shadowBlur = 0;
 
+                // BALÃO DE FALA (Se houver mensagem)
+                if (this.msg) {
+                    ctx.save();
+                    ctx.translate(0, -170 * s);
+                    // Fundo do balão
+                    ctx.fillStyle = 'white';
+                    ctx.strokeStyle = '#333';
+                    ctx.lineWidth = 2;
+                    const w = ctx.measureText(this.msg).width + 20;
+                    ctx.beginPath();
+                    ctx.roundRect(-w/2, -30, w, 30, 10);
+                    ctx.fill();
+                    ctx.stroke();
+                    // Triângulo baixo
+                    ctx.beginPath();
+                    ctx.moveTo(-5, 0); ctx.lineTo(5, 0); ctx.lineTo(0, 10);
+                    ctx.fill(); ctx.stroke();
+                    // Texto
+                    ctx.fillStyle = 'black';
+                    ctx.fillText(this.msg, 0, -10);
+                    ctx.restore();
+                }
+
                 ctx.scale(this.dir, 1); 
 
-                // Desenho das Partes (Ordem de Camadas)
+                // Desenho das Partes
                 ctx.filter = "brightness(0.8)";
                 this.drawPart(ctx, 'perna_tras', cfg.offsets.legSpread, cfg.offsets.legY - bob, -walk * 0.5);
                 ctx.filter = "none";
@@ -223,27 +391,33 @@
 
         // --- 4. ENGINE DO JOGO ---
         const canvas = document.getElementById('arcadeCanvas');
+        const container = document.getElementById('canvasContainer');
         const ctx = canvas.getContext('2d');
         let avatares = [];
         let lastTime = 0;
+        let myAvatar = null;
 
         function initArcade() {
             resize();
             window.addEventListener('resize', resize);
             
-            // Cria um avatar inicial (Eu)
-            avatares.push(new Avatar("Eu"));
+            // Cria EU
+            myAvatar = new Avatar("Eu", true);
+            avatares.push(myAvatar);
             
             requestAnimationFrame(loop);
         }
 
         function resize() {
             const dpr = window.devicePixelRatio || 1;
-            canvas.width = window.innerWidth * dpr;
-            canvas.height = window.innerHeight * dpr;
-            canvas.style.width = window.innerWidth + 'px';
-            canvas.style.height = window.innerHeight + 'px';
+            const rect = container.getBoundingClientRect();
+            canvas.width = rect.width * dpr;
+            canvas.height = rect.height * dpr;
             ctx.scale(dpr, dpr);
+            
+            // Ajusta o chão dos avatares
+            const chaoY = rect.height - 50;
+            avatares.forEach(a => a.y = chaoY);
         }
 
         function loop(timestamp) {
@@ -251,18 +425,19 @@
             const dt = (timestamp - lastTime) / 1000;
             lastTime = timestamp;
 
-            // Limpa e desenha fundo
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            // Limpa
+            const w = canvas.width / (window.devicePixelRatio||1);
+            const h = canvas.height / (window.devicePixelRatio||1);
+            ctx.clearRect(0, 0, w, h);
             
-            // Chão simples
+            // Chão
             ctx.fillStyle = '#4CAF50';
-            ctx.fillRect(0, window.innerHeight - 150, window.innerWidth, 150);
-            ctx.fillStyle = '#388E3C'; // Borda da grama
-            ctx.fillRect(0, window.innerHeight - 150, window.innerWidth, 10);
+            ctx.fillRect(0, h - 50, w, 50);
+            ctx.fillStyle = '#388E3C';
+            ctx.fillRect(0, h - 50, w, 10);
 
-            // Ordena por profundidade (Y)
+            // Ordena e Desenha
             avatares.sort((a, b) => a.y - b.y);
-
             avatares.forEach(av => {
                 av.update(dt);
                 av.draw(ctx);
@@ -271,12 +446,45 @@
             requestAnimationFrame(loop);
         }
 
-        // Função Global de Teste
+        // --- 5. LÓGICA DO CHAT ---
+        const input = document.getElementById('msgInput');
+        const history = document.getElementById('chatHistory');
+
+        window.enviarMensagem = function() {
+            const txt = input.value.trim();
+            if(!txt) return;
+
+            // 1. Adiciona no Histórico Visual
+            const div = document.createElement('div');
+            div.className = 'msg me';
+            div.innerHTML = `<strong>Eu</strong>${txt}`;
+            history.appendChild(div);
+            history.scrollTop = history.scrollHeight;
+
+            // 2. Faz o Avatar Falar (Balão)
+            if(myAvatar) myAvatar.falar(txt);
+
+            input.value = "";
+        }
+
+        // Enviar com Enter
+        input.addEventListener('keypress', (e) => {
+            if(e.key === 'Enter') window.enviarMensagem();
+        });
+
+        // Funções Extras
         window.spawnarAvatarTeste = function() {
-            const nomes = ["Visitante", "Gamer", "Noob", "Pro", "Hacker"];
+            const nomes = ["Visitante", "Gamer", "Noob", "Pro"];
             const nome = nomes[Math.floor(Math.random() * nomes.length)] + Math.floor(Math.random()*100);
-            avatares.push(new Avatar(nome));
+            const bot = new Avatar(nome);
+            bot.y = myAvatar.y; // Mesma altura
+            avatares.push(bot);
             document.getElementById('online-count').innerText = avatares.length;
+        }
+
+        window.mudarCorAvatar = function() {
+            // Futuramente isso mudará a imagem da camisa
+            alert("Em breve: Tintura de Roupas!");
         }
 
         // Inicia
