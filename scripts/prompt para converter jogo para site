@@ -16,3 +16,33 @@ ctx.scale(dpr, dpr);
 // Ajuste o estilo CSS para ocupar 100% mas renderizar na resolução interna alta
 canvas.style.width = '100%';
 canvas.style.height = '100%';
+```
+
+### 2. REGRAS DE FÍSICA E LOOP (Delta Time)
+Não simplifique o loop! Mantenha a lógica de `dt` (Delta Time) **exatamente igual**.
+- Se no React eu usava `prevTime`, no Vanilla use uma variável `let lastTime = 0;`.
+- Copie todas as constantes (`CONSTANTS`, `SPEED`, `GRAVITY`) com os **mesmos valores numéricos**. Não arredonde nada.
+
+### 3. ESTRUTURA DOS ARQUIVOS (ES Modules)
+
+#### 📂 `index.html`
+- Crie um HTML mínimo.
+- Importante: Adicione `<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">` para bloquear zoom no celular.
+- Importe o script como module: `<script type="module" src="game.js"></script>`.
+
+#### 📂 `style.css`
+- Remova o Tailwind. Converta para CSS padrão.
+- Garanta que o `canvas` e o `body` tenham `touch-action: none;` (para evitar rolar a página ao jogar).
+- Centralize o jogo no Desktop (max-width: 480px) com fundo escuro fora da área do jogo.
+
+#### 📂 `audio.js`
+- Mantenha a classe `SoundManager` idêntica. Exporte com `export class SoundManager`.
+
+#### 📂 `game.js`
+- Converta o componente React em uma `class Game`.
+- **Constructor:** Inicialize as variáveis de estado (`score`, `gameOver`, posições).
+- **Init:** Configure o Canvas com o DPR (regra 1) e adicione os Event Listeners.
+- **Loop:** Use `requestAnimationFrame` passando o `timestamp` para calcular o `dt`.
+- **Integração:** Mantenha os `window.parent.postMessage` intactos.
+
+**Execute a conversão agora. Mantenha a qualidade visual e a física 1:1.**
