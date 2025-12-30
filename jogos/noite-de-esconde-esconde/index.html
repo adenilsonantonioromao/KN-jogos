@@ -1,0 +1,80 @@
+
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Noite de Esconde Esconde</title>
+    <link href="https://fonts.googleapis.com/css2?family=Creepster&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+<script type="importmap">
+{
+  "imports": {
+    "react": "https://esm.sh/react@^19.2.3",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "react/": "https://esm.sh/react@^19.2.3/"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+<body>
+    <div id="root">
+        <div class="game-container">
+            <!-- HUD -->
+            <div id="hud" class="hud-layer hidden">
+                <div class="hud-score-box">
+                    <p class="hud-label">PONTOS</p>
+                    <p id="score-val" class="hud-value">0</p>
+                </div>
+                <div class="hud-timer-box">
+                    <p id="timer-val" class="hud-timer">60s</p>
+                </div>
+                <div class="hud-friends-box">
+                    <p class="hud-label">AMIGOS</p>
+                    <p id="friends-val" class="hud-value horror-text">20</p>
+                </div>
+            </div>
+
+            <canvas id="gameCanvas"></canvas>
+
+            <!-- Telas de Menu -->
+            <div id="menu-start" class="screen active bg-black">
+                <div class="icon-orb">
+                    <div class="orb-eye"></div>
+                </div>
+                <h1 class="horror-title">NOITE DE<br>ESCONDE<br>ESCONDE</h1>
+                <p class="description">ENCONTRE 20 AMIGOS EM 60 SEGUNDOS.<br><br><span class="highlight">PEGUE OS RELÓGIOS PARA GANHAR TEMPO!</span></p>
+                <button id="btn-start" class="btn-primary">BRINCAR NA NOITE</button>
+            </div>
+
+            <div id="screen-countdown" class="screen pointer-none bg-overlay hidden">
+                <span id="countdown-val" class="countdown-text">10</span>
+                <p class="horror-text tracking-wide">SE ESCONDAM!</p>
+            </div>
+
+            <div id="menu-killed" class="screen bg-black hidden">
+                <div class="horror-icon">👁️</div>
+                <h2 class="horror-subtitle">VOCÊ FOI<br>ACHADO!</h2>
+                <div class="score-card">
+                    <p class="label">PONTOS RESTANTES</p>
+                    <p id="killed-score-val" class="value">0</p>
+                </div>
+                <button id="btn-retry" class="btn-secondary">TENTAR DE NOVO</button>
+            </div>
+
+            <div id="menu-gameover" class="screen bg-black hidden">
+                <h2 id="gameover-title" class="horror-subtitle gold">TODOS SALVOS!</h2>
+                <div class="score-card-big">
+                    <p class="label">MÉRITO FINAL</p>
+                    <p id="final-score-val" class="value-big">0</p>
+                    <p id="final-friends-val" class="sub-label">AMIGOS SALVOS: 0</p>
+                </div>
+                <button id="btn-restart" class="btn-restart">JOGAR NOVAMENTE</button>
+            </div>
+        </div>
+    </div>
+    <script type="module" src="game.js"></script>
+<script type="module" src="/index.tsx"></script>
+</body>
+</html>
