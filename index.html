@@ -548,4 +548,392 @@
                 const newDots = document.getElementById('carousel-dots');
                 banners.forEach((b, index) => {
                     const slide = document.createElement('div');
-                    slide.className = `carousel-slide ${index === 0 ? 'active'
+                    slide.className = `carousel-slide ${index === 0 ? 'active' : ''}`;
+                    slide.style.backgroundImage = `url('banners/${b.arquivo}')`;
+                    if (b.link) {
+                        slide.classList.add('clickable');
+                        slide.onclick = () => {
+                            if (b.link === '#share') abrirModalShare();
+                            else if (b.link.startsWith('#')) {
+                                const btn = document.querySelector(`.nav-btn[onclick*="${b.link.replace('#tab-', '')}"]`);
+                                if (btn) btn.click();
+                            } else window.open(b.link, '_blank');
+                        };
+                    }
+                    container.appendChild(slide);
+                    const dot = document.createElement('div');
+                    dot.className = `dot ${index === 0 ? 'active' : ''}`;
+                    dot.onclick = () => mudarSlide(index);
+                    if(newDots) newDots.appendChild(dot);
+                });
+                iniciarRotacaoBanners(banners.length);
+            } catch (e) {}
+        }
+
+        async function carregarListaDeJogos() {
+            try {
+                const querySnapshot = await getDocs(collection(db, "listaJogos"));
+                JOGOS_CONFIG = [];
+                querySnapshot.forEach((doc) => { JOGOS_CONFIG.push(doc.data()); });
+                JOGOS_CONFIG.sort((a, b) => (new Date(b.dataInclusao || 0) - new Date(a.dataInclusao || 0)));
+            } catch (e) {}
+        }
+
+        async function carregarStatsGlobais() {
+            const snap = await getDoc(doc(db, "config", "gameStats"));
+            if(snap.exists()) globalStats = snap.data();
+        }
+// --- FUNÇÃO QUE FALTAVA: SISTEMA DE MENSAGENS ---
+        function iniciarMonitoramentoMensagens(user) {
+            // Busca as últimas 20 mensagens
+            const q = query(collection(db, "users", user.uid, "mensagens"), orderBy("data", "desc"), limit(20));
+            
+            // O unsubscribeMsg serve para parar de escutar quando deslogar
+            unsubscribeMsg = onSnapshot(q, (snapshot) => {
+                const lista = document.getElementById('lista-mensagens');
+                const badge = document.getElementById('inbox-badge');
+                
+                if(!lista || !badge) return;
+
+                // Se não tiver mensagens
+                if (snapshot.empty) {
+                    lista.innerHTML = '<div class="empty-inbox" style="text-align:center; padding:20px; color:#999;">Nada por aqui. 🦗</div>';
+                    badge.style.display = 'none';
+                    return;
+                }
+
+                let unreadCount = 0;
+                lista.innerHTML = '';
+
+                snapshot.forEach((docSnap) => {
+                    const msg = docSnap.data();
+                    const id = docSnap.id;
+                    
+                    // Conta quantas não foram lidas
+                    if (!msg.lida) unreadCount++;
+
+                    // Cria o visual da mensagem
+                    const item = document.createElement('li');
+                    item.style.cssText = `
+                        background: ${msg.lida ? '#f9f9f9' : '#E3F2FD'}; 
+                        padding: 15px; 
+                        border-radius: 10px; 
+                        margin-bottom: 10px; 
+                        border: 1px solid ${msg.lida ? '#eee' : '#90CAF9'}; 
+                        list-style:none; text-align:left;
+                    `;
+                    
+                    // Formata a data (se existir)
+                    const dataFormatada = msg.data ? new Date(msg.data.seconds * 1000).toLocaleDateString('pt-BR') : 'Hoje';
+
+                    item.innerHTML = `
+                        <div style="display:flex; justify-content:space-between; font-size:0.75rem; color:#888; margin-bottom:5px;">
+                            <span>📅 ${dataFormatada}</span>
+                            ${!msg.lida ? '<span style="color:#2196F3; font-weight:bold;">● NOVA</span>' : '<span>Lida</span>'}
+                        </div>
+                        <div style="font-weight:bold; color:#333; font-size:1rem; margin-bottom:5px;">${msg.titulo}</div>
+                        <div style="font-size:0.9rem; color:#555; line-height:1.4;">${msg.corpo}</div>
+                        ${!msg.lida ? `<button onclick="marcarComoLida('${id}')" style="margin-top:10px; width:100%; padding:8px; border:none; background:#2196F3; color:white; border-radius:5px; cursor:pointer; font-weight:bold;">Marcar como Lida ✔️</button>` : ''}
+                    `;
+                    lista.appendChild(item);
+                });
+
+                // Atualiza a bolinha vermelha no sino
+                if (unreadCount > 0) {
+                    badge.style.display = 'flex';
+                    badge.innerText = unreadCount > 9 ? '9+' : unreadCount;
+                } else {
+                    badge.style.display = 'none';
+                }
+            });
+        }
+
+        // Função Global para o botão funcionar
+        window.marcarComoLida = async function(msgId) {
+            if(!currentUser) return;
+            try {
+                // Atualiza no banco que a mensagem foi lida
+                await updateDoc(doc(db, "users", currentUser.uid, "mensagens", msgId), { lida: true });
+            } catch(e) { console.error("Erro ao ler msg:", e); }
+        }
+
+        // --- FIM DA FUNÇÃO DE MENSAGENS ---
+        onAuthStateChanged(auth, async (user) => {
+            const loginScreen = document.getElementById('login-screen');
+            const appContainer = document.getElementById('app-container');
+            const splash = document.getElementById('splash-screen');
+            try {
+                if (user) {
+                    currentUser = user;
+                    loginScreen.style.display = 'none';
+                    appContainer.style.display = 'block';
+                    const meuLink = `${window.location.origin}${window.location.pathname}?ref=${user.uid}`;
+                    if(document.getElementById('share-link-input')) document.getElementById('share-link-input').value = meuLink;
+                    await carregarUsuario(user);
+                    try { iniciarMonitoramentoMensagens(user); } catch(e) {}
+                    await carregarListaDeJogos(); 
+                    await carregarBanners(); 
+                    await carregarStatsGlobais();
+                    renderizarTodosJogos();
+                } else { if(unsubscribeMsg) unsubscribeMsg(); loginScreen.style.display = 'flex'; appContainer.style.display = 'none'; }
+            } catch (error) { console.error("Erro auth:", error); loginScreen.style.display = 'flex'; } 
+            finally { if(splash) splash.style.display = 'none'; }
+        });
+
+        let currentSlide = 0;
+        function iniciarRotacaoBanners(total) {
+            if(total <= 1) return;
+            setInterval(() => {
+                let next = currentSlide + 1;
+                if(next >= total) next = 0;
+                mudarSlide(next);
+            }, 5000);
+        }
+        function mudarSlide(index) {
+            const slides = document.querySelectorAll('.carousel-slide');
+            const dots = document.querySelectorAll('.dot');
+            if(slides.length === 0 || dots.length === 0) return;
+            slides[currentSlide].classList.remove('active');
+            dots[currentSlide].classList.remove('active');
+            currentSlide = index;
+            slides[currentSlide].classList.add('active');
+            dots[currentSlide].classList.add('active');
+        }
+
+        window.mudarAba = async function(abaID, btn) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById('tab-' + abaID).classList.add('active');
+            btn.classList.add('active');
+            if(abaID === 'rank') carregarRanking();
+            if(abaID === 'populares') { carregarFiltros('filter-tags'); filtrarJogos(); }
+            if(abaID === 'favoritos') { carregarFiltros('filter-tags-fav'); filtrarFavoritos(); }
+        }
+
+        window.abrirModalInbox = function() { document.getElementById('inbox-modal').style.display = 'flex'; }
+        window.fecharModalInbox = function() { document.getElementById('inbox-modal').style.display = 'none'; }
+        window.abrirModalApelido = function(obrigatorio) {
+            document.getElementById('nickname-modal').style.display = 'flex';
+            if (!obrigatorio) document.getElementById('input-apelido').value = document.getElementById('user-name').innerText;
+            if(document.getElementById('close-nick-modal')) document.getElementById('close-nick-modal').style.display = obrigatorio ? 'none' : 'block';
+        }
+        window.fecharModalApelido = function() { document.getElementById('nickname-modal').style.display = 'none'; }
+        window.salvarApelido = async function() {
+            const nick = document.getElementById('input-apelido').value.trim();
+            if (nick.length < 3) { alert("Mínimo 3 letras."); return; }
+            await updateDoc(doc(db, "users", currentUser.uid), { apelido: nick });
+            document.getElementById('user-name').innerText = nick;
+            fecharModalApelido();
+            if(document.getElementById('tab-rank').classList.contains('active')) carregarRanking();
+        }
+        window.abrirModalShare = function() { document.getElementById('share-modal').style.display = 'flex'; }
+        window.fecharModalShare = function() { document.getElementById('share-modal').style.display = 'none'; }
+        window.copiarLinkGanharFichas = async function() {
+            const input = document.getElementById('share-link-input');
+            const btn = document.querySelector('.btn-copy');
+            if(!input) return;
+            try {
+                await navigator.clipboard.writeText(input.value);
+            } catch (err) {
+                input.select(); input.setSelectionRange(0, 99999); document.execCommand('copy');
+            }
+            if(btn) {
+                const textoOriginal = btn.innerText;
+                btn.innerText = "COPIADO!";
+                setTimeout(() => btn.innerText = textoOriginal, 2000);
+            }
+            if (currentUser) {
+                try {
+                    const userRef = doc(db, "users", currentUser.uid);
+                    const data = (await getDoc(userRef)).data();
+                    const hoje = new Date().toLocaleDateString('pt-BR');
+                    if (data.ultimoResgateShare !== hoje) {
+                        await updateDoc(userRef, { 
+                            fichas: increment(10), 
+                            ultimoResgateShare: hoje 
+                        });
+                        const userFichas = document.getElementById('user-fichas');
+                        if(userFichas) userFichas.innerText = (data.fichas || 0) + 10;
+                        registrarExtrato(currentUser.uid, 10, "Bônus Diário", "FICHA");
+                        mostrarNotificacao("+10 Fichas! 🎉");
+                    } else { mostrarNotificacao("Já resgatou hoje ✅"); }
+                } catch (e) { console.error("Erro ao dar fichas:", e); mostrarNotificacao("Erro ao validar bônus."); }
+            }
+            setTimeout(fecharModalShare, 2500);
+        }
+
+        window.iniciarJogo = async function(urlArquivo, idJogo) {
+            if(!currentUser) return;
+            const userRef = doc(db, "users", currentUser.uid);
+            const snap = await getDoc(userRef);
+            if ((snap.data().fichas || 0) < 1) { mostrarNotificacao("🚫 Sem fichas!"); return; }
+
+            const batch = writeBatch(db);
+            const extratoRef = doc(collection(db, "users", currentUser.uid, "extrato"));
+            
+            batch.update(userRef, { 
+                fichas: increment(-1), 
+                [`jogosJogados.${idJogo}`]: increment(1),
+                ultimoScoreData: serverTimestamp() 
+            });
+            
+            batch.set(extratoRef, {
+                data: new Date(),
+                valor: -1,
+                motivo: `Jogou: ${idJogo}`,
+                tipo: "FICHA",
+                serial: `GAME-${Date.now()}`
+            });
+
+            try {
+                await batch.commit(); 
+                setDoc(doc(db, "config", "gameStats"), { [idJogo]: increment(1) }, { merge: true });
+                document.getElementById('user-fichas').innerText = (snap.data().fichas || 0) - 1;
+                window.jogoAtualID = idJogo;
+                const modal = document.getElementById('game-modal');
+                const iframe = document.getElementById('game-frame');
+                modal.style.display = 'flex';
+                iframe.src = urlArquivo; 
+            } catch (e) {
+                console.error(e);
+                mostrarNotificacao("Erro ao iniciar jogo.");
+            }
+        }
+        
+        window.reiniciarJogo = async function() {
+            if(!currentUser) return;
+            if(!confirm("⚠️ JOGAR NOVAMENTE: Custo 1 Ficha 🪙")) return;
+            const userRef = doc(db, "users", currentUser.uid);
+            const snap = await getDoc(userRef);
+            if ((snap.data().fichas || 0) < 1) { mostrarNotificacao("🚫 Sem fichas!"); return; }
+
+            const batch = writeBatch(db);
+            const extratoRef = doc(collection(db, "users", currentUser.uid, "extrato"));
+
+            batch.update(userRef, { 
+                fichas: increment(-1), 
+                [`jogosJogados.${window.jogoAtualID}`]: increment(1),
+                ultimoScoreData: serverTimestamp()
+            });
+            batch.set(extratoRef, {
+                data: new Date(),
+                valor: -1,
+                motivo: `Rejogou: ${window.jogoAtualID}`,
+                tipo: "FICHA",
+                serial: `REPLAY-${Date.now()}`
+            });
+
+            try {
+                await batch.commit();
+                setDoc(doc(db, "config", "gameStats"), { [window.jogoAtualID]: increment(1) }, { merge: true });
+                document.getElementById('user-fichas').innerText = (snap.data().fichas || 0) - 1;
+                const iframe = document.getElementById('game-frame');
+                if(iframe && iframe.contentWindow) {
+                    iframe.contentWindow.postMessage({ type: 'RESET' }, '*');
+                } else {
+                    iframe.src = iframe.src; 
+                }
+                mostrarNotificacao("🔄 Recarregando...");
+            } catch (e) {
+                mostrarNotificacao("Erro ao reiniciar.");
+            }
+        }
+        
+        window.fecharJogo = function() { document.getElementById('game-modal').style.display = 'none'; document.getElementById('game-frame').src = ""; location.reload(); }
+        window.ativarTelaCheia = function() {
+            const iframe = document.getElementById('game-frame');
+            if (iframe.requestFullscreen) iframe.requestFullscreen();
+            else if (iframe.webkitRequestFullscreen) iframe.webkitRequestFullscreen();
+        }
+
+        window.addEventListener('message', async function(event) {
+            let pontos = 0;
+            let isGameOver = false;
+            if (event.data && event.data.type === 'GAME_OVER') { pontos = parseInt(event.data.score) || 0; isGameOver = true; }
+            else if (typeof event.data === 'number') { pontos = parseInt(event.data); isGameOver = true; }
+            if (!isGameOver) { if (event.data === 'RESTART_REQUEST' || (event.data && event.data.type === 'RESTART_REQUEST')) reiniciarJogo(); return; }
+
+            mostrarNotificacao(`Fim! Pontos: ${pontos}`);
+            if (!currentUser) return;
+
+            try { const spanPts = document.getElementById('user-pontos-diario'); spanPts.innerText = (parseInt(spanPts.innerText)||0) + pontos; } catch(e) {}
+
+            const userRef = doc(db, "users", currentUser.uid);
+            try {
+                const data = (await getDoc(userRef)).data();
+                let updates = { 
+                    pontuacaoTotal: increment(pontos),
+                    ultimoScoreData: serverTimestamp() 
+                };
+                
+                // --- CORREÇÃO DE DATAS ---
+                // 1. Data Pura (Hoje) para Mês e Dia
+                const dataAtual = new Date();
+                const hoje = dataAtual.toLocaleDateString('pt-BR');
+                const mes = `${dataAtual.getMonth()+1}/${dataAtual.getFullYear()}`;
+
+                // 2. Data Auxiliar para Cálculo da Semana (ISO 8601)
+                const dAux = new Date(); 
+                dAux.setHours(0,0,0,0); 
+                dAux.setDate(dAux.getDate()+3-(dAux.getDay()+6)%7);
+                const sem = 1+Math.round(((dAux.getTime()-new Date(dAux.getFullYear(),0,4).getTime())/86400000-3+(new Date(dAux.getFullYear(),0,4).getDay()+6)%7)/7);
+                // -------------------------
+
+                if (data.dataUltimoDiario === hoje) {
+                    updates.scoreDiario = increment(pontos);
+                } else { 
+                    updates.scoreDiario = pontos; 
+                    updates.dataUltimoDiario = hoje;
+                    updates.pontosHojePorJogo = {}; 
+                }
+                
+                let mapAtual = data.dataUltimoDiario === hoje ? (data.pontosHojePorJogo || {}) : {};
+                mapAtual[window.jogoAtualID] = (mapAtual[window.jogoAtualID] || 0) + pontos;
+                updates.pontosHojePorJogo = mapAtual;
+
+                if (data.dataUltimoSemanal === sem) updates.scoreSemanal = increment(pontos); else { updates.scoreSemanal = pontos; updates.dataUltimoSemanal = sem; }
+                if (data.dataUltimoMensal === mes) updates.scoreMensal = increment(pontos); else { updates.scoreMensal = pontos; updates.dataUltimoMensal = mes; }
+                
+                let recordes = data.recordes || {};
+                if (pontos > (recordes[window.jogoAtualID] || 0)) { recordes[window.jogoAtualID] = pontos; updates.recordes = recordes; mostrarNotificacao(`🏆 NOVO RECORDE!`); }
+                
+                registrarExtrato(currentUser.uid, pontos, `Score: ${window.jogoAtualID}`, "PONTO");
+                await updateDoc(userRef, updates);
+            } catch (e) { console.error("Erro ao salvar pontos:", e); }
+        });
+
+        function mostrarNotificacao(msg) {
+            const el = document.getElementById('notificacao');
+            el.innerText = msg; el.style.display = 'block'; setTimeout(() => el.style.display = 'none', 4000);
+        }
+        
+        async function carregarRanking() {
+            const list = document.getElementById('lista-rank');
+            if(!list) return;
+            list.innerHTML = "";
+            const loading = document.getElementById('loading-rank');
+            if(loading) loading.style.display = 'block';
+            try {
+                const q = query(collection(db, "users"), orderBy("scoreDiario", "desc"), limit(50));
+                const querySnapshot = await getDocs(q);
+                if(loading) loading.style.display = 'none';
+                let rank = 1;
+                const hoje = new Date().toLocaleDateString('pt-BR');
+
+                querySnapshot.forEach((docSnap) => {
+                    const u = docSnap.data();
+                    const isMe = docSnap.id === currentUser.uid;
+                    const nome = u.apelido || u.nome.split(' ')[0];
+                    const pontos = (u.dataUltimoDiario === hoje) ? (u.scoreDiario || 0) : 0;
+                    list.innerHTML += `<li id="${isMe ? 'meu-rank' : ''}" class="rank-item ${isMe ? 'me' : ''}"><div class="rank-pos">#${rank}</div><div class="rank-user"><img src="${u.foto}"><div><strong>${nome}</strong></div></div><div class="rank-score">${pontos}</div></li>`;
+                    rank++;
+                });
+            } catch (error) { 
+                console.error(error); 
+                if(loading) loading.style.display = 'none';
+                list.innerHTML = "<li>Erro ao carregar ranking.</li>";
+            }
+        }
+    </script>
+</body>
+</html>
