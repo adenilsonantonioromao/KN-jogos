@@ -1,0 +1,86 @@
+
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Noite de Esconde Esconde</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Creepster&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+<script type="importmap">
+{
+  "imports": {
+    "react": "https://esm.sh/react@^19.2.3",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "react/": "https://esm.sh/react@^19.2.3/"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+<body>
+    <div id="game-wrapper">
+        <div id="game-container">
+            <!-- HUD Layer -->
+            <div id="hud" class="hidden">
+                <div class="hud-top">
+                    <div class="hud-box score-box">
+                        <span class="label">PONTOS</span>
+                        <span id="score-val">0</span>
+                    </div>
+                    <div id="timer-box" class="hud-box timer-box">
+                        <span id="timer-val">60s</span>
+                    </div>
+                    <div class="hud-box friends-box">
+                        <span class="label">AMIGOS</span>
+                        <span id="friends-val">20</span>
+                    </div>
+                </div>
+            </div>
+
+            <canvas id="gameCanvas"></canvas>
+
+            <!-- Menu Layers -->
+            <div id="menu-start" class="menu-layer active">
+                <div class="orb-container">
+                    <div class="orb">
+                        <div class="eye"></div>
+                    </div>
+                </div>
+                <h1 class="horror-title">NOITE DE<br>ESCONDE<br>ESCONDE</h1>
+                <p class="description">ENCONTRE 20 AMIGOS EM 60 SEGUNDOS.<br><br><span class="highlight">PEGUE OS RELÓGIOS PARA GANHAR TEMPO!</span></p>
+                <button id="btn-start" class="btn-primary">BRINCAR NA NOITE</button>
+            </div>
+
+            <div id="screen-countdown" class="menu-layer hidden overlay">
+                <span id="countdown-val">10</span>
+                <p class="horror-subtitle">SE ESCONDAM!</p>
+            </div>
+
+            <div id="menu-killed" class="menu-layer hidden">
+                <div class="icon-killed">👁️</div>
+                <h2 class="horror-title red">VOCÊ FOI<br>ACHADO!</h2>
+                <div class="score-card">
+                    <p class="card-label">PONTOS RESTANTES</p>
+                    <p id="killed-score-val">0</p>
+                </div>
+                <button id="btn-retry" class="btn-primary">TENTAR DE NOVO</button>
+            </div>
+
+            <div id="menu-gameover" class="menu-layer hidden">
+                <h2 id="gameover-title" class="horror-title gold">TODOS SALVOS!</h2>
+                <div class="score-card-big">
+                    <p class="card-label">MÉRITO FINAL</p>
+                    <p id="final-score-val" class="score-huge">0</p>
+                    <p id="final-friends-val" class="card-sub-label">AMIGOS SALVOS: 0</p>
+                </div>
+                <button id="btn-restart" class="btn-white">JOGAR NOVAMENTE</button>
+            </div>
+        </div>
+    </div>
+    <script type="module" src="game.js"></script>
+<script type="module" src="/index.tsx"></script>
+</body>
+</html>
