@@ -9,290 +9,157 @@
         
         :root { 
             --primary: #FF5722; 
-            --primary-dark: #E64A19;
-            --secondary: #FFC107; 
             --bg: #f0fdf4; 
             --dark: #37474F; 
             --green: #4CAF50;
-            --white: #ffffff;
             --shadow: 0 10px 25px rgba(0,0,0,0.1);
         }
 
         * { box-sizing: border-box; }
 
         body { 
-            margin: 0; 
-            height: 100vh;
-            background-color: var(--bg); 
-            font-family: 'Nunito', sans-serif;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            color: var(--dark);
+            margin: 0; height: 100vh; background-color: var(--bg); 
+            font-family: 'Nunito', sans-serif; overflow: hidden; 
+            display: flex; flex-direction: column; color: var(--dark);
         }
 
-        /* LAYOUT PRINCIPAL */
         .main-layout {
-            display: flex;
-            flex: 1;
-            height: 100%;
-            padding: 15px;
-            gap: 15px;
-            overflow: hidden;
+            display: flex; flex: 1; height: 100%; padding: 15px; gap: 15px; overflow: hidden;
         }
 
-        /* --- COLUNA ESQUERDA (JOGO) --- */
+        /* JOGO */
         .game-column {
-            flex: 2;
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-            position: relative;
+            flex: 2; display: flex; flex-direction: column; gap: 15px; position: relative;
         }
-
-        /* O CARTÃO DO JOGO (COM BORDAS ARREDONDADAS) */
         .canvas-card {
-            flex: 1;
-            background: white;
-            border-radius: 30px;
-            overflow: hidden;
-            box-shadow: var(--shadow);
-            position: relative;
-            border: 5px solid white;
+            flex: 1; background: white; border-radius: 30px; overflow: hidden;
+            box-shadow: var(--shadow); position: relative; border: 5px solid white;
         }
-        
         canvas { display: block; width: 100%; height: 100%; background: linear-gradient(to bottom, #81D4FA, #B2EBF2); }
 
-        /* UI SOBRE O JOGO */
         .overlay-ui {
-            position: absolute;
-            top: 15px; left: 15px; right: 15px;
-            display: flex;
-            justify-content: space-between;
-            pointer-events: none;
+            position: absolute; top: 15px; left: 15px; right: 15px;
+            display: flex; justify-content: space-between; pointer-events: none;
         }
-        
         .btn-back {
-            background: white; color: var(--primary); 
-            text-decoration: none; padding: 10px 20px; 
-            border-radius: 50px; font-weight: bold; font-family: 'Fredoka One';
-            pointer-events: auto; box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-            transition: transform 0.2s; display: flex; align-items: center; gap: 5px;
+            background: white; color: var(--primary); text-decoration: none; 
+            padding: 10px 20px; border-radius: 50px; font-weight: bold; font-family: 'Fredoka One';
+            pointer-events: auto; box-shadow: 0 4px 10px rgba(0,0,0,0.1); display: flex; align-items: center; gap: 5px;
         }
-        .btn-back:active { transform: scale(0.95); }
-
         .online-badge {
             background: rgba(255,255,255,0.9); color: var(--green);
             padding: 8px 20px; border-radius: 50px; font-weight: bold;
             box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-            display: flex; align-items: center; gap: 8px;
         }
 
-        /* DOCK DE CONTROLES (FLUTUANTE) */
+        /* CONTROLES */
         .controls-dock {
-            background: white;
-            height: 90px;
-            border-radius: 25px;
-            padding: 10px 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 15px;
-            box-shadow: var(--shadow);
+            background: white; height: 90px; border-radius: 25px;
+            padding: 10px 20px; display: flex; align-items: center; justify-content: center;
+            gap: 15px; box-shadow: var(--shadow);
         }
-
         .action-btn {
-            background: var(--bg);
-            color: var(--dark);
-            border: none;
-            border-radius: 20px;
-            width: 70px;
-            height: 70px;
-            cursor: pointer;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.2s;
-            font-family: 'Nunito', sans-serif;
+            background: var(--bg); color: var(--dark); border: none; border-radius: 20px;
+            width: 70px; height: 70px; cursor: pointer; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; transition: all 0.2s;
         }
-        .action-btn:hover { background: #e0f2f1; transform: translateY(-3px); }
         .action-btn:active { transform: scale(0.9); }
-        .action-btn span { font-size: 1.8rem; margin-bottom: 2px; }
+        .action-btn span { font-size: 1.8rem; }
         .action-btn label { font-size: 0.7rem; font-weight: bold; color: #777; }
 
-        /* --- COLUNA DIREITA (CHAT) --- */
+        /* CHAT */
         .chat-column {
-            flex: 1;
-            min-width: 320px;
-            background: white;
-            border-radius: 30px;
-            box-shadow: var(--shadow);
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            border: 5px solid white;
+            flex: 1; min-width: 320px; background: white; border-radius: 30px;
+            box-shadow: var(--shadow); display: flex; flex-direction: column;
+            overflow: hidden; border: 5px solid white;
         }
-
         .chat-header {
-            background: var(--primary);
-            color: white;
-            padding: 20px;
-            font-family: 'Fredoka One';
-            text-align: center;
-            font-size: 1.2rem;
-            border-radius: 25px 25px 0 0; /* Só arredonda em cima se quiser, mas aqui fica reto pra conectar */
+            background: var(--primary); color: white; padding: 20px;
+            font-family: 'Fredoka One'; text-align: center; font-size: 1.2rem;
         }
-
         .chat-history {
-            flex: 1;
-            padding: 20px;
-            overflow-y: auto;
-            background: #f8f9fa;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
+            flex: 1; padding: 20px; overflow-y: auto; background: #f8f9fa;
+            display: flex; flex-direction: column; gap: 12px;
         }
-
-        /* MENSAGENS ESTILO WHATSAPP/MESSENGER */
         .msg {
-            background: white;
-            padding: 10px 15px;
-            border-radius: 18px;
-            border-bottom-left-radius: 4px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-            font-size: 0.95rem;
-            max-width: 85%;
-            align-self: flex-start;
-            line-height: 1.4;
-            position: relative;
+            background: white; padding: 10px 15px; border-radius: 18px; border-bottom-left-radius: 4px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05); font-size: 0.95rem; max-width: 85%; align-self: flex-start;
         }
         .msg strong { color: var(--primary); display: block; font-size: 0.75rem; margin-bottom: 3px; }
-        
         .msg.me { 
-            align-self: flex-end; 
-            background: #FFF3E0; /* Laranja bem clarinho */
-            border-bottom-left-radius: 18px; 
-            border-bottom-right-radius: 4px;
-            border: 1px solid #FFE0B2;
+            align-self: flex-end; background: #FFF3E0; 
+            border-bottom-left-radius: 18px; border-bottom-right-radius: 4px;
         }
-        .msg.me strong { color: #E65100; text-align: right; }
-
         .chat-input-area {
-            padding: 15px;
-            background: white;
-            border-top: 1px solid #eee;
-            display: flex;
-            gap: 10px;
-            align-items: center;
+            padding: 15px; background: white; border-top: 1px solid #eee;
+            display: flex; gap: 10px; align-items: center;
         }
         .chat-input {
-            flex: 1;
-            padding: 12px 20px;
-            border: 2px solid #eee;
-            border-radius: 50px;
-            outline: none;
-            font-size: 1rem;
-            transition: 0.3s;
-            background: #f9f9f9;
+            flex: 1; padding: 12px 20px; border: 2px solid #eee; border-radius: 50px;
+            outline: none; font-size: 1rem; background: #f9f9f9;
         }
-        .chat-input:focus { border-color: var(--primary); background: white; }
-        
         .btn-send {
-            background: var(--green);
-            color: white;
-            border: none;
-            width: 45px;
-            height: 45px;
-            border-radius: 50%;
-            cursor: pointer;
-            font-size: 1.2rem;
-            display: flex; align-items: center; justify-content: center;
-            box-shadow: 0 4px 10px rgba(76, 175, 80, 0.3);
-            transition: transform 0.2s;
+            background: var(--green); color: white; border: none; width: 45px; height: 45px;
+            border-radius: 50%; cursor: pointer; font-size: 1.2rem; display: flex; 
+            align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(76, 175, 80, 0.3);
         }
-        .btn-send:active { transform: scale(0.9); }
 
-        /* MOBILE RESPONSIVO */
         @media (max-width: 850px) {
             .main-layout { flex-direction: column; padding: 10px; gap: 10px; }
             .game-column { flex: 1.5; }
             .chat-column { flex: 1; min-width: auto; border-radius: 25px; }
-            .canvas-card { border-radius: 25px; }
             .controls-dock { height: 80px; padding: 5px; }
             .action-btn { width: 60px; height: 60px; }
-            .action-btn span { font-size: 1.5rem; }
-            .action-btn label { display: none; } /* Esconde texto no mobile pra caber mais */
+            .action-btn label { display: none; }
         }
     </style>
 </head>
 <body>
 
     <div class="main-layout">
-        
-        <!-- ESQUERDA: JOGO E LOJA -->
         <div class="game-column">
             <div class="canvas-card" id="canvasContainer">
                 <canvas id="arcadeCanvas"></canvas>
-                
                 <div class="overlay-ui">
                     <a href="index.html" class="btn-back">⬅️ Voltar</a>
                     <div class="online-badge">🟢 <span id="online-count">1</span> Online</div>
                 </div>
             </div>
-
-            <!-- DOCK DE CONTROLES (MENU FLUTUANTE) -->
             <div class="controls-dock">
-                <button class="action-btn" onclick="alert('Loja em breve!')">
-                    <span>🏪</span><label>Loja</label>
-                </button>
-                <button class="action-btn" onclick="alert('Inventário em breve!')">
-                    <span>🎒</span><label>Itens</label>
-                </button>
-                <button class="action-btn" style="background: #E3F2FD; border-color: #90CAF9;" onclick="spawnarAvatarTeste()">
-                    <span>➕</span><label>Bot</label>
-                </button>
-                <button class="action-btn" onclick="mudarCorAvatar()">
-                    <span>🎨</span><label>Cor</label>
-                </button>
-                <button class="action-btn" onclick="alert('Emotes em breve!')">
-                    <span>😀</span><label>Emote</label>
-                </button>
+                <button class="action-btn" id="btnLoja"><span>🏪</span><label>Loja</label></button>
+                <button class="action-btn" id="btnItens"><span>🎒</span><label>Itens</label></button>
+                <button class="action-btn" id="btnAddBot" style="background: #E3F2FD;"><span>➕</span><label>Bot</label></button>
+                <button class="action-btn" id="btnCor"><span>🎨</span><label>Cor</label></button>
             </div>
         </div>
 
-        <!-- DIREITA: CHAT -->
         <div class="chat-column">
             <div class="chat-header">💬 Chat da Galera</div>
             <div class="chat-history" id="chatHistory">
                 <div class="msg" style="text-align:center; background:none; box-shadow:none; color:#999; font-size:0.8rem;">
-                    Bem-vindo à Praça KN! <br> Converse para seu avatar aparecer.
+                    Bem-vindo à Praça KN!
                 </div>
             </div>
             <div class="chat-input-area">
                 <input type="text" id="msgInput" class="chat-input" placeholder="Digite algo..." maxlength="50">
-                <button class="btn-send" onclick="enviarMensagem()">➤</button>
+                <button class="btn-send" id="btnSend">➤</button>
             </div>
         </div>
-
     </div>
 
     <script type="module">
-        // --- 1. CONFIGURAÇÃO DO AVATAR (SEUS DADOS JSON) ---
+        // --- 1. CONFIGURAÇÃO (SEUS DADOS) ---
         const AVATAR_CONFIG = {
             scale: 0.45, 
             offsets: { headY: -86, armY: -55, legY: 50, spreadX: -42, legSpread: -19 },
             pivots: {
-                cabeca: { x: 0.501, y: 0.892 },
-                tronco: { x: 0.471, y: 0.585 },
-                braco_frente: { x: 0.266, y: 0.125 },
-                braco_tras: { x: 0.764, y: 0.118 },
-                perna_frente: { x: 0.293, y: 0.135 },
-                perna_tras: { x: 0.672, y: 0.118 }
+                cabeca: { x: 0.501, y: 0.892 }, tronco: { x: 0.471, y: 0.585 },
+                braco_frente: { x: 0.266, y: 0.125 }, braco_tras: { x: 0.764, y: 0.118 },
+                perna_frente: { x: 0.293, y: 0.135 }, perna_tras: { x: 0.672, y: 0.118 }
             }
         };
 
-        // --- 2. CARREGAMENTO DE IMAGENS ---
+        // --- 2. CARREGAMENTO ---
         const avatarImages = {};
         const partsList = ['cabeca', 'tronco', 'braco_frente', 'braco_tras', 'perna_frente', 'perna_tras'];
         const BASE_URL = 'assets/avatar/base/'; 
@@ -304,6 +171,11 @@
                 img.src = `${BASE_URL}${name}.png`;
                 img.onload = () => {
                     assetsLoaded++;
+                    if(assetsLoaded === partsList.length) initArcade();
+                };
+                img.onerror = () => {
+                    console.warn(`Imagem falhou: ${name}. Iniciando modo de segurança.`);
+                    assetsLoaded++; // Conta como carregado pra não travar
                     if(assetsLoaded === partsList.length) initArcade();
                 };
                 avatarImages[name] = img;
@@ -367,7 +239,7 @@
                 ctx.save();
                 ctx.translate(this.x, this.y);
                 
-                // Nome com sombra suave
+                // Nome
                 ctx.fillStyle = this.isMe ? '#FFC107' : 'white';
                 ctx.font = 'bold 14px Nunito';
                 ctx.textAlign = 'center';
@@ -376,7 +248,7 @@
                 ctx.fillText(this.nome, 0, -140 * s);
                 ctx.shadowBlur = 0;
 
-                // Balão de Fala Arredondado
+                // Balão
                 if (this.msg) {
                     ctx.save();
                     ctx.translate(0, -175 * s);
@@ -384,19 +256,137 @@
                     ctx.shadowColor = 'rgba(0,0,0,0.2)';
                     ctx.shadowBlur = 5;
                     ctx.shadowOffsetY = 3;
-                    
                     const w = ctx.measureText(this.msg).width + 30;
-                    
-                    // Desenha balão (Round Rect manual para compatibilidade)
                     ctx.beginPath();
-                    ctx.moveTo(-w/2 + 10, -35);
-                    ctx.lineTo(w/2 - 10, -35);
-                    ctx.quadraticCurveTo(w/2, -35, w/2, -25);
-                    ctx.lineTo(w/2, -5);
-                    ctx.quadraticCurveTo(w/2, 5, w/2 - 10, 5);
-                    ctx.lineTo(5, 5);
-                    ctx.lineTo(0, 15); // Ponta
-                    ctx.lineTo(-5, 5);
-                    ctx.lineTo(-w/2 + 10, 5);
-                    ctx.quadraticCurveTo(-w/2, 5, -w/2, -5);
-                    ctx.lineTo(-w/2, -25);
+                    ctx.roundRect(-w/2, -30, w, 30, 10);
+                    ctx.fill();
+                    ctx.beginPath(); ctx.moveTo(-5, 0); ctx.lineTo(5, 0); ctx.lineTo(0, 10); ctx.fill();
+                    ctx.fillStyle = '#333';
+                    ctx.shadowColor = 'transparent';
+                    ctx.fillText(this.msg, 0, -10);
+                    ctx.restore();
+                }
+
+                ctx.scale(this.dir, 1); 
+
+                // Desenho
+                ctx.filter = "brightness(0.85)";
+                this.drawPart(ctx, 'perna_tras', cfg.offsets.legSpread, cfg.offsets.legY - bob, -walk * 0.5);
+                ctx.filter = "none";
+                ctx.filter = "brightness(0.9)";
+                this.drawPart(ctx, 'braco_tras', cfg.offsets.spreadX * 0.8, cfg.offsets.armY - bob, walk * 0.6);
+                ctx.filter = "none";
+                this.drawPart(ctx, 'tronco', 0, -bob, 0);
+                this.drawPart(ctx, 'cabeca', 0, cfg.offsets.headY - bob + (breathe * 5), breathe * 0.2);
+                this.drawPart(ctx, 'perna_frente', -cfg.offsets.legSpread, cfg.offsets.legY - bob, walk * 0.5);
+                this.drawPart(ctx, 'braco_frente', -cfg.offsets.spreadX, cfg.offsets.armY - bob, -walk * 0.6);
+
+                ctx.restore();
+            }
+
+            drawPart(ctx, name, x, y, rot) {
+                const img = avatarImages[name];
+                if (!img || !img.complete || img.naturalWidth === 0) return; // Proteção contra imagem quebrada
+                const piv = AVATAR_CONFIG.pivots[name];
+                const s = AVATAR_CONFIG.scale;
+                ctx.save();
+                ctx.translate(x * s, y * s);
+                ctx.rotate(rot);
+                ctx.drawImage(img, -img.width * s * piv.x, -img.height * s * piv.y, img.width * s, img.height * s);
+                ctx.restore();
+            }
+        }
+
+        // --- 4. ENGINE ---
+        const canvas = document.getElementById('arcadeCanvas');
+        const container = document.getElementById('canvasContainer');
+        const ctx = canvas.getContext('2d');
+        let avatares = [];
+        let lastTime = 0;
+        let myAvatar = null;
+
+        function initArcade() {
+            resize();
+            window.addEventListener('resize', resize);
+            myAvatar = new Avatar("Eu", true);
+            avatares.push(myAvatar);
+            requestAnimationFrame(loop);
+        }
+
+        function resize() {
+            const dpr = window.devicePixelRatio || 1;
+            const rect = container.getBoundingClientRect();
+            const w = rect.width; 
+            const h = rect.height;
+            canvas.width = w * dpr;
+            canvas.height = h * dpr;
+            ctx.scale(dpr, dpr);
+            const chaoY = h - 60;
+            avatares.forEach(a => a.y = chaoY);
+        }
+
+        function loop(timestamp) {
+            if (!lastTime) lastTime = timestamp;
+            const dt = (timestamp - lastTime) / 1000;
+            lastTime = timestamp;
+
+            const w = canvas.width / (window.devicePixelRatio||1);
+            const h = canvas.height / (window.devicePixelRatio||1);
+            ctx.clearRect(0, 0, w, h);
+            
+            // Fundo
+            ctx.fillStyle = '#81C784'; 
+            ctx.beginPath(); ctx.ellipse(w/2, h + 80, w * 0.8, 150, 0, 0, Math.PI * 2); ctx.fill();
+            ctx.strokeStyle = '#4CAF50'; ctx.lineWidth = 10; ctx.stroke();
+
+            avatares.sort((a, b) => a.y - b.y);
+            avatares.forEach(av => { av.update(dt); av.draw(ctx); });
+
+            requestAnimationFrame(loop);
+        }
+
+        // --- 5. LÓGICA DO CHAT (CORRIGIDA) ---
+        const input = document.getElementById('msgInput');
+        const history = document.getElementById('chatHistory');
+
+        function enviarMensagem() {
+            const txt = input.value.trim();
+            if(!txt) return;
+
+            const div = document.createElement('div');
+            div.className = 'msg me';
+            div.innerHTML = `<strong>Eu</strong>${txt}`;
+            history.appendChild(div);
+            history.scrollTop = history.scrollHeight;
+
+            if(myAvatar) myAvatar.falar(txt);
+            input.value = "";
+        }
+
+        // EVENT LISTENERS (AQUI ESTAVA O ERRO ANTES)
+        document.getElementById('btnSend').addEventListener('click', enviarMensagem);
+        
+        input.addEventListener('keypress', (e) => {
+            if(e.key === 'Enter') enviarMensagem();
+        });
+
+        // Botões do Dock
+        document.getElementById('btnLoja').addEventListener('click', () => alert('Loja em breve!'));
+        document.getElementById('btnItens').addEventListener('click', () => alert('Inventário em breve!'));
+        document.getElementById('btnCor').addEventListener('click', () => alert('Tintura em breve!'));
+        
+        document.getElementById('btnAddBot').addEventListener('click', () => {
+            const nomes = ["Visitante", "Gamer", "Noob", "Pro"];
+            const nome = nomes[Math.floor(Math.random() * nomes.length)] + Math.floor(Math.random()*100);
+            const bot = new Avatar(nome);
+            bot.y = myAvatar ? myAvatar.y : 300; 
+            avatares.push(bot);
+            document.getElementById('online-count').innerText = avatares.length;
+        });
+
+        // Inicia
+        carregarAssets();
+
+    </script>
+</body>
+</html>
