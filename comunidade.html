@@ -147,21 +147,36 @@
         </div>
     </div>
 
-    <script type="module">
-        // --- 1. CONFIGURAÇÃO (SEUS DADOS) ---
+  <script type="module">
+        // ==================================================
+        // 1. CONFIGURAÇÃO DO AVATAR (SEUS DADOS DO LABORATÓRIO)
+        // ==================================================
         const AVATAR_CONFIG = {
-            scale: 0.45, 
-            offsets: { headY: -86, armY: -55, legY: 50, spreadX: -42, legSpread: -19 },
+            scale: 0.4, // Ajuste aqui se o boneco ficar muito grande ou pequeno
+            offsets: {
+                headY: -86,
+                armY: -55,
+                legY: 50,
+                spreadX: -42,
+                legSpread: -19
+            },
             pivots: {
-                cabeca: { x: 0.501, y: 0.892 }, tronco: { x: 0.471, y: 0.585 },
-                braco_frente: { x: 0.266, y: 0.125 }, braco_tras: { x: 0.764, y: 0.118 },
-                perna_frente: { x: 0.293, y: 0.135 }, perna_tras: { x: 0.672, y: 0.118 }
+                cabeca: { x: 0.501, y: 0.892 },
+                tronco: { x: 0.471, y: 0.585 },
+                braco_frente: { x: 0.266, y: 0.125 },
+                braco_tras: { x: 0.764, y: 0.118 },
+                perna_frente: { x: 0.293, y: 0.135 },
+                perna_tras: { x: 0.672, y: 0.118 }
             }
         };
 
-        // --- 2. CARREGAMENTO ---
+        // ==================================================
+        // 2. CARREGAMENTO DE ASSETS
+        // ==================================================
         const avatarImages = {};
         const partsList = ['cabeca', 'tronco', 'braco_frente', 'braco_tras', 'perna_frente', 'perna_tras'];
+        
+        // ⚠️ IMPORTANTE: Certifique-se que as imagens estão nesta pasta no seu projeto!
         const BASE_URL = 'assets/avatar/base/'; 
 
         let assetsLoaded = 0;
@@ -169,59 +184,83 @@
             partsList.forEach(name => {
                 const img = new Image();
                 img.src = `${BASE_URL}${name}.png`;
+                
                 img.onload = () => {
                     assetsLoaded++;
                     if(assetsLoaded === partsList.length) initArcade();
                 };
+                
                 img.onerror = () => {
-                    console.warn(`Imagem falhou: ${name}. Iniciando modo de segurança.`);
-                    assetsLoaded++; // Conta como carregado pra não travar
+                    console.warn(`⚠️ Imagem não encontrada: ${name}.png`);
+                    // Continua mesmo com erro para não travar o site
+                    assetsLoaded++;
                     if(assetsLoaded === partsList.length) initArcade();
                 };
+                
                 avatarImages[name] = img;
             });
         }
 
-        // --- 3. CLASSE AVATAR ---
+        // ==================================================
+        // 3. CLASSE AVATAR (COM ANIMAÇÃO ESQUELETAL)
+        // ==================================================
         class Avatar {
             constructor(nome, isMe = false) {
                 this.x = Math.random() * 300;
-                this.y = 300; 
+                this.y = 300; // Será ajustado no resize
                 this.nome = nome;
                 this.isMe = isMe;
+                
+                // Chat
                 this.msg = "";
                 this.msgTimer = 0;
-                this.dir = Math.random() > 0.5 ? 1 : -1;
+
+                // Física e Estado
+                this.dir = Math.random() > 0.5 ? 1 : -1; // 1 = Direita, -1 = Esquerda
                 this.speed = Math.random() * 0.8 + 0.5;
                 this.state = 'walk';
-                this.timer = Math.random() * 100;
+                this.timer = Math.random() * 100; // Começa em tempo aleatório para não andarem sincronizados
                 this.targetX = this.x;
+                
                 this.escolherNovoAlvo();
             }
 
             falar(texto) {
                 this.msg = texto;
-                this.msgTimer = 300; 
-                this.timer = 0; 
+                this.msgTimer = 300; // 5 segundos
+                this.timer = 0; // Reseta animação (pulo de alegria)
             }
 
             escolherNovoAlvo() {
+                // Pega a largura real do canvas
                 const canvasW = document.getElementById('arcadeCanvas').width / (window.devicePixelRatio||1);
                 const margem = 50;
+                
+                // Escolhe um ponto aleatório na tela
                 this.targetX = Math.random() * (canvasW - margem*2) + margem;
+                
+                // Define direção
                 this.dir = this.targetX > this.x ? 1 : -1;
                 this.state = 'walk';
+                
+                // Define quando vai parar
                 setTimeout(() => {
                     this.state = 'idle';
-                    setTimeout(() => this.escolherNovoAlvo(), Math.random() * 2000 + 1000);
-                }, Math.random() * 4000 + 2000);
+                    // Define quando vai andar de novo
+                    setTimeout(() => this.escolherNovoAlvo(), Math.random() * 3000 + 2000);
+                }, Math.random() * 4000 + 3000);
             }
 
             update(dt) {
-                this.timer += dt * 5;
+                this.timer += dt * 5; // Velocidade da animação
+                
+                // Timer do Balão de Fala
                 if(this.msgTimer > 0) this.msgTimer--; else this.msg = "";
+
+                // Movimento
                 if (this.state === 'walk') {
                     this.x += this.dir * this.speed;
+                    // Se chegou perto do destino, para
                     if (Math.abs(this.x - this.targetX) < 10) this.state = 'idle';
                 }
             }
@@ -229,75 +268,109 @@
             draw(ctx) {
                 const cfg = AVATAR_CONFIG;
                 const s = cfg.scale;
-                let walk = 0, bob = 0, breathe = Math.sin(this.timer * 0.5) * 0.05;
+                
+                // --- MATEMÁTICA DA ANIMAÇÃO ---
+                let walk = 0;
+                let bob = 0;
+                let breathe = Math.sin(this.timer * 0.5) * 0.05; // Respiração constante
 
                 if (this.state === 'walk') {
-                    walk = Math.sin(this.timer);
-                    bob = Math.abs(Math.sin(this.timer)) * 10;
+                    walk = Math.sin(this.timer); // Ciclo das pernas
+                    bob = Math.abs(Math.sin(this.timer)) * 10; // Pulo do corpo
                 }
 
                 ctx.save();
                 ctx.translate(this.x, this.y);
                 
-                // Nome
+                // 1. Desenha o NOME
                 ctx.fillStyle = this.isMe ? '#FFC107' : 'white';
                 ctx.font = 'bold 14px Nunito';
                 ctx.textAlign = 'center';
                 ctx.shadowColor = 'rgba(0,0,0,0.5)';
                 ctx.shadowBlur = 4;
-                ctx.fillText(this.nome, 0, -140 * s);
+                ctx.fillText(this.nome, 0, -150 * s);
                 ctx.shadowBlur = 0;
 
-                // Balão
+                // 2. Desenha o BALÃO (Se tiver falando)
                 if (this.msg) {
-                    ctx.save();
-                    ctx.translate(0, -175 * s);
-                    ctx.fillStyle = 'white';
-                    ctx.shadowColor = 'rgba(0,0,0,0.2)';
-                    ctx.shadowBlur = 5;
-                    ctx.shadowOffsetY = 3;
-                    const w = ctx.measureText(this.msg).width + 30;
-                    ctx.beginPath();
-                    ctx.roundRect(-w/2, -30, w, 30, 10);
-                    ctx.fill();
-                    ctx.beginPath(); ctx.moveTo(-5, 0); ctx.lineTo(5, 0); ctx.lineTo(0, 10); ctx.fill();
-                    ctx.fillStyle = '#333';
-                    ctx.shadowColor = 'transparent';
-                    ctx.fillText(this.msg, 0, -10);
-                    ctx.restore();
+                    this.drawBalloon(ctx, s);
                 }
 
+                // 3. ESPELHAMENTO (Vira o boneco para a direção certa)
                 ctx.scale(this.dir, 1); 
 
-                // Desenho
+                // --- 4. DESENHO DAS PARTES (ORDEM DE CAMADAS) ---
+                
+                // Perna de Trás (Escura)
                 ctx.filter = "brightness(0.85)";
                 this.drawPart(ctx, 'perna_tras', cfg.offsets.legSpread, cfg.offsets.legY - bob, -walk * 0.5);
                 ctx.filter = "none";
+
+                // Braço de Trás (Escuro)
                 ctx.filter = "brightness(0.9)";
                 this.drawPart(ctx, 'braco_tras', cfg.offsets.spreadX * 0.8, cfg.offsets.armY - bob, walk * 0.6);
                 ctx.filter = "none";
+
+                // Tronco (Base)
                 this.drawPart(ctx, 'tronco', 0, -bob, 0);
+
+                // Cabeça (Com leve balanço de respiração)
                 this.drawPart(ctx, 'cabeca', 0, cfg.offsets.headY - bob + (breathe * 5), breathe * 0.2);
+
+                // Perna da Frente
                 this.drawPart(ctx, 'perna_frente', -cfg.offsets.legSpread, cfg.offsets.legY - bob, walk * 0.5);
+
+                // Braço da Frente
                 this.drawPart(ctx, 'braco_frente', -cfg.offsets.spreadX, cfg.offsets.armY - bob, -walk * 0.6);
 
                 ctx.restore();
             }
 
+            // Função auxiliar para desenhar cada osso
             drawPart(ctx, name, x, y, rot) {
                 const img = avatarImages[name];
-                if (!img || !img.complete || img.naturalWidth === 0) return; // Proteção contra imagem quebrada
+                if (!img || !img.complete || img.naturalWidth === 0) return;
+                
                 const piv = AVATAR_CONFIG.pivots[name];
                 const s = AVATAR_CONFIG.scale;
+
                 ctx.save();
-                ctx.translate(x * s, y * s);
-                ctx.rotate(rot);
+                ctx.translate(x * s, y * s); // Vai até a posição da junta
+                ctx.rotate(rot);             // Gira
+                // Desenha a imagem deslocada pelo pivô
                 ctx.drawImage(img, -img.width * s * piv.x, -img.height * s * piv.y, img.width * s, img.height * s);
+                ctx.restore();
+            }
+
+            drawBalloon(ctx, s) {
+                ctx.save();
+                ctx.translate(0, -185 * s);
+                ctx.fillStyle = 'white';
+                ctx.shadowColor = 'rgba(0,0,0,0.2)';
+                ctx.shadowBlur = 5;
+                ctx.shadowOffsetY = 3;
+                
+                const w = ctx.measureText(this.msg).width + 30;
+                
+                // Desenha balão arredondado
+                ctx.beginPath();
+                ctx.roundRect(-w/2, -30, w, 30, 10);
+                ctx.fill();
+                
+                // Ponta do balão
+                ctx.beginPath(); ctx.moveTo(-5, 0); ctx.lineTo(5, 0); ctx.lineTo(0, 10); ctx.fill();
+                
+                // Texto
+                ctx.fillStyle = '#333';
+                ctx.shadowColor = 'transparent';
+                ctx.fillText(this.msg, 0, -10);
                 ctx.restore();
             }
         }
 
-        // --- 4. ENGINE ---
+        // ==================================================
+        // 4. ENGINE DO JOGO (LOOP E RENDERIZAÇÃO)
+        // ==================================================
         const canvas = document.getElementById('arcadeCanvas');
         const container = document.getElementById('canvasContainer');
         const ctx = canvas.getContext('2d');
@@ -308,8 +381,12 @@
         function initArcade() {
             resize();
             window.addEventListener('resize', resize);
+            
+            // Cria o Avatar do Jogador ("Eu")
             myAvatar = new Avatar("Eu", true);
             avatares.push(myAvatar);
+            
+            // Inicia o Loop
             requestAnimationFrame(loop);
         }
 
@@ -318,9 +395,12 @@
             const rect = container.getBoundingClientRect();
             const w = rect.width; 
             const h = rect.height;
+            
             canvas.width = w * dpr;
             canvas.height = h * dpr;
             ctx.scale(dpr, dpr);
+            
+            // Define a linha do chão (onde os pés tocam)
             const chaoY = h - 60;
             avatares.forEach(a => a.y = chaoY);
         }
@@ -332,20 +412,37 @@
 
             const w = canvas.width / (window.devicePixelRatio||1);
             const h = canvas.height / (window.devicePixelRatio||1);
+            
+            // Limpa a tela
             ctx.clearRect(0, 0, w, h);
             
-            // Fundo
+            // --- DESENHA O CENÁRIO ---
+            // Chão Curvo (Estilo Animal Crossing / Planeta)
             ctx.fillStyle = '#81C784'; 
-            ctx.beginPath(); ctx.ellipse(w/2, h + 80, w * 0.8, 150, 0, 0, Math.PI * 2); ctx.fill();
-            ctx.strokeStyle = '#4CAF50'; ctx.lineWidth = 10; ctx.stroke();
+            ctx.beginPath(); 
+            ctx.ellipse(w/2, h + 80, w * 0.8, 150, 0, 0, Math.PI * 2); 
+            ctx.fill();
+            
+            // Borda da Grama
+            ctx.strokeStyle = '#4CAF50'; 
+            ctx.lineWidth = 10; 
+            ctx.stroke();
 
+            // --- DESENHA OS AVATARES ---
+            // Ordena por Y (quem está mais "embaixo" na tela desenha por cima)
             avatares.sort((a, b) => a.y - b.y);
-            avatares.forEach(av => { av.update(dt); av.draw(ctx); });
+            
+            avatares.forEach(av => { 
+                av.update(dt); 
+                av.draw(ctx); 
+            });
 
             requestAnimationFrame(loop);
         }
 
-        // --- 5. LÓGICA DO CHAT (CORRIGIDA) ---
+        // ==================================================
+        // 5. LÓGICA DO CHAT E UI
+        // ==================================================
         const input = document.getElementById('msgInput');
         const history = document.getElementById('chatHistory');
 
@@ -353,38 +450,45 @@
             const txt = input.value.trim();
             if(!txt) return;
 
+            // Adiciona no histórico visual
             const div = document.createElement('div');
             div.className = 'msg me';
             div.innerHTML = `<strong>Eu</strong>${txt}`;
             history.appendChild(div);
             history.scrollTop = history.scrollHeight;
 
+            // Faz o boneco falar
             if(myAvatar) myAvatar.falar(txt);
+            
             input.value = "";
         }
 
-        // EVENT LISTENERS (AQUI ESTAVA O ERRO ANTES)
+        // Event Listeners
         document.getElementById('btnSend').addEventListener('click', enviarMensagem);
         
         input.addEventListener('keypress', (e) => {
             if(e.key === 'Enter') enviarMensagem();
         });
 
-        // Botões do Dock
-        document.getElementById('btnLoja').addEventListener('click', () => alert('Loja em breve!'));
-        document.getElementById('btnItens').addEventListener('click', () => alert('Inventário em breve!'));
-        document.getElementById('btnCor').addEventListener('click', () => alert('Tintura em breve!'));
-        
+        // Botão "Add Bot" (Para testar com mais gente)
         document.getElementById('btnAddBot').addEventListener('click', () => {
-            const nomes = ["Visitante", "Gamer", "Noob", "Pro"];
+            const nomes = ["Visitante", "Gamer", "Noob", "Pro", "Hacker", "Ninja"];
             const nome = nomes[Math.floor(Math.random() * nomes.length)] + Math.floor(Math.random()*100);
             const bot = new Avatar(nome);
+            
+            // Coloca o bot na mesma altura do chão que eu
             bot.y = myAvatar ? myAvatar.y : 300; 
+            
             avatares.push(bot);
             document.getElementById('online-count').innerText = avatares.length;
         });
 
-        // Inicia
+        // Outros botões
+        document.getElementById('btnLoja').addEventListener('click', () => alert('Loja em breve!'));
+        document.getElementById('btnItens').addEventListener('click', () => alert('Inventário em breve!'));
+        document.getElementById('btnCor').addEventListener('click', () => alert('Tintura em breve!'));
+
+        // INICIA TUDO
         carregarAssets();
 
     </script>
