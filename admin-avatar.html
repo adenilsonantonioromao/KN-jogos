@@ -3,78 +3,79 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin - Editor de Avatar</title>
+    <title>Admin - Editor de Avatar (Master)</title>
     <style>
         body { 
             background: #1e1e1e; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; 
             margin: 0; height: 100vh; display: flex; flex-direction: column; 
         }
 
-        /* BARRA SUPERIOR */
         header {
-            background: #2d2d2d; padding: 15px 20px; border-bottom: 1px solid #444;
+            background: #2d2d2d; padding: 10px 20px; border-bottom: 1px solid #444;
             display: flex; justify-content: space-between; align-items: center;
         }
-        h2 { margin: 0; color: #FF5722; font-size: 1.2rem; }
+        h2 { margin: 0; color: #FF5722; font-size: 1.1rem; }
         
         .btn-save {
-            background: #4CAF50; color: white; border: none; padding: 10px 25px;
-            border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 1rem;
-            transition: 0.2s;
+            background: #4CAF50; color: white; border: none; padding: 8px 20px;
+            border-radius: 4px; cursor: pointer; font-weight: bold;
         }
         .btn-save:hover { background: #43A047; }
 
-        /* LAYOUT PRINCIPAL */
         .workspace { display: flex; flex: 1; overflow: hidden; }
 
-        /* COLUNA 1: LISTA DE PEÇAS */
+        /* COLUNA 1: LISTA */
         .sidebar {
-            width: 220px; background: #252526; border-right: 1px solid #444;
+            width: 200px; background: #252526; border-right: 1px solid #444;
             overflow-y: auto; padding: 10px;
         }
         .part-btn {
-            display: block; width: 100%; padding: 10px; margin-bottom: 5px;
+            display: block; width: 100%; padding: 8px; margin-bottom: 4px;
             background: #333; border: 1px solid #444; color: #aaa;
-            text-align: left; cursor: pointer; border-radius: 4px; font-size: 0.9rem;
+            text-align: left; cursor: pointer; border-radius: 4px; font-size: 0.85rem;
         }
-        .part-btn:hover { background: #3e3e42; }
-        .part-btn.active { 
-            background: #007ACC; color: white; border-color: #007ACC; 
-            font-weight: bold;
-        }
+        .part-btn.active { background: #007ACC; color: white; font-weight: bold; }
 
-        /* COLUNA 2: CANVAS (VISUALIZAÇÃO) */
+        /* COLUNA 2: PREVIEW GLOBAL */
         .viewport {
             flex: 1; background: #111; position: relative;
             display: flex; justify-content: center; align-items: center;
-            overflow: hidden;
+            border-right: 1px solid #444;
         }
-        canvas {
-            background-image: linear-gradient(45deg, #222 25%, transparent 25%), 
-                              linear-gradient(-45deg, #222 25%, transparent 25%), 
-                              linear-gradient(45deg, transparent 75%, #222 75%), 
-                              linear-gradient(-45deg, transparent 75%, #222 75%);
+        #editorCanvas {
+            background-image: radial-gradient(#333 1px, transparent 1px);
             background-size: 20px 20px;
             background-color: #1a1a1a;
-            border: 2px solid #444;
-            box-shadow: 0 0 30px rgba(0,0,0,0.5);
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
         }
 
-        /* COLUNA 3: CONTROLES */
+        /* COLUNA 3: EDITOR DE PIVÔ E PROPRIEDADES */
         .inspector {
-            width: 320px; background: #252526; border-left: 1px solid #444;
-            padding: 20px; overflow-y: auto;
+            width: 350px; background: #252526; 
+            display: flex; flex-direction: column;
         }
-        .control-group { margin-bottom: 20px; background: #333; padding: 15px; border-radius: 8px; }
-        .control-label { display: block; margin-bottom: 5px; font-size: 0.8rem; color: #ccc; }
-        .slider-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
-        input[type=range] { flex: 1; cursor: pointer; }
-        input[type=number] { width: 60px; background: #222; border: 1px solid #555; color: white; padding: 5px; border-radius: 4px; }
+        
+        .pivot-area {
+            height: 300px; background: #222; border-bottom: 1px solid #444;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            position: relative;
+        }
+        #pivotCanvas {
+            background: url('https://i.imgur.com/3M7qL9p.png'); /* Xadrez */
+            border: 1px solid #555; cursor: crosshair;
+        }
+        
+        .properties { padding: 15px; overflow-y: auto; flex: 1; }
+        
+        .control-group { margin-bottom: 15px; background: #333; padding: 10px; border-radius: 6px; }
+        .label-row { display: flex; justify-content: space-between; font-size: 0.8rem; color: #ccc; margin-bottom: 5px; }
+        .slider-row { display: flex; align-items: center; gap: 5px; }
+        input[type=range] { flex: 1; }
+        input[type=number] { width: 50px; background: #222; border: 1px solid #555; color: white; padding: 2px; }
 
-        /* MODO LOGIN */
         #login-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.9); z-index: 999;
+            background: rgba(0,0,0,0.95); z-index: 999;
             display: flex; justify-content: center; align-items: center;
         }
     </style>
@@ -82,73 +83,65 @@
 <body>
 
     <div id="login-overlay">
-        <div style="text-align:center; color:white;">
-            <h1>🔒 Área Restrita</h1>
-            <button id="btnLogin" class="btn-save" style="background:#2196F3;">Entrar como Admin</button>
+        <div style="text-align:center;">
+            <h1 style="color:white;">🔐 Admin Avatar</h1>
+            <button id="btnLogin" class="btn-save" style="background:#2196F3; padding:15px 30px;">Entrar com Google</button>
         </div>
     </div>
 
     <header>
-        <h2>🛠️ Editor de Avatar Base</h2>
-        <button class="btn-save" onclick="salvarNoFirebase()">💾 SALVAR NO BANCO</button>
+        <h2>Editor de Avatar Base</h2>
+        <div style="display:flex; gap:10px; align-items:center;">
+            <span style="font-size:0.8rem; color:#aaa;">Zoom:</span>
+            <input type="range" min="0.5" max="3" step="0.1" value="1" oninput="updateZoom(this.value)">
+            <button class="btn-save" onclick="salvarNoFirebase()">💾 PUBLICAR</button>
+        </div>
     </header>
 
     <div class="workspace">
-        <!-- SELETOR DE PEÇAS -->
-        <div class="sidebar" id="partsList">
-            <!-- Botões gerados via JS -->
-        </div>
+        <!-- 1. LISTA -->
+        <div class="sidebar" id="partsList"></div>
 
-        <!-- CANVAS -->
+        <!-- 2. PREVIEW GERAL -->
         <div class="viewport">
-            <canvas id="editorCanvas" width="600" height="600"></canvas>
+            <canvas id="editorCanvas" width="500" height="600"></canvas>
         </div>
 
-        <!-- PROPRIEDADES -->
+        <!-- 3. EDITOR DE PIVÔ -->
         <div class="inspector">
-            
-            <!-- NOVO: CONTROLE DE ZOOM -->
-            <div class="control-group" style="background: #2D2D30; border: 1px solid #444;">
-                <label class="control-label" style="color: #4CAF50; font-weight: bold;">🔍 ZOOM DA CÂMERA</label>
-                <div class="slider-row">
-                    <input type="range" id="globalZoom" min="0.5" max="3" step="0.1" value="1" oninput="updateZoom(this.value)">
-                    <span id="zoomDisplay" style="width: 30px; text-align: right; font-size: 0.8rem;">1.0x</span>
-                </div>
+            <div class="pivot-area">
+                <div style="position:absolute; top:5px; left:10px; font-size:0.8rem; color:#aaa;">📍 Editor de Pivô (Clique na imagem)</div>
+                <canvas id="pivotCanvas" width="250" height="250"></canvas>
             </div>
 
-            <h3 id="selectedPartName" style="margin-top:0; color:#2196F3;">Selecione uma peça</h3>
-            
-            <div class="control-group">
-                <label class="control-label">📍 Posição X (Offset)</label>
-                <div class="slider-row">
-                    <input type="range" id="inpX" min="-300" max="300" step="1" oninput="updateConfig('x', this.value)">
-                    <input type="number" id="numX" onchange="updateConfig('x', this.value)">
+            <div class="properties">
+                <h3 id="selectedPartName" style="margin-top:0; color:#2196F3;">Tronco</h3>
+                
+                <div class="control-group">
+                    <div class="label-row"><span>Posição X</span></div>
+                    <div class="slider-row">
+                        <input type="range" id="inpX" min="-200" max="200" oninput="updateConfig('x', this.value)">
+                        <input type="number" id="numX" onchange="updateConfig('x', this.value)">
+                    </div>
+                    <div class="label-row" style="margin-top:5px;"><span>Posição Y</span></div>
+                    <div class="slider-row">
+                        <input type="range" id="inpY" min="-300" max="300" oninput="updateConfig('y', this.value)">
+                        <input type="number" id="numY" onchange="updateConfig('y', this.value)">
+                    </div>
                 </div>
 
-                <label class="control-label">📍 Posição Y (Offset)</label>
-                <div class="slider-row">
-                    <input type="range" id="inpY" min="-300" max="300" step="1" oninput="updateConfig('y', this.value)">
-                    <input type="number" id="numY" onchange="updateConfig('y', this.value)">
+                <div class="control-group">
+                    <div class="label-row"><span>Pivô X (Fino)</span></div>
+                    <div class="slider-row">
+                        <input type="range" id="inpPivX" min="0" max="1" step="0.01" oninput="updateConfig('pivX', this.value)">
+                        <input type="number" id="numPivX" step="0.01" onchange="updateConfig('pivX', this.value)">
+                    </div>
+                    <div class="label-row" style="margin-top:5px;"><span>Pivô Y (Fino)</span></div>
+                    <div class="slider-row">
+                        <input type="range" id="inpPivY" min="0" max="1" step="0.01" oninput="updateConfig('pivY', this.value)">
+                        <input type="number" id="numPivY" step="0.01" onchange="updateConfig('pivY', this.value)">
+                    </div>
                 </div>
-            </div>
-
-            <div class="control-group">
-                <label class="control-label">🎯 Pivô X (0.0 a 1.0)</label>
-                <div class="slider-row">
-                    <input type="range" id="inpPivX" min="0" max="1" step="0.01" oninput="updateConfig('pivX', this.value)">
-                    <input type="number" id="numPivX" step="0.01" onchange="updateConfig('pivX', this.value)">
-                </div>
-
-                <label class="control-label">🎯 Pivô Y (0.0 a 1.0)</label>
-                <div class="slider-row">
-                    <input type="range" id="inpPivY" min="0" max="1" step="0.01" oninput="updateConfig('pivY', this.value)">
-                    <input type="number" id="numPivY" step="0.01" onchange="updateConfig('pivY', this.value)">
-                </div>
-            </div>
-
-            <div class="control-group">
-                <label class="control-label">Z-Index (Ordem de Camada)</label>
-                <input type="number" id="layerIndex" disabled style="width:100%; opacity:0.5;">
             </div>
         </div>
     </div>
@@ -158,7 +151,6 @@
         import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-        // --- CONFIGURAÇÃO FIREBASE ---
         const firebaseConfig = {
             apiKey: "AIzaSyBIR7CqYYvMZVQxtO67JCQoJ3OLT1cvAx8",
             authDomain: "kn-jogos.firebaseapp.com",
@@ -172,43 +164,23 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
         const provider = new GoogleAuthProvider();
-
         const ADMIN_ID = "0wCjH6RgGmgpYfRcRQunjmymy4O2";
 
-        // --- VARIÁVEIS DO EDITOR ---
+        // --- DADOS ---
         let viewportZoom = 1.0;
+        let activePart = 'tronco';
+        const images = {};
+        const BASE_URL = 'assets/avatar/base/';
 
-        // --- DADOS DO AVATAR ---
-        let avatarConfig = {
-            scale: 0.22, 
-            parts: {
-                // Configuração inicial (placeholder) - você vai ajustar visualmente
-                'capa': { x: 0, y: 0, pivX: 0.5, pivY: 0.5 },
-                'perna_tras': { x: -24, y: 50, pivX: 0.67, pivY: 0.11 },
-                'perna_frente': { x: 24, y: 50, pivX: 0.29, pivY: 0.13 },
-                'escudo_tras': { x: 0, y: 0, pivX: 0.5, pivY: 0.5 },
-                'braco_tras': { x: -37, y: -150, pivX: 0.76, pivY: 0.11 },
-                'tronco': { x: 0, y: 0, pivX: 0.47, pivY: 0.75 },
-                'cintura': { x: 0, y: 0, pivX: 0.5, pivY: 0.5 },
-                'cabeca': { x: 0, y: -230, pivX: 0.50, pivY: 0.89 },
-                'rosto': { x: 0, y: -230, pivX: 0.5, pivY: 0.5 },
-                'mascara': { x: 0, y: -230, pivX: 0.5, pivY: 0.5 },
-                'cabelo': { x: 0, y: -230, pivX: 0.5, pivY: 0.5 },
-                'arma_frente': { x: 0, y: 0, pivX: 0.5, pivY: 0.5 },
-                'braco_frente': { x: 47, y: -150, pivX: 0.26, pivY: 0.12 },
-                'escudo_frente': { x: 0, y: 0, pivX: 0.5, pivY: 0.5 }
-            }
-        };
-
-        // NOVA ORDEM DE RENDERIZAÇÃO SOLICITADA
+        // ORDEM EXATA SOLICITADA
         const LAYER_ORDER = [
             'capa',             // 0
-            'braco_tras',       // 1
-            'perna_tras',       // 2
-            'perna_frente',     // 3
-            'escudo_tras',      // 4
+            'escudo_tras',      // 1
+            'braco_tras',       // 2
+            'perna_tras',       // 3
+            'perna_frente',     // 4
             'tronco',           // 5
-            'cintura',          // 6 (novo)
+            'cintura',          // 6 (enfeite)
             'cabeca',           // 7
             'rosto',            // 8
             'mascara',          // 9
@@ -218,26 +190,50 @@
             'escudo_frente'     // 13
         ];
 
-        const images = {};
-        const BASE_URL = 'assets/avatar/base/';
-        let activePart = 'tronco';
+        // Configuração Padrão (Será sobrescrita se tiver no banco)
+        let avatarConfig = {
+            scale: 0.22,
+            parts: {}
+        };
 
-        // --- SISTEMA ---
+        // Inicializa config vazia baseada na ordem
+        LAYER_ORDER.forEach(k => {
+            avatarConfig.parts[k] = { x: 0, y: 0, pivX: 0.5, pivY: 0.5 };
+        });
 
+        // --- INICIALIZAÇÃO ---
         function init() {
             createSidebar();
             loadImages();
+            loadConfigFromDb(); // Tenta carregar config existente
             loop();
+            drawPivotEditor();
+        }
+
+        async function loadConfigFromDb() {
+            try {
+                const snap = await getDoc(doc(db, "config", "avatar_base"));
+                if (snap.exists()) {
+                    const data = snap.data();
+                    // Mescla com o padrão para garantir que novas peças existam
+                    avatarConfig.scale = data.scale || 0.22;
+                    LAYER_ORDER.forEach(k => {
+                        if(data.parts[k]) avatarConfig.parts[k] = data.parts[k];
+                    });
+                    selectPart('tronco'); // Atualiza UI
+                }
+            } catch(e) { console.log("Sem config salva, usando padrão."); }
         }
 
         function createSidebar() {
             const list = document.getElementById('partsList');
+            list.innerHTML = '';
             LAYER_ORDER.forEach((key, index) => {
                 const btn = document.createElement('div');
                 btn.className = 'part-btn';
+                btn.id = `btn-${key}`;
                 btn.innerText = `${index}. ${key.toUpperCase().replace('_', ' ')}`;
-                btn.onclick = () => selectPart(key, btn);
-                if (key === 'tronco') btn.classList.add('active'); 
+                btn.onclick = () => selectPart(key);
                 list.appendChild(btn);
             });
         }
@@ -246,25 +242,28 @@
             LAYER_ORDER.forEach(name => {
                 const img = new Image();
                 img.src = `${BASE_URL}${name}.png`;
-                img.onload = () => console.log(`Carregado: ${name}`);
+                img.onload = () => {
+                    if(name === activePart) drawPivotEditor();
+                };
                 img.onerror = () => img.isMissing = true;
                 images[name] = img;
             });
         }
 
-        function selectPart(key, btnElement) {
+        // --- LÓGICA DE SELEÇÃO E PIVÔ ---
+        function selectPart(key) {
             activePart = key;
             document.querySelectorAll('.part-btn').forEach(b => b.classList.remove('active'));
-            btnElement.classList.add('active');
-            
+            document.getElementById(`btn-${key}`).classList.add('active');
             document.getElementById('selectedPartName').innerText = key.toUpperCase().replace('_', ' ');
-            const data = avatarConfig.parts[key];
             
+            const data = avatarConfig.parts[key];
             setInput('X', data.x);
             setInput('Y', data.y);
             setInput('PivX', data.pivX);
             setInput('PivY', data.pivY);
-            document.getElementById('layerIndex').value = LAYER_ORDER.indexOf(key);
+            
+            drawPivotEditor();
         }
 
         function setInput(suffix, val) {
@@ -276,126 +275,170 @@
             const num = parseFloat(val);
             avatarConfig.parts[activePart][field] = num;
             
+            // Atualiza inputs cruzados
             const suffix = field.charAt(0).toUpperCase() + field.slice(1);
-            const numId = 'num' + (field.startsWith('piv') ? 'Piv' + field.charAt(3) : suffix);
-            const rngId = 'inp' + (field.startsWith('piv') ? 'Piv' + field.charAt(3) : suffix);
+            const idBase = field.startsWith('piv') ? 'Piv' + field.charAt(3) : suffix;
             
-            if(document.activeElement.type === 'range') document.getElementById(numId).value = num;
-            else document.getElementById(rngId).value = num;
+            if(document.activeElement.type === 'range') document.getElementById('num' + idBase).value = num;
+            else document.getElementById('inp' + idBase).value = num;
+
+            if(field.startsWith('piv')) drawPivotEditor();
         }
 
-        // NOVO: Atualiza o Zoom
-        window.updateZoom = function(val) {
-            viewportZoom = parseFloat(val);
-            document.getElementById('zoomDisplay').innerText = viewportZoom.toFixed(1) + 'x';
-        }
+        window.updateZoom = function(val) { viewportZoom = parseFloat(val); }
 
-        // --- RENDERIZAÇÃO ---
-        const canvas = document.getElementById('editorCanvas');
-        const ctx = canvas.getContext('2d');
+        // --- EDITOR DE PIVÔ (CANVAS PEQUENO) ---
+        const pCanvas = document.getElementById('pivotCanvas');
+        const pCtx = pCanvas.getContext('2d');
 
-        function drawPart(key) {
-            const img = images[key];
-            const cfg = avatarConfig.parts[key];
+        function drawPivotEditor() {
+            pCtx.clearRect(0, 0, 250, 250);
+            
+            // Linhas guia
+            pCtx.strokeStyle = '#444'; pCtx.beginPath();
+            pCtx.moveTo(125,0); pCtx.lineTo(125,250);
+            pCtx.moveTo(0,125); pCtx.lineTo(250,125); pCtx.stroke();
 
-            // Desenha placeholder se faltar a imagem
+            const img = images[activePart];
+            const cfg = avatarConfig.parts[activePart];
+
             if (!img || img.isMissing) {
-                // Mostra um quadrado semitransparente apenas para peças essenciais para orientar
-                if(['tronco','cabeca','braco','perna'].some(k => key.includes(k))) {
-                    ctx.save();
-                    ctx.translate(300 + cfg.x, 300 + cfg.y);
-                    ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
-                    ctx.strokeStyle = '#666';
-                    ctx.setLineDash([5, 5]);
-                    ctx.strokeRect(-25, -25, 50, 50);
-                    ctx.restore();
-                }
+                pCtx.fillStyle = '#333'; pCtx.fillText("Sem Imagem", 90, 125);
+                // Desenha quadrado placeholder
+                pCtx.fillStyle = 'rgba(255,255,255,0.2)';
+                pCtx.fillRect(100, 100, 50, 50);
                 return;
             }
 
-            ctx.save();
-            // Centraliza na tela (300, 300) + Offset
-            ctx.translate(300 + cfg.x, 300 + cfg.y);
-            
-            const w = img.width;
-            const h = img.height;
+            // Centraliza imagem no canvas pequeno
+            // Escala para caber se for muito grande
+            const scale = Math.min(200/img.width, 200/img.height, 1); 
+            const dw = img.width * scale;
+            const dh = img.height * scale;
+            const dx = (250 - dw) / 2;
+            const dy = (250 - dh) / 2;
 
-            // Desenha com Pivô
-            ctx.drawImage(img, -w * cfg.pivX, -h * cfg.pivY);
+            pCtx.drawImage(img, dx, dy, dw, dh);
 
-            // Gizmo (Se selecionado)
-            if (key === activePart) {
-                ctx.fillStyle = '#FF5722';
-                ctx.beginPath(); ctx.arc(0,0, 6/viewportZoom, 0, Math.PI*2); ctx.fill(); // Ponto ajusta com zoom
-                ctx.strokeStyle = '#FFC107';
-                ctx.lineWidth = 2 / viewportZoom;
-                ctx.strokeRect(-w * cfg.pivX, -h * cfg.pivY, w, h);
-            }
+            // Desenha o Ponto do Pivô
+            const px = dx + (cfg.pivX * dw);
+            const py = dy + (cfg.pivY * dh);
 
-            ctx.restore();
+            pCtx.fillStyle = '#FF0000';
+            pCtx.beginPath(); pCtx.arc(px, py, 5, 0, Math.PI*2); pCtx.fill();
+            pCtx.strokeStyle = 'white'; pCtx.lineWidth = 2; pCtx.stroke();
         }
 
+        // CLIQUE E ARRASTE NO PIVÔ
+        let draggingPivot = false;
+        pCanvas.addEventListener('mousedown', () => draggingPivot = true);
+        window.addEventListener('mouseup', () => draggingPivot = false);
+        
+        pCanvas.addEventListener('mousemove', (e) => {
+            if(!draggingPivot) return;
+            const rect = pCanvas.getBoundingClientRect();
+            const img = images[activePart];
+            if(!img || img.isMissing) return;
+
+            const scale = Math.min(200/img.width, 200/img.height, 1);
+            const dw = img.width * scale;
+            const dh = img.height * scale;
+            const dx = (250 - dw) / 2;
+            const dy = (250 - dh) / 2;
+
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+
+            // Calcula 0.0 a 1.0 relativo à imagem desenhada
+            let relX = (mouseX - dx) / dw;
+            let relY = (mouseY - dy) / dh;
+
+            // Trava limites (opcional, mas bom)
+            // relX = Math.max(0, Math.min(1, relX));
+            // relY = Math.max(0, Math.min(1, relY));
+
+            updateConfig('pivX', relX.toFixed(3));
+            updateConfig('pivY', relY.toFixed(3));
+        });
+
+        // --- RENDERIZAÇÃO PRINCIPAL ---
+        const canvas = document.getElementById('editorCanvas');
+        const ctx = canvas.getContext('2d');
+
         function loop() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.clearRect(0, 0, 500, 600);
             
             ctx.save();
-            
-            // --- APLICA O ZOOM GLOBAL ---
-            // 1. Move para o centro
-            ctx.translate(300, 300);
-            // 2. Aplica escala
+            ctx.translate(250, 300); // Centro da tela
             ctx.scale(viewportZoom, viewportZoom);
-            // 3. Move de volta (para que o zoom seja no centro, não no canto 0,0)
-            ctx.translate(-300, -300);
+            ctx.translate(-250, -300);
 
-            // Linhas Guia
-            ctx.strokeStyle = '#333';
-            ctx.lineWidth = 1 / viewportZoom; // Mantém a linha fina mesmo com zoom
-            ctx.beginPath(); ctx.moveTo(300,0); ctx.lineTo(300,600); ctx.stroke();
-            ctx.beginPath(); ctx.moveTo(0,300); ctx.lineTo(600,300); ctx.stroke();
+            // Guia Central
+            ctx.strokeStyle = '#333'; ctx.lineWidth = 1/viewportZoom;
+            ctx.beginPath(); ctx.moveTo(250,0); ctx.lineTo(250,600); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(0,300); ctx.lineTo(500,300); ctx.stroke();
 
-            // Desenha na ordem
             LAYER_ORDER.forEach(key => {
-                if (key.includes('tras') || key === 'capa') ctx.filter = "brightness(0.7)";
-                drawPart(key);
-                ctx.filter = "none";
-            });
-            
-            ctx.restore(); // Remove o zoom para o próximo frame
+                const img = images[key];
+                const cfg = avatarConfig.parts[key];
+                
+                // Placeholder se faltar
+                if (!img || img.isMissing) {
+                    // Só desenha placeholder para peças chave para não poluir
+                    if(['tronco','cabeca'].includes(key)) {
+                        ctx.save();
+                        ctx.translate(250 + cfg.x, 300 + cfg.y);
+                        ctx.fillStyle = 'rgba(255,255,255,0.1)';
+                        ctx.fillRect(-20, -20, 40, 40);
+                        ctx.restore();
+                    }
+                    return;
+                }
 
+                ctx.save();
+                ctx.translate(250 + cfg.x, 300 + cfg.y);
+                
+                // Desenha com Pivô
+                ctx.drawImage(img, -img.width * cfg.pivX, -img.height * cfg.pivY);
+
+                // Gizmo de Seleção
+                if (key === activePart) {
+                    ctx.fillStyle = 'red';
+                    ctx.beginPath(); ctx.arc(0,0, 4/viewportZoom, 0, Math.PI*2); ctx.fill();
+                    ctx.strokeStyle = 'yellow'; ctx.lineWidth = 2/viewportZoom;
+                    ctx.strokeRect(-img.width * cfg.pivX, -img.height * cfg.pivY, img.width, img.height);
+                }
+                ctx.restore();
+            });
+
+            ctx.restore();
             requestAnimationFrame(loop);
         }
 
         // --- SALVAR ---
         window.salvarNoFirebase = async function() {
-            if(!confirm("Salvar configuração PADRÃO? Isso afetará todos os jogadores.")) return;
+            if(!confirm("Publicar essa configuração para o jogo?")) return;
             try {
-                // Adiciona o Layer Order no objeto salvo para garantir integridade
-                const dadosParaSalvar = {
+                // Salva a config + a ordem das camadas para garantir sincronia
+                await setDoc(doc(db, "config", "avatar_base"), {
                     ...avatarConfig,
                     layerOrder: LAYER_ORDER
-                };
-                
-                await setDoc(doc(db, "config", "avatar_base"), dadosParaSalvar);
-                alert("✅ Configuração Salva! Vá para a Parte 3 para integrar.");
-            } catch(e) {
-                alert("Erro ao salvar: " + e.message);
-            }
+                });
+                alert("✅ Sucesso! O jogo 'comunidade.html' vai usar esses dados.");
+            } catch(e) { alert("Erro: " + e.message); }
         }
 
+        // Auth
         document.getElementById('btnLogin').addEventListener('click', () => {
-            signInWithPopup(auth, provider).then((result) => {
-                if(result.user.uid === ADMIN_ID) {
+            signInWithPopup(auth, provider).then((r) => {
+                if(r.user.uid === ADMIN_ID) {
                     document.getElementById('login-overlay').style.display = 'none';
                     init();
-                } else {
-                    alert("Acesso Negado.");
-                }
+                } else alert("Acesso Negado");
             });
         });
-
-        onAuthStateChanged(auth, (user) => {
-            if(user && user.uid === ADMIN_ID) {
+        onAuthStateChanged(auth, (u) => {
+            if(u && u.uid === ADMIN_ID) {
                 document.getElementById('login-overlay').style.display = 'none';
                 init();
             }
