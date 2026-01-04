@@ -27,15 +27,25 @@
             display: flex; flex: 1; height: 100%; padding: 15px; gap: 15px; overflow: hidden;
         }
 
-        /* COLUNA DO JOGO */
+        /* --- COLUNA DO JOGO (ESQUERDA) --- */
         .game-column {
             flex: 2; display: flex; flex-direction: column; gap: 15px; position: relative;
+            min-width: 0; /* Importante para o Flexbox não estourar */
         }
+        
         .canvas-card {
-            flex: 1; background: white; border-radius: 30px; overflow: hidden;
+            flex: 1; /* Ocupa todo espaço vertical disponível */
+            background: white; border-radius: 30px; overflow: hidden;
             box-shadow: var(--shadow); position: relative; border: 5px solid white;
+            display: flex; /* Garante que o canvas preencha */
         }
-        canvas { display: block; width: 100%; height: 100%; background: linear-gradient(to bottom, #81D4FA, #B2EBF2); }
+        
+        canvas { 
+            display: block; 
+            width: 100%; 
+            height: 100%; 
+            background: linear-gradient(to bottom, #81D4FA, #B2EBF2); 
+        }
 
         .overlay-ui {
             position: absolute; top: 15px; left: 15px; right: 15px;
@@ -52,11 +62,11 @@
             box-shadow: 0 4px 10px rgba(0,0,0,0.1);
         }
 
-        /* DOCK DE CONTROLES */
+        /* CONTROLES */
         .controls-dock {
             background: white; height: 90px; border-radius: 25px;
             padding: 10px 20px; display: flex; align-items: center; justify-content: center;
-            gap: 15px; box-shadow: var(--shadow);
+            gap: 15px; box-shadow: var(--shadow); flex-shrink: 0;
         }
         .action-btn {
             background: var(--bg); color: var(--dark); border: none; border-radius: 20px;
@@ -67,7 +77,7 @@
         .action-btn span { font-size: 1.8rem; }
         .action-btn label { font-size: 0.7rem; font-weight: bold; color: #777; }
 
-        /* COLUNA DO CHAT */
+        /* --- COLUNA DO CHAT (DIREITA) --- */
         .chat-column {
             flex: 1; min-width: 320px; background: white; border-radius: 30px;
             box-shadow: var(--shadow); display: flex; flex-direction: column;
@@ -75,7 +85,7 @@
         }
         .chat-header {
             background: var(--primary); color: white; padding: 20px;
-            font-family: 'Fredoka One'; text-align: center; font-size: 1.2rem;
+            font-family: 'Fredoka One'; text-align: center; font-size: 1.2rem; flex-shrink: 0;
         }
         .chat-history {
             flex: 1; padding: 20px; overflow-y: auto; background: #f8f9fa;
@@ -92,7 +102,7 @@
         }
         .chat-input-area {
             padding: 15px; background: white; border-top: 1px solid #eee;
-            display: flex; gap: 10px; align-items: center;
+            display: flex; gap: 10px; align-items: center; flex-shrink: 0;
         }
         .chat-input {
             flex: 1; padding: 12px 20px; border: 2px solid #eee; border-radius: 50px;
@@ -104,9 +114,10 @@
             align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(76, 175, 80, 0.3);
         }
 
+        /* MOBILE RESPONSIVO */
         @media (max-width: 850px) {
             .main-layout { flex-direction: column; padding: 10px; gap: 10px; }
-            .game-column { flex: 1.5; }
+            .game-column { flex: 1.5; min-height: 50vh; } /* Garante altura no mobile */
             .chat-column { flex: 1; min-width: auto; border-radius: 25px; }
             .controls-dock { height: 80px; padding: 5px; }
             .action-btn { width: 60px; height: 60px; }
@@ -149,24 +160,15 @@
 
     <script type="module">
         // ==================================================
-        // 1. CONFIGURAÇÃO AJUSTADA (Menor e Corrigida)
+        // 1. CONFIGURAÇÃO (SEUS DADOS DO LABORATÓRIO)
         // ==================================================
         const AVATAR_CONFIG = {
-            scale: 0.22, // REDUZIDO PELA METADE (Era 0.45)
-            offsets: {
-                headY: -86,
-                armY: -55,
-                legY: 50,
-                spreadX: -42,
-                legSpread: -19
-            },
+            scale: 0.22, 
+            offsets: { headY: -86, armY: -55, legY: 50, spreadX: -42, legSpread: -19 },
             pivots: {
-                cabeca: { x: 0.501, y: 1.000 },
-                tronco: { x: 0.471, y: 0.585 },
-                braco_frente: { x: 0.266, y: 0.125 },
-                braco_tras: { x: 0.764, y: 0.118 },
-                perna_frente: { x: 0.293, y: 0.135 },
-                perna_tras: { x: 0.672, y: 0.118 }
+                cabeca: { x: 0.501, y: 0.892 }, tronco: { x: 0.471, y: 0.585 },
+                braco_frente: { x: 0.266, y: 0.125 }, braco_tras: { x: 0.764, y: 0.118 },
+                perna_frente: { x: 0.293, y: 0.135 }, perna_tras: { x: 0.672, y: 0.118 }
             }
         };
 
@@ -197,22 +199,28 @@
         }
 
         // ==================================================
-        // 3. CLASSE AVATAR (FÍSICA CORRIGIDA)
+        // 3. CLASSE AVATAR
         // ==================================================
         class Avatar {
             constructor(nome, isMe = false) {
-                this.x = Math.random() * 300;
-                this.y = 300; 
                 this.nome = nome;
                 this.isMe = isMe;
                 this.msg = "";
                 this.msgTimer = 0;
+                
+                // Posição Inicial (Será corrigida no update)
+                this.x = 100;
+                this.y = 300; 
+
+                // Física
                 this.dir = Math.random() > 0.5 ? 1 : -1;
                 this.speed = Math.random() * 0.8 + 0.5;
                 this.state = 'walk';
                 this.timer = Math.random() * 100;
                 this.targetX = this.x;
-                this.escolherNovoAlvo();
+                
+                // Inicia IA
+                setTimeout(() => this.escolherNovoAlvo(), 100);
             }
 
             falar(texto) {
@@ -222,13 +230,15 @@
             }
 
             escolherNovoAlvo() {
+                // Pega a largura LÓGICA do canvas (CSS pixels)
                 const canvasEl = document.getElementById('arcadeCanvas');
                 if(!canvasEl) return;
-                const canvasW = canvasEl.width / (window.devicePixelRatio||1);
-                const margem = 50;
-                this.targetX = Math.random() * (canvasW - margem*2) + margem;
                 
-                // Define direção
+                // Usamos clientWidth para saber a largura real na tela
+                const width = canvasEl.clientWidth;
+                const margem = 50;
+                
+                this.targetX = Math.random() * (width - margem*2) + margem;
                 this.dir = this.targetX > this.x ? 1 : -1;
                 this.state = 'walk';
                 
@@ -250,8 +260,7 @@
 
             draw(ctx) {
                 const cfg = AVATAR_CONFIG;
-                const s = cfg.scale; // Escala global (0.22)
-                
+                const s = cfg.scale;
                 let walk = 0, bob = 0, breathe = Math.sin(this.timer * 0.5) * 0.05;
 
                 if (this.state === 'walk') {
@@ -268,7 +277,6 @@
                 ctx.textAlign = 'center';
                 ctx.shadowColor = 'rgba(0,0,0,0.8)';
                 ctx.shadowBlur = 3;
-                // Ajustei a altura do nome baseado na escala
                 ctx.fillText(this.nome, 0, -160 * s);
                 ctx.shadowBlur = 0;
 
@@ -277,183 +285,16 @@
                     this.drawBalloon(ctx, s);
                 }
 
-                // --- CORREÇÃO DO MOONWALK ---
-                // Inverti para -this.dir para corrigir a direção
+                // Espelhamento (Olhar para onde anda)
                 ctx.scale(-this.dir, 1); 
 
-                // --- CORREÇÃO DOS MEMBROS DESENCAIXADOS ---
-                // Multiplicamos os offsets pela escala (cfg.offsets.X * s)
-                
-                // 1. Perna Trás
+                // Desenho das Partes
                 ctx.filter = "brightness(0.85)";
-                this.drawPart(ctx, 'perna_tras', 
-                    (cfg.offsets.legSpread * s), 
-                    (cfg.offsets.legY * s) - (bob * s), 
-                    -walk * 0.5, '#555');
+                this.drawPart(ctx, 'perna_tras', (cfg.offsets.legSpread * s), (cfg.offsets.legY * s) - (bob * s), -walk * 0.5, '#555');
                 ctx.filter = "none";
 
-                // 2. Braço Trás
                 ctx.filter = "brightness(0.9)";
-                this.drawPart(ctx, 'braco_tras', 
-                    (cfg.offsets.spreadX * s) * 0.8, 
-                    (cfg.offsets.armY * s) - (bob * s), 
-                    walk * 0.6, '#777');
+                this.drawPart(ctx, 'braco_tras', (cfg.offsets.spreadX * s) * 0.8, (cfg.offsets.armY * s) - (bob * s), walk * 0.6, '#777');
                 ctx.filter = "none";
 
-                // 3. Tronco
-                this.drawPart(ctx, 'tronco', 0, -(bob * s), 0, '#FF5722');
-
-                // 4. Cabeça
-                this.drawPart(ctx, 'cabeca', 
-                    0, 
-                    (cfg.offsets.headY * s) - (bob * s) + (breathe * 5), 
-                    breathe * 0.2, '#FFCC80');
-
-                // 5. Perna Frente
-                this.drawPart(ctx, 'perna_frente', 
-                    -(cfg.offsets.legSpread * s), 
-                    (cfg.offsets.legY * s) - (bob * s), 
-                    walk * 0.5, '#333');
-
-                // 6. Braço Frente
-                this.drawPart(ctx, 'braco_frente', 
-                    -(cfg.offsets.spreadX * s), 
-                    (cfg.offsets.armY * s) - (bob * s), 
-                    -walk * 0.6, '#FF5722');
-
-                ctx.restore();
-            }
-
-            drawPart(ctx, name, x, y, rot, fallbackColor) {
-                const img = avatarImages[name];
-                const piv = AVATAR_CONFIG.pivots[name];
-                const s = AVATAR_CONFIG.scale;
-                
-                ctx.save();
-                ctx.translate(x, y); // Já vem escalado do draw()
-                ctx.rotate(rot);
-
-                if (img && img.complete && !img.isBroken && img.naturalWidth > 0) {
-                    ctx.drawImage(img, -img.width * s * piv.x, -img.height * s * piv.y, img.width * s, img.height * s);
-                } else {
-                    ctx.fillStyle = fallbackColor;
-                    let w = 50 * s; 
-                    let h = (name === 'tronco' || name.includes('perna')) ? 80 * s : 50 * s;
-                    if(name === 'cabeca') { w = 70*s; h = 70*s; }
-                    ctx.fillRect(-w/2, 0, w, h);
-                }
-                ctx.restore();
-            }
-
-            drawBalloon(ctx, s) {
-                ctx.save();
-                ctx.translate(0, -190 * s);
-                ctx.fillStyle = 'white';
-                ctx.shadowColor = 'rgba(0,0,0,0.2)';
-                ctx.shadowBlur = 5;
-                ctx.shadowOffsetY = 3;
-                const w = ctx.measureText(this.msg).width + 30;
-                
-                ctx.beginPath();
-                ctx.roundRect(-w/2, -30, w, 30, 10); // Se der erro em browser antigo, avise
-                ctx.fill();
-                ctx.beginPath(); ctx.moveTo(-5, 0); ctx.lineTo(5, 0); ctx.lineTo(0, 10); ctx.fill();
-                
-                ctx.fillStyle = '#333';
-                ctx.shadowColor = 'transparent';
-                ctx.fillText(this.msg, 0, -10);
-                ctx.restore();
-            }
-        }
-
-        // ==================================================
-        // 4. ENGINE
-        // ==================================================
-        const canvas = document.getElementById('arcadeCanvas');
-        const container = document.getElementById('canvasContainer');
-        const ctx = canvas.getContext('2d');
-        let avatares = [];
-        let lastTime = 0;
-        let myAvatar = null;
-
-        function initArcade() {
-            resize();
-            window.addEventListener('resize', resize);
-            myAvatar = new Avatar("Eu", true);
-            avatares.push(myAvatar);
-            requestAnimationFrame(loop);
-        }
-
-        function resize() {
-            const dpr = window.devicePixelRatio || 1;
-            const rect = container.getBoundingClientRect();
-            const w = rect.width; 
-            const h = rect.height;
-            canvas.width = w * dpr;
-            canvas.height = h * dpr;
-            ctx.scale(dpr, dpr);
-            
-            // --- CORREÇÃO DO CHÃO (FLUTUANDO) ---
-            // Ajustei para 80px da borda inferior para garantir que o pé toque a grama
-            const chaoY = h - 80; 
-            avatares.forEach(a => a.y = chaoY);
-        }
-
-        function loop(timestamp) {
-            if (!lastTime) lastTime = timestamp;
-            const dt = (timestamp - lastTime) / 1000;
-            lastTime = timestamp;
-
-            const w = canvas.width / (window.devicePixelRatio||1);
-            const h = canvas.height / (window.devicePixelRatio||1);
-            ctx.clearRect(0, 0, w, h);
-            
-            // Fundo
-            ctx.fillStyle = '#81C784'; 
-            // Desenha o morro da grama mais alto para encontrar o pé do boneco
-            ctx.beginPath(); ctx.ellipse(w/2, h + 60, w * 0.9, 150, 0, 0, Math.PI * 2); ctx.fill();
-            ctx.strokeStyle = '#4CAF50'; ctx.lineWidth = 10; ctx.stroke();
-
-            avatares.sort((a, b) => a.y - b.y);
-            avatares.forEach(av => { av.update(dt); av.draw(ctx); });
-
-            requestAnimationFrame(loop);
-        }
-
-        // --- 5. LÓGICA DO CHAT ---
-        const input = document.getElementById('msgInput');
-        const history = document.getElementById('chatHistory');
-
-        function enviarMensagem() {
-            const txt = input.value.trim();
-            if(!txt) return;
-            const div = document.createElement('div');
-            div.className = 'msg me';
-            div.innerHTML = `<strong>Eu</strong>${txt}`;
-            history.appendChild(div);
-            history.scrollTop = history.scrollHeight;
-            if(myAvatar) myAvatar.falar(txt);
-            input.value = "";
-        }
-
-        const btnSend = document.getElementById('btnSend');
-        if(btnSend) btnSend.addEventListener('click', enviarMensagem);
-        if(input) input.addEventListener('keypress', (e) => { if(e.key === 'Enter') enviarMensagem(); });
-
-        document.getElementById('btnLoja').addEventListener('click', () => alert('Loja em breve!'));
-        document.getElementById('btnItens').addEventListener('click', () => alert('Inventário em breve!'));
-        document.getElementById('btnCor').addEventListener('click', () => alert('Tintura em breve!'));
-        
-        document.getElementById('btnAddBot').addEventListener('click', () => {
-            const nomes = ["Visitante", "Gamer", "Noob", "Pro"];
-            const nome = nomes[Math.floor(Math.random() * nomes.length)] + Math.floor(Math.random()*100);
-            const bot = new Avatar(nome);
-            bot.y = myAvatar ? myAvatar.y : 300; 
-            avatares.push(bot);
-            document.getElementById('online-count').innerText = avatares.length;
-        });
-
-        carregarAssets();
-    </script>
-</body>
-</html>
+                th
