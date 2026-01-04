@@ -8,147 +8,40 @@
         @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;700&display=swap');
         
         :root { 
-            --primary: #FF5722; 
-            --bg: #f0fdf4; 
-            --dark: #37474F; 
-            --green: #4CAF50;
+            --primary: #FF5722; --bg: #f0fdf4; --dark: #37474F; --green: #4CAF50;
             --shadow: 0 10px 25px rgba(0,0,0,0.1);
         }
-
         * { box-sizing: border-box; }
-
-        body { 
-            margin: 0; height: 100vh; background-color: var(--bg); 
-            font-family: 'Nunito', sans-serif; overflow: hidden; 
-            display: flex; flex-direction: column; color: var(--dark);
-        }
-
-        .main-layout {
-            display: flex; flex: 1; height: 100%; padding: 15px; gap: 15px; overflow: hidden;
-        }
-
-        /* --- COLUNA ESQUERDA (JOGO + LOJA) --- */
-        .game-column {
-            flex: 2; display: flex; flex-direction: column; gap: 15px; position: relative;
-            min-width: 0; transition: all 0.3s ease;
-        }
+        body { margin: 0; height: 100vh; background-color: var(--bg); font-family: 'Nunito', sans-serif; overflow: hidden; display: flex; flex-direction: column; color: var(--dark); }
+        .main-layout { display: flex; flex: 1; height: 100%; padding: 15px; gap: 15px; overflow: hidden; }
         
-        /* O Container do Canvas agora é flexível */
-        .canvas-card {
-            flex: 1; /* Ocupa o espaço que sobrar */
-            background: #81D4FA; 
-            border-radius: 30px; 
-            overflow: hidden;
-            box-shadow: var(--shadow); 
-            position: relative; 
-            border: 5px solid white;
-            min-height: 200px; /* Altura mínima para não sumir */
-            display: flex;
-            transition: flex 0.3s ease; /* Animação suave ao redimensionar */
-        }
-        
+        .game-column { flex: 2; display: flex; flex-direction: column; gap: 15px; position: relative; min-width: 0; }
+        .canvas-card { flex: 1; background: #81D4FA; border-radius: 30px; overflow: hidden; box-shadow: var(--shadow); position: relative; border: 5px solid white; min-height: 300px; display: flex; }
         canvas { display: block; width: 100%; height: 100%; background: linear-gradient(to bottom, #81D4FA, #B2EBF2); }
+        
+        .overlay-ui { position: absolute; top: 15px; left: 15px; right: 15px; display: flex; justify-content: space-between; pointer-events: none; }
+        .btn-back { background: white; color: var(--primary); text-decoration: none; padding: 10px 20px; border-radius: 50px; font-weight: bold; font-family: 'Fredoka One'; pointer-events: auto; box-shadow: 0 4px 10px rgba(0,0,0,0.1); display: flex; align-items: center; gap: 5px; }
+        .online-badge { background: rgba(255,255,255,0.9); color: var(--green); padding: 8px 20px; border-radius: 50px; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
 
-        .overlay-ui {
-            position: absolute; top: 15px; left: 15px; right: 15px;
-            display: flex; justify-content: space-between; pointer-events: none;
-        }
-        .btn-back {
-            background: white; color: var(--primary); text-decoration: none; 
-            padding: 10px 20px; border-radius: 50px; font-weight: bold; font-family: 'Fredoka One';
-            pointer-events: auto; box-shadow: 0 4px 10px rgba(0,0,0,0.1); display: flex; align-items: center; gap: 5px;
-        }
-        .online-badge {
-            background: rgba(255,255,255,0.9); color: var(--green);
-            padding: 8px 20px; border-radius: 50px; font-weight: bold;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-        }
-
-        /* DOCK DE CONTROLES */
-        .controls-dock {
-            background: white; height: 90px; border-radius: 25px;
-            padding: 10px 20px; display: flex; align-items: center; justify-content: center;
-            gap: 15px; box-shadow: var(--shadow); flex-shrink: 0; z-index: 10;
-        }
-        .action-btn {
-            background: var(--bg); color: var(--dark); border: none; border-radius: 20px;
-            width: 70px; height: 70px; cursor: pointer; display: flex; flex-direction: column;
-            align-items: center; justify-content: center; transition: all 0.2s;
-        }
+        .controls-dock { background: white; height: 90px; border-radius: 25px; padding: 10px 20px; display: flex; align-items: center; justify-content: center; gap: 15px; box-shadow: var(--shadow); flex-shrink: 0; }
+        .action-btn { background: var(--bg); color: var(--dark); border: none; border-radius: 20px; width: 70px; height: 70px; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: all 0.2s; }
         .action-btn:active { transform: scale(0.9); }
         .action-btn span { font-size: 1.8rem; }
         .action-btn label { font-size: 0.7rem; font-weight: bold; color: #777; }
 
-        /* PAINEL DA LOJA (Oculto por padrão) */
-        .store-panel {
-            height: 0;
-            overflow: hidden;
-            background: white;
-            border-radius: 25px;
-            transition: height 0.3s ease, padding 0.3s ease;
-            box-shadow: var(--shadow);
-            padding: 0 20px; /* Padding lateral */
-        }
-        
-        .store-panel.open {
-            height: 220px; /* Altura da loja aberta */
-            padding: 20px;
-            margin-top: -5px; /* Gruda levemente no dock */
-        }
-
-        .store-content {
-            display: flex; gap: 10px; overflow-x: auto; height: 100%; align-items: center;
-        }
-        .store-item {
-            min-width: 100px; height: 140px; background: #f0f0f0; border-radius: 15px;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            font-size: 0.8rem; color: #666; border: 2px solid transparent; cursor: pointer;
-        }
-        .store-item:hover { border-color: var(--primary); background: #FFF3E0; }
-
-        /* --- COLUNA DO CHAT --- */
-        .chat-column {
-            flex: 1; min-width: 320px; background: white; border-radius: 30px;
-            box-shadow: var(--shadow); display: flex; flex-direction: column;
-            overflow: hidden; border: 5px solid white;
-            transition: all 0.3s ease;
-        }
-        .chat-header {
-            background: var(--primary); color: white; padding: 20px;
-            font-family: 'Fredoka One'; text-align: center; font-size: 1.2rem; flex-shrink: 0;
-        }
-        .chat-history {
-            flex: 1; padding: 20px; overflow-y: auto; background: #f8f9fa;
-            display: flex; flex-direction: column; gap: 12px;
-        }
-        .msg {
-            background: white; padding: 10px 15px; border-radius: 18px; border-bottom-left-radius: 4px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05); font-size: 0.95rem; max-width: 85%; align-self: flex-start;
-        }
+        .chat-column { flex: 1; min-width: 320px; background: white; border-radius: 30px; box-shadow: var(--shadow); display: flex; flex-direction: column; overflow: hidden; border: 5px solid white; }
+        .chat-header { background: var(--primary); color: white; padding: 20px; font-family: 'Fredoka One'; text-align: center; font-size: 1.2rem; flex-shrink: 0; }
+        .chat-history { flex: 1; padding: 20px; overflow-y: auto; background: #f8f9fa; display: flex; flex-direction: column; gap: 12px; }
+        .msg { background: white; padding: 10px 15px; border-radius: 18px; border-bottom-left-radius: 4px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); font-size: 0.95rem; max-width: 85%; align-self: flex-start; }
         .msg strong { color: var(--primary); display: block; font-size: 0.75rem; margin-bottom: 3px; }
-        .msg.me { 
-            align-self: flex-end; background: #FFF3E0; 
-            border-bottom-left-radius: 18px; border-bottom-right-radius: 4px;
-        }
-        .chat-input-area {
-            padding: 15px; background: white; border-top: 1px solid #eee;
-            display: flex; gap: 10px; align-items: center; flex-shrink: 0;
-        }
-        .chat-input {
-            flex: 1; padding: 12px 20px; border: 2px solid #eee; border-radius: 50px;
-            outline: none; font-size: 1rem; background: #f9f9f9;
-        }
-        .btn-send {
-            background: var(--green); color: white; border: none; width: 45px; height: 45px;
-            border-radius: 50%; cursor: pointer; font-size: 1.2rem; display: flex; 
-            align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(76, 175, 80, 0.3);
-        }
+        .msg.me { align-self: flex-end; background: #FFF3E0; border-bottom-left-radius: 18px; border-bottom-right-radius: 4px; }
+        .chat-input-area { padding: 15px; background: white; border-top: 1px solid #eee; display: flex; gap: 10px; align-items: center; flex-shrink: 0; }
+        .chat-input { flex: 1; padding: 12px 20px; border: 2px solid #eee; border-radius: 50px; outline: none; font-size: 1rem; background: #f9f9f9; }
+        .btn-send { background: var(--green); color: white; border: none; width: 45px; height: 45px; border-radius: 50%; cursor: pointer; font-size: 1.2rem; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(76, 175, 80, 0.3); }
 
-        /* MOBILE RESPONSIVO */
         @media (max-width: 850px) {
             .main-layout { flex-direction: column; padding: 10px; gap: 10px; }
             .game-column { flex: 1.5; min-height: 50vh; }
-            /* No mobile, o painel da loja está dentro da game-column, então ele empurra o chat naturalmente */
             .chat-column { flex: 1; min-width: auto; border-radius: 25px; }
             .controls-dock { height: 80px; padding: 5px; }
             .action-btn { width: 60px; height: 60px; }
@@ -160,7 +53,6 @@
 
     <div class="main-layout">
         <div class="game-column">
-            <!-- ÁREA DO JOGO (Encolhe quando a loja abre) -->
             <div class="canvas-card" id="canvasContainer">
                 <canvas id="arcadeCanvas"></canvas>
                 <div class="overlay-ui">
@@ -168,24 +60,11 @@
                     <div class="online-badge">🟢 <span id="online-count">1</span> Online</div>
                 </div>
             </div>
-
-            <!-- CONTROLES -->
             <div class="controls-dock">
                 <button class="action-btn" id="btnLoja"><span>🏪</span><label>Loja</label></button>
                 <button class="action-btn" id="btnItens"><span>🎒</span><label>Itens</label></button>
                 <button class="action-btn" id="btnAddBot" style="background: #E3F2FD;"><span>➕</span><label>Bot</label></button>
                 <button class="action-btn" id="btnCor"><span>🎨</span><label>Cor</label></button>
-            </div>
-
-            <!-- PAINEL DA LOJA (Abre aqui dentro) -->
-            <div class="store-panel" id="storePanel">
-                <h4 style="margin: 0 0 10px 0; color: var(--primary);">Loja de Itens</h4>
-                <div class="store-content">
-                    <div class="store-item">Espaço Vazio 1</div>
-                    <div class="store-item">Espaço Vazio 2</div>
-                    <div class="store-item">Espaço Vazio 3</div>
-                    <div class="store-item">Espaço Vazio 4</div>
-                </div>
             </div>
         </div>
 
@@ -204,100 +83,85 @@
     </div>
 
     <script type="module">
-        // ==================================================
-        // 1. CONFIGURAÇÃO (SEUS DADOS)
-        // ==================================================
-        const AVATAR_CONFIG = {
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        // --- FIREBASE (Para ler a config do Admin) ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyBIR7CqYYvMZVQxtO67JCQoJ3OLT1cvAx8",
+            authDomain: "kn-jogos.firebaseapp.com",
+            projectId: "kn-jogos",
+            storageBucket: "kn-jogos.firebasestorage.app",
+            messagingSenderId: "273132829744",
+            appId: "1:273132829744:web:a03e85b80ffabfa24101f5"
+        };
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // --- CONFIGURAÇÃO PADRÃO (Fallback se não tiver internet/banco) ---
+        let AVATAR_CONFIG = {
             scale: 0.22, 
-            offsets: { 
-                headY: -230,    
-                armY: -150,     
-                legY: 50, 
-                spreadX: -47,   
-                legSpread: -24  
-            },
-            pivots: {
-                cabeca: { x: 0.501, y: 0.892 }, 
-                tronco: { x: 0.471, y: 0.75 },
-                braco_frente: { x: 0.266, y: 0.125 }, 
-                braco_tras: { x: 0.764, y: 0.118 },
-                perna_frente: { x: 0.293, y: 0.135 }, 
-                perna_tras: { x: 0.672, y: 0.118 }
+            parts: {
+                // Valores padrão seguros
+                'capa': { x: 0, y: 0, pivX: 0.5, pivY: 0.5 },
+                'perna_tras': { x: -24, y: 50, pivX: 0.67, pivY: 0.11 },
+                'perna_frente': { x: 24, y: 50, pivX: 0.29, pivY: 0.13 },
+                'braco_tras': { x: -37, y: -150, pivX: 0.76, pivY: 0.11 },
+                'tronco': { x: 0, y: 0, pivX: 0.47, pivY: 0.75 },
+                'cabeca': { x: 0, y: -230, pivX: 0.50, pivY: 0.89 },
+                'braco_frente': { x: 47, y: -150, pivX: 0.26, pivY: 0.12 }
             }
         };
 
-        // ==================================================
-        // 2. SISTEMA DE 14 CAMADAS (ORDER UPDATE)
-        // ==================================================
+        // ORDEM DE CAMADAS (Z-INDEX) - Igual ao Admin
         const LAYER_ORDER = [
-            'capa',             // 0
-            'perna_tras',       // 1
-            'perna_frente',     // 2 (Mudança solicitada)
-            'escudo_tras',      // 3
-            'braco_tras',       // 4
-            'tronco',           // 5
-            'cintura',          // 6 (Novo)
-            'cabeca',           // 7
-            'rosto',            // 8
-            'mascara',          // 9
-            'cabelo',           // 10
-            'arma_frente',      // 11
-            'braco_frente',     // 12
-            'escudo_frente'     // 13
+            'capa', 'escudo_tras', 'braco_tras', 'perna_tras', 'perna_frente',
+            'tronco', 'cintura', 'cabeca', 'rosto', 'mascara', 'cabelo',
+            'arma_frente', 'braco_frente', 'escudo_frente'
         ];
-
-        // Mapeamento de quais partes usam quais pivôs/offsets
-        // Se uma parte nova não tiver config, usa a do "tronco" como padrão
-        const PIVOT_MAP = {
-            'capa': 'tronco',
-            'perna_tras': 'perna_tras',
-            'perna_frente': 'perna_frente',
-            'escudo_tras': 'braco_tras',
-            'braco_tras': 'braco_tras',
-            'tronco': 'tronco',
-            'cintura': 'tronco',
-            'cabeca': 'cabeca',
-            'rosto': 'cabeca',
-            'mascara': 'cabeca',
-            'cabelo': 'cabeca',
-            'arma_frente': 'braco_frente',
-            'braco_frente': 'braco_frente',
-            'escudo_frente': 'braco_frente'
-        };
 
         const avatarImages = {};
         const BASE_URL = 'assets/avatar/base/'; 
 
-        let assetsLoaded = 0;
-        
-        // Carrega todas as camadas definidas
-        function carregarAssets() {
-            LAYER_ORDER.forEach(name => {
-                // Tenta carregar. Se não existir (ex: capa.png), não tem problema.
-                const img = new Image();
-                img.src = `${BASE_URL}${name}.png`;
-                
-                img.onload = () => {
-                    assetsLoaded++;
-                    // Inicia apenas quando as essenciais carregarem, ou define um timeout
-                    if(name === 'tronco') initArcade(); 
-                };
-                
-                img.onerror = () => {
-                    // Silencioso para peças opcionais
-                    if(['tronco','cabeca'].includes(name)) console.warn(`Base ${name} não encontrada.`);
-                    img.isBroken = true; 
-                };
-                
-                avatarImages[name] = img;
-            });
-            // Fallback de segurança para iniciar se o tronco não carregar rápido
-            setTimeout(initArcade, 1000); 
+        // --- INICIALIZAÇÃO ---
+        async function start() {
+            // 1. Tenta baixar config do Firebase
+            try {
+                const snap = await getDoc(doc(db, "config", "avatar_base"));
+                if(snap.exists()) {
+                    const data = snap.data();
+                    AVATAR_CONFIG.scale = data.scale;
+                    // Mescla para garantir que todas as peças tenham dados
+                    AVATAR_CONFIG.parts = { ...AVATAR_CONFIG.parts, ...data.parts };
+                    console.log("Configuração baixada do Admin!");
+                }
+            } catch(e) { console.log("Usando config local."); }
+
+            // 2. Carrega Imagens
+            carregarAssets();
         }
 
-        // ==================================================
-        // 3. CLASSE AVATAR
-        // ==================================================
+        let assetsLoaded = 0;
+        function carregarAssets() {
+            LAYER_ORDER.forEach(name => {
+                const img = new Image();
+                img.src = `${BASE_URL}${name}.png`;
+                img.onload = () => {
+                    assetsLoaded++;
+                    if(assetsLoaded >= 5) initArcade(); // Inicia se carregar pelo menos 5 peças
+                };
+                img.onerror = () => {
+                    img.isBroken = true; 
+                    assetsLoaded++;
+                    if(assetsLoaded >= 5) initArcade();
+                };
+                avatarImages[name] = img;
+            });
+            // Timeout de segurança
+            setTimeout(() => { if(!initCalled) initArcade(); }, 2000);
+        }
+
+        // --- CLASSE AVATAR ---
         class Avatar {
             constructor(nome, isMe = false) {
                 this.nome = nome;
@@ -339,8 +203,7 @@
             }
 
             draw(ctx) {
-                const cfg = AVATAR_CONFIG;
-                const s = cfg.scale;
+                const s = AVATAR_CONFIG.scale;
                 let walk = 0, bob = 0, breathe = Math.sin(this.timer * 0.5) * 0.05;
 
                 if (this.state === 'walk') {
@@ -360,38 +223,27 @@
                 ctx.fillText(this.nome, 0, -160 * s);
                 ctx.shadowBlur = 0;
 
-                // Balão
                 if (this.msg) this.drawBalloon(ctx, s);
 
-                // Espelhamento
                 ctx.scale(-this.dir, 1); 
 
-                // --- DESENHO EM LOOP DAS 14 CAMADAS ---
+                // --- DESENHO DAS 14 CAMADAS ---
                 LAYER_ORDER.forEach(partName => {
-                    // Define a animação baseada no tipo de peça
-                    let animX = 0; 
-                    let animY = 0; 
-                    let animRot = 0;
-                    const configKey = PIVOT_MAP[partName]; // Mapeia para config existente (ex: mascara usa config da cabeca)
-
-                    // Lógica de Animação por Parte
+                    let animX = 0, animY = 0, animRot = 0;
+                    
+                    // Lógica de Animação (Quem segue quem)
                     if (partName.includes('perna')) {
-                        // Pernas opostas
                         const isFrente = partName.includes('frente');
-                        animX = isFrente ? -cfg.offsets.legSpread : cfg.offsets.legSpread;
-                        animY = cfg.offsets.legY - bob;
+                        animY = -bob;
                         animRot = (isFrente ? walk : -walk) * 0.5;
                     } 
                     else if (partName.includes('braco') || partName.includes('arma') || partName.includes('escudo')) {
-                        // Braços e itens de mão
                         const isFrente = partName.includes('frente');
-                        animX = isFrente ? -cfg.offsets.spreadX : (cfg.offsets.spreadX * 0.8);
-                        animY = cfg.offsets.armY - bob;
+                        animY = -bob;
                         animRot = (isFrente ? -walk : walk) * 0.6;
                     }
                     else if (['cabeca', 'rosto', 'mascara', 'cabelo'].includes(partName)) {
-                        // Grupo da Cabeça
-                        animY = cfg.offsets.headY - bob + (breathe * 5);
+                        animY = -bob + (breathe * 5);
                         animRot = breathe * 0.2;
                     }
                     else {
@@ -399,42 +251,29 @@
                         animY = -bob;
                     }
 
-                    // Aplica escala nas posições
-                    this.drawPart(ctx, partName, configKey, animX * s, animY * s, animRot);
+                    this.drawPart(ctx, partName, animX * s, animY * s, animRot);
                 });
 
                 ctx.restore();
             }
 
-            drawPart(ctx, imageName, configKey, x, y, rot) {
-                const img = avatarImages[imageName];
-                // Se não tiver imagem (ex: capa não comprada), pula
-                if (!img || !img.complete || img.isBroken || img.naturalWidth === 0) {
-                    // Fallback visual só para o esqueleto básico
-                    const basicParts = ['tronco', 'cabeca', 'braco', 'perna'];
-                    if (!basicParts.some(b => imageName.includes(b))) return;
-                    
-                    // Desenha quadrado de fallback para peças básicas faltando
-                    ctx.save();
-                    ctx.translate(x, y);
-                    ctx.rotate(rot);
-                    ctx.fillStyle = '#555';
-                    ctx.fillRect(-10, -10, 20, 20);
-                    ctx.restore();
-                    return;
-                }
+            drawPart(ctx, name, x, y, rot) {
+                const img = avatarImages[name];
+                // Se não tiver imagem ou config, pula (não desenha nada)
+                if (!img || !img.complete || img.isBroken || img.naturalWidth === 0) return;
                 
-                const piv = AVATAR_CONFIG.pivots[configKey]; // Usa o pivô da peça pai
+                // Se não tiver config no banco, usa padrão (0,0)
+                const cfg = AVATAR_CONFIG.parts[name] || { x:0, y:0, pivX:0.5, pivY:0.5 };
                 const s = AVATAR_CONFIG.scale;
-                
+
                 ctx.save();
-                ctx.translate(x, y);
+                // Aplica posição base da peça + animação
+                ctx.translate((cfg.x * s) + x, (cfg.y * s) + y);
                 ctx.rotate(rot);
                 
-                // Filtro de brilho para profundidade
-                if (imageName.includes('tras') || imageName === 'capa') ctx.filter = "brightness(0.85)";
+                if (name.includes('tras') || name === 'capa') ctx.filter = "brightness(0.85)";
                 
-                ctx.drawImage(img, -img.width * s * piv.x, -img.height * s * piv.y, img.width * s, img.height * s);
+                ctx.drawImage(img, -img.width * s * cfg.pivX, -img.height * s * cfg.pivY, img.width * s, img.height * s);
                 
                 ctx.filter = "none";
                 ctx.restore();
@@ -448,20 +287,15 @@
                 ctx.shadowBlur = 5;
                 ctx.shadowOffsetY = 3;
                 const w = ctx.measureText(this.msg).width + 30;
-                ctx.beginPath();
-                ctx.roundRect(-w/2, -30, w, 30, 10);
-                ctx.fill();
+                ctx.beginPath(); ctx.roundRect(-w/2, -30, w, 30, 10); ctx.fill();
                 ctx.beginPath(); ctx.moveTo(-5, 0); ctx.lineTo(5, 0); ctx.lineTo(0, 10); ctx.fill();
-                ctx.fillStyle = '#333';
-                ctx.shadowColor = 'transparent';
+                ctx.fillStyle = '#333'; ctx.shadowColor = 'transparent';
                 ctx.fillText(this.msg, 0, -10);
                 ctx.restore();
             }
         }
 
-        // ==================================================
-        // 4. ENGINE
-        // ==================================================
+        // --- ENGINE ---
         const canvas = document.getElementById('arcadeCanvas');
         const container = document.getElementById('canvasContainer');
         const ctx = canvas.getContext('2d');
@@ -471,12 +305,10 @@
         let initCalled = false;
 
         function initArcade() {
-            if(initCalled) return; // Evita rodar 2x
+            if(initCalled) return;
             initCalled = true;
-
             myAvatar = new Avatar("Eu", true);
             avatares.push(myAvatar);
-            
             window.addEventListener('resize', resize);
             resize();
             requestAnimationFrame(loop);
@@ -486,13 +318,10 @@
             const dpr = window.devicePixelRatio || 1;
             const rect = container.getBoundingClientRect();
             if(rect.width === 0 || rect.height === 0) return;
-
             canvas.width = rect.width * dpr;
             canvas.height = rect.height * dpr;
             ctx.setTransform(1, 0, 0, 1, 0, 0);
             ctx.scale(dpr, dpr);
-            
-            // Chão fixo
             const chaoY = rect.height - 90; 
             avatares.forEach(a => {
                 a.y = chaoY;
@@ -504,39 +333,21 @@
             if (!lastTime) lastTime = timestamp;
             const dt = (timestamp - lastTime) / 1000;
             lastTime = timestamp;
-
             const w = canvas.clientWidth;
             const h = canvas.clientHeight;
             ctx.clearRect(0, 0, w, h);
             
             // Cenário
             ctx.fillStyle = '#81C784'; 
-            ctx.beginPath(); 
-            ctx.ellipse(w/2, h + 80, w * 0.9, 150, 0, 0, Math.PI * 2); 
-            ctx.fill();
-            ctx.strokeStyle = '#4CAF50'; 
-            ctx.lineWidth = 10; 
-            ctx.stroke();
+            ctx.beginPath(); ctx.ellipse(w/2, h + 80, w * 0.9, 150, 0, 0, Math.PI * 2); ctx.fill();
+            ctx.strokeStyle = '#4CAF50'; ctx.lineWidth = 10; ctx.stroke();
 
             avatares.sort((a, b) => a.y - b.y);
             avatares.forEach(av => { av.update(dt); av.draw(ctx); });
-
             requestAnimationFrame(loop);
         }
 
-        // ==================================================
-        // 5. LÓGICA UI & LOJA (TOGGLE)
-        // ==================================================
-        const storePanel = document.getElementById('storePanel');
-        
-        function toggleStore() {
-            storePanel.classList.toggle('open');
-            // Pequeno delay para o canvas redimensionar suavemente com o CSS
-            setTimeout(resize, 50); 
-            setTimeout(resize, 300); // Garante ajuste final
-        }
-
-        // CHAT
+        // --- CHAT ---
         const input = document.getElementById('msgInput');
         const history = document.getElementById('chatHistory');
 
@@ -552,16 +363,13 @@
             input.value = "";
         }
 
-        // EVENTOS
-        const btnSend = document.getElementById('btnSend');
-        if(btnSend) btnSend.addEventListener('click', enviarMensagem);
-        if(input) input.addEventListener('keypress', (e) => { if(e.key === 'Enter') enviarMensagem(); });
+        document.getElementById('btnSend').addEventListener('click', enviarMensagem);
+        input.addEventListener('keypress', (e) => { if(e.key === 'Enter') enviarMensagem(); });
 
-        // Abre/Fecha a Loja
-        document.getElementById('btnLoja').addEventListener('click', toggleStore);
-        document.getElementById('btnItens').addEventListener('click', toggleStore);
-        
+        document.getElementById('btnLoja').addEventListener('click', () => alert('Loja em breve!'));
+        document.getElementById('btnItens').addEventListener('click', () => alert('Inventário em breve!'));
         document.getElementById('btnCor').addEventListener('click', () => alert('Tintura em breve!'));
+        
         document.getElementById('btnAddBot').addEventListener('click', () => {
             const nomes = ["Visitante", "Gamer", "Noob", "Pro"];
             const nome = nomes[Math.floor(Math.random() * nomes.length)] + Math.floor(Math.random()*100);
@@ -573,7 +381,9 @@
             document.getElementById('online-count').innerText = avatares.length;
         });
 
-        carregarAssets();
+        // Inicia
+        start();
+
     </script>
 </body>
 </html>
