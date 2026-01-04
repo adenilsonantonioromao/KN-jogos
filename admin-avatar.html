@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Editor de Avatar</title>
+    <style>
+        body { 
+            background: #1e1e1e; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; 
+            margin: 0; height: 100vh; display: flex; flex-direction: column; 
+        }
+
+        /* BARRA SUPERIOR */
+        header {
+            background: #2d2d2d; padding: 15px 20px; border-bottom: 1px solid #444;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        h2 { margin: 0; color: #FF5722; font-size: 1.2rem; }
+        
+        .btn-save {
+            background: #4CAF50; color: white; border: none; padding: 10px 25px;
+            border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 1rem;
+            transition: 0.2s;
+        }
+        .btn-save:hover { background: #43A047; }
+
+        /* LAYOUT PRINCIPAL */
+        .workspace { display: flex; flex: 1; overflow: hidden; }
+
+        /* COLUNA 1: LISTA DE PEÇAS */
+        .sidebar {
+            width: 200px; background: #252526; border-right: 1px solid #444;
+            overflow-y: auto; padding: 10px;
+        }
+        .part-btn {
+            display: block; width: 100%; padding: 10px; margin-bottom: 5px;
+            background: #333; border: 1px solid #444; color: #aaa;
+            text-align: left; cursor: pointer; border-radius: 4px;
+        }
+        .part-btn:hover { background: #3e3e42; }
+        .part-btn.active { 
+            background: #007ACC; color: white; border-color: #007ACC; 
+            font-weight: bold;
+        }
+
+        /* COLUNA 2: CANVAS (VISUALIZAÇÃO) */
+        .viewport {
+            flex: 1; background: #111; position: relative;
+            display: flex; justify-content: center; align-items: center;
+        }
+        canvas {
+            background-image: linear-gradient(45deg, #222 25%, transparent 25%), 
+                              linear-gradient(-45deg, #222 25%, transparent 25%), 
+                              linear-gradient(45deg, transparent 75%, #222 75%), 
+                              linear-gradient(-45deg, transparent 75%, #222 75%);
+            background-size: 20px 20px;
+            background-color: #1a1a1a;
+            border: 2px solid #444;
+            box-shadow: 0 0 30px rgba(0,0,0,0.5);
+        }
+
+        /* COLUNA 3: CONTROLES */
+        .inspector {
+            width: 300px; background: #252526; border-left: 1px solid #444;
+            padding: 20px; overflow-y: auto;
+        }
+        .control-group { margin-bottom: 20px; background: #333; padding: 15px; border-radius: 8px; }
+        .control-label { display: block; margin-bottom: 5px; font-size: 0.8rem; color: #ccc; }
+        .slider-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+        input[type=range] { flex: 1; }
+        input[type=number] { width: 50px; background: #222; border: 1px solid #555; color: white; padding: 3px; }
+
+        /* MODO LOGIN */
+        #login-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9); z-index: 999;
+            display: flex; justify-content: center; align-items: center;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="login-overlay">
+        <div style="text-align:center; color:white;">
+            <h1>🔒 Área Restrita</h1>
+            <button id="btnLogin" class="btn-save" style="background:#2196F3;">Entrar como Admin</button>
+        </div>
+    </div>
+
+    <header>
+        <h2>🛠️ Editor de Avatar Base</h2>
+        <button class="btn-save" onclick="salvarNoFirebase()">💾 SALVAR NO BANCO</button>
+    </header>
+
+    <div class="workspace">
+        <!-- SELETOR DE PEÇAS -->
+        <div class="sidebar" id="partsList">
+            <!-- Botões gerados via JS -->
+        </div>
+
+        <!-- CANVAS -->
+        <div class="viewport">
+            <canvas id="editorCanvas" width="500" height="600"></canvas>
+            <div style="position: absolute; bottom: 10px; left: 10px; color: #555; font-size: 0.8rem;">
+                Use o scroll do mouse para Zoom na visualização (não implementado no canvas, use sliders)
+            </div>
+        </div>
+
+        <!-- PROPRIEDADES -->
+        <div class="inspector">
+            <h3 id="selectedPartName" style="margin-top:0; color:#2196F3;">Selecione uma peça</h3>
+            
+            <div class="control-group">
+                <label class="control-label">📍 Posição X (Offset)</label>
+                <div class="slider-row">
+                    <input type="range" id="inpX" min="-200" max="200" step="1" oninput="updateConfig('x', this.value)">
+                    <input type="number" id="numX" onchange="updateConfig('x', this.value)">
+                </div>
+
+                <label class="control-label">📍 Posição Y (Offset)</label>
+                <div class="slider-row">
+                    <input type="range" id="inpY" min="-300" max="300" step="1" oninput="updateConfig('y', this.value)">
+                    <input type="number" id="numY" onchange="updateConfig('y', this.value)">
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label class="control-label">🎯 Pivô X (0.0 a 1.0)</label>
+                <div class="slider-row">
+                    <input type="range" id="inpPivX" min="0" max="1" step="0.01" oninput="updateConfig('pivX', this.value)">
+                    <input type="number" id="numPivX" step="0.01" onchange="updateConfig('pivX', this.value)">
+                </div>
+
+                <label class="control-label">🎯 Pivô Y (0.0 a 1.0)</label>
+                <div class="slider-row">
+                    <input type="range" id="inpPivY" min="0" max="1" step="0.01" oninput="updateConfig('pivY', this.value)">
+                    <input type="number" id="numPivY" step="0.01" onchange="updateConfig('pivY', this.value)">
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label class="control-label">Z-Index (Ordem de Camada)</label>
+                <input type="number" id="layerIndex" disabled style="width:100%; opacity:0.5;">
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        // --- CONFIGURAÇÃO FIREBASE ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyBIR7CqYYvMZVQxtO67JCQoJ3OLT1cvAx8",
+            authDomain: "kn-jogos.firebaseapp.com",
+            projectId: "kn-jogos",
+            storageBucket: "kn-jogos.firebasestorage.app",
+            messagingSenderId: "273132829744",
+            appId: "1:273132829744:web:a03e85b80ffabfa24101f5"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const provider = new GoogleAuthProvider();
+
+        // SEU ID ADMIN (Segurança extra no front)
+        const ADMIN_ID = "0wCjH6RgGmgpYfRcRQunjmymy4O2";
+
+        // --- DADOS DO AVATAR (Estado Inicial com suas medidas) ---
+        // A chave agora é o nome da peça para facilitar
+        let avatarConfig = {
+            scale: 0.22, // Escala fixa de renderização
+            parts: {
+                // A Ordem das chaves não importa aqui, importa no array LAYER_ORDER
+                'capa': { x: 0, y: 0, pivX: 0.5, pivY: 0.5 },
+                'perna_tras': { x: -24, y: 50, pivX: 0.67, pivY: 0.11 },
+                'perna_frente': { x: 24, y: 50, pivX: 0.29, pivY: 0.13 }, // Note o X positivo
+                'escudo_tras': { x: 0, y: 0, pivX: 0.5, pivY: 0.5 },
+                'braco_tras': { x: -37, y: -150, pivX: 0.76, pivY: 0.11 }, // SpreadX ajustado
+                'tronco': { x: 0, y: 0, pivX: 0.47, pivY: 0.75 },
+                'cintura': { x: 0, y: 0, pivX: 0.5, pivY: 0.5 },
+                'cabeca': { x: 0, y: -230, pivX: 0.50, pivY: 0.89 },
+                'rosto': { x: 0, y: -230, pivX: 0.5, pivY: 0.5 }, // Segue cabeça
+                'mascara': { x: 0, y: -230, pivX: 0.5, pivY: 0.5 }, // Segue cabeça
+                'cabelo': { x: 0, y: -230, pivX: 0.5, pivY: 0.5 }, // Segue cabeça
+                'arma_frente': { x: 0, y: 0, pivX: 0.5, pivY: 0.5 },
+                'braco_frente': { x: 47, y: -150, pivX: 0.26, pivY: 0.12 },
+                'escudo_frente': { x: 0, y: 0, pivX: 0.5, pivY: 0.5 }
+            }
+        };
+
+        // ORDEM DE RENDERIZAÇÃO (Z-INDEX) - Vc definiu esta ordem:
+        const LAYER_ORDER = [
+            'capa', 'perna_tras', 'perna_frente', 'escudo_tras', 'braco_tras', 
+            'tronco', 'cintura', 'cabeca', 'rosto', 'mascara', 'cabelo', 
+            'arma_frente', 'braco_frente', 'escudo_frente'
+        ];
+
+        const images = {};
+        const BASE_URL = 'assets/avatar/base/';
+        let activePart = 'tronco';
+
+        // --- SISTEMA ---
+
+        function init() {
+            createSidebar();
+            loadImages();
+            loop();
+        }
+
+        function createSidebar() {
+            const list = document.getElementById('partsList');
+            LAYER_ORDER.forEach((key, index) => {
+                const btn = document.createElement('div');
+                btn.className = 'part-btn';
+                btn.innerText = `${index}. ${key.toUpperCase()}`;
+                btn.onclick = () => selectPart(key, btn);
+                if (key === 'tronco') btn.classList.add('active'); // Seleciona tronco por padrão
+                list.appendChild(btn);
+            });
+        }
+
+        function loadImages() {
+            LAYER_ORDER.forEach(name => {
+                const img = new Image();
+                img.src = `${BASE_URL}${name}.png`;
+                img.onload = () => console.log(`Carregado: ${name}`);
+                img.onerror = () => {
+                    // console.warn(`Faltando: ${name}`);
+                    img.isMissing = true;
+                };
+                images[name] = img;
+            });
+        }
+
+        function selectPart(key, btnElement) {
+            activePart = key;
+            
+            // Atualiza UI da Sidebar
+            document.querySelectorAll('.part-btn').forEach(b => b.classList.remove('active'));
+            btnElement.classList.add('active');
+            
+            // Atualiza Painel da Direita
+            document.getElementById('selectedPartName').innerText = key.toUpperCase();
+            const data = avatarConfig.parts[key];
+            
+            // Preenche inputs
+            setInput('X', data.x);
+            setInput('Y', data.y);
+            setInput('PivX', data.pivX);
+            setInput('PivY', data.pivY);
+            document.getElementById('layerIndex').value = LAYER_ORDER.indexOf(key);
+        }
+
+        function setInput(suffix, val) {
+            document.getElementById('inp' + suffix).value = val;
+            document.getElementById('num' + suffix).value = val;
+        }
+
+        // Função global para o HTML chamar
+        window.updateConfig = function(field, val) {
+            const num = parseFloat(val);
+            avatarConfig.parts[activePart][field] = num;
+            
+            // Sincroniza Slider <-> Number
+            const suffix = field.charAt(0).toUpperCase() + field.slice(1);
+            if(document.activeElement.type === 'range') {
+                document.getElementById('num' + (field.startsWith('piv') ? 'Piv' + field.charAt(3) : suffix)).value = num;
+            } else {
+                document.getElementById('inp' + (field.startsWith('piv') ? 'Piv' + field.charAt(3) : suffix)).value = num;
+            }
+        }
+
+        // --- RENDERIZAÇÃO ---
+        const canvas = document.getElementById('editorCanvas');
+        const ctx = canvas.getContext('2d');
+
+        function drawPart(key) {
+            const img = images[key];
+            const cfg = avatarConfig.parts[key];
+            const s = 1.0; // No editor usamos zoom 100% relativo ao canvas, não a escala do jogo 0.22
+
+            if (!img || img.isMissing) {
+                // Desenha quadrado fantasma se faltar imagem (para saber onde está)
+                if(['tronco','cabeca','braco','perna'].some(k => key.includes(k))) {
+                    ctx.save();
+                    ctx.translate(250 + cfg.x, 300 + cfg.y);
+                    ctx.fillStyle = 'rgba(255,255,255,0.1)';
+                    ctx.strokeStyle = '#555';
+                    ctx.fillRect(-25, -25, 50, 50);
+                    ctx.strokeRect(-25, -25, 50, 50);
+                    ctx.restore();
+                }
+                return;
+            }
+
+            ctx.save();
+            // Centraliza na tela (250, 300) + Offset da peça
+            ctx.translate(250 + cfg.x, 300 + cfg.y);
+            
+            const w = img.width;
+            const h = img.height;
+
+            // Desenha com Pivô
+            ctx.drawImage(img, -w * cfg.pivX, -h * cfg.pivY);
+
+            // Desenha Gizmo (Ponto Vermelho) se for a peça selecionada
+            if (key === activePart) {
+                ctx.fillStyle = 'red';
+                ctx.beginPath(); ctx.arc(0,0, 5, 0, Math.PI*2); ctx.fill();
+                ctx.strokeStyle = 'yellow';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(-w * cfg.pivX, -h * cfg.pivY, w, h); // Box em volta
+            }
+
+            ctx.restore();
+        }
+
+        function loop() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Linhas Guia (Centro)
+            ctx.strokeStyle = '#333';
+            ctx.beginPath(); ctx.moveTo(250,0); ctx.lineTo(250,600); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(0,300); ctx.lineTo(500,300); ctx.stroke();
+
+            // Desenha na ordem das camadas
+            LAYER_ORDER.forEach(key => {
+                // Filtro de brilho para peças de trás
+                if (key.includes('tras') || key === 'capa') ctx.filter = "brightness(0.7)";
+                drawPart(key);
+                ctx.filter = "none";
+            });
+
+            requestAnimationFrame(loop);
+        }
+
+        // --- SALVAR / LOGIN ---
+        window.salvarNoFirebase = async function() {
+            if(!confirm("Salvar essa configuração como PADRÃO para todos os usuários?")) return;
+            try {
+                await setDoc(doc(db, "config", "avatar_base"), avatarConfig);
+                alert("✅ Configuração Salva! O site 'comunidade.html' lerá isso agora.");
+            } catch(e) {
+                alert("Erro ao salvar: " + e.message);
+            }
+        }
+
+        // Auth Simples
+        document.getElementById('btnLogin').addEventListener('click', () => {
+            signInWithPopup(auth, provider).then((result) => {
+                if(result.user.uid === ADMIN_ID) {
+                    document.getElementById('login-overlay').style.display = 'none';
+                    init();
+                } else {
+                    alert("Acesso Negado.");
+                }
+            });
+        });
+
+        // Auto-login se já tiver cookie
+        onAuthStateChanged(auth, (user) => {
+            if(user && user.uid === ADMIN_ID) {
+                document.getElementById('login-overlay').style.display = 'none';
+                init();
+            }
+        });
+
+    </script>
+</body>
+</html>
