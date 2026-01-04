@@ -49,6 +49,7 @@
             display: block; 
             width: 100%; 
             height: 100%; 
+            background: linear-gradient(to bottom, #81D4FA, #B2EBF2); 
         }
 
         .overlay-ui {
@@ -172,8 +173,8 @@
                 headY: -230,    // Ajustado
                 armY: -150,     // Ajustado
                 legY: 50, 
-                spreadX: -47,   // Afastado 5px (-42 - 5)
-                legSpread: -24  // Afastado 5px (-19 - 5)
+                spreadX: -47,   // Afastado 5px
+                legSpread: -24  // Afastado 5px
             },
             pivots: {
                 cabeca: { x: 0.501, y: 0.892 }, 
@@ -245,7 +246,9 @@
                 const canvasEl = document.getElementById('arcadeCanvas');
                 if(!canvasEl) return;
                 
-                const width = canvasEl.clientWidth;
+                // Usamos a largura lógica do canvas (width) e não clientWidth para consistência
+                const dpr = window.devicePixelRatio || 1;
+                const width = canvasEl.width / dpr;
                 const margem = 50;
                 
                 this.targetX = Math.random() * (width - margem*2) + margem;
@@ -300,4 +303,33 @@
 
                 // Desenho das Partes
                 ctx.filter = "brightness(0.85)";
-                this.drawPart(ctx, 'perna_tras', (cf
+                this.drawPart(ctx, 'perna_tras', (cfg.offsets.legSpread * s), (cfg.offsets.legY * s) - (bob * s), -walk * 0.5, '#555');
+                ctx.filter = "none";
+
+                ctx.filter = "brightness(0.9)";
+                this.drawPart(ctx, 'braco_tras', (cfg.offsets.spreadX * s) * 0.8, (cfg.offsets.armY * s) - (bob * s), walk * 0.6, '#777');
+                ctx.filter = "none";
+
+                this.drawPart(ctx, 'tronco', 0, -(bob * s), 0, '#FF5722');
+                this.drawPart(ctx, 'cabeca', 0, (cfg.offsets.headY * s) - (bob * s) + (breathe * 5), breathe * 0.2, '#FFCC80');
+                this.drawPart(ctx, 'perna_frente', -(cfg.offsets.legSpread * s), (cfg.offsets.legY * s) - (bob * s), walk * 0.5, '#333');
+                this.drawPart(ctx, 'braco_frente', -(cfg.offsets.spreadX * s), (cfg.offsets.armY * s) - (bob * s), -walk * 0.6, '#FF5722');
+
+                ctx.restore();
+            }
+
+            drawPart(ctx, name, x, y, rot, fallbackColor) {
+                const img = avatarImages[name];
+                const piv = AVATAR_CONFIG.pivots[name];
+                const s = AVATAR_CONFIG.scale;
+                
+                ctx.save();
+                ctx.translate(x, y);
+                ctx.rotate(rot);
+
+                if (img && img.complete && !img.isBroken && img.naturalWidth > 0) {
+                    ctx.drawImage(img, -img.width * s * piv.x, -img.height * s * piv.y, img.width * s, img.height * s);
+                } else {
+                    ctx.fillStyle = fallbackColor;
+                    let w = 50 * s; 
+                    let h = (name === 'tronco' || name.includes('perna')) ? 80 * s : 50 * s;
