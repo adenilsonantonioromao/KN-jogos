@@ -41,6 +41,7 @@
             box-shadow: var(--shadow); 
             position: relative; 
             border: 5px solid white;
+            /* Garante que o canvas tenha altura mesmo se o flex falhar */
             min-height: 300px; 
             display: flex;
         }
@@ -165,20 +166,20 @@
 
     <script type="module">
         // ==================================================
-        // 1. CONFIGURAÇÃO (SEUS DADOS AJUSTADOS)
+        // 1. CONFIGURAÇÃO (SEUS DADOS ATUALIZADOS)
         // ==================================================
         const AVATAR_CONFIG = {
             scale: 0.22, 
             offsets: { 
-                headY: -230,    // Ajustado
-                armY: -150,     // Ajustado
+                headY: -230,    // Atualizado
+                armY: -150,     // Atualizado
                 legY: 50, 
-                spreadX: -47,   // Afastado 5px
-                legSpread: -24  // Afastado 5px
+                spreadX: -47,   // Atualizado (5px a mais)
+                legSpread: -24  // Atualizado (5px a mais)
             },
             pivots: {
                 cabeca: { x: 0.501, y: 0.892 }, 
-                tronco: { x: 0.471, y: 0.75 }, // Ajustado
+                tronco: { x: 0.471, y: 0.75 }, // Atualizado
                 braco_frente: { x: 0.266, y: 0.125 }, 
                 braco_tras: { x: 0.764, y: 0.118 },
                 perna_frente: { x: 0.293, y: 0.135 }, 
@@ -246,9 +247,7 @@
                 const canvasEl = document.getElementById('arcadeCanvas');
                 if(!canvasEl) return;
                 
-                // Usamos a largura lógica do canvas (width) e não clientWidth para consistência
-                const dpr = window.devicePixelRatio || 1;
-                const width = canvasEl.width / dpr;
+                const width = canvasEl.width / (window.devicePixelRatio||1);
                 const margem = 50;
                 
                 this.targetX = Math.random() * (width - margem*2) + margem;
@@ -333,3 +332,44 @@
                     ctx.fillStyle = fallbackColor;
                     let w = 50 * s; 
                     let h = (name === 'tronco' || name.includes('perna')) ? 80 * s : 50 * s;
+                    if(name === 'cabeca') { w = 70*s; h = 70*s; }
+                    ctx.fillRect(-w/2, 0, w, h);
+                }
+                ctx.restore();
+            }
+
+            drawBalloon(ctx, s) {
+                ctx.save();
+                ctx.translate(0, -190 * s);
+                ctx.fillStyle = 'white';
+                ctx.shadowColor = 'rgba(0,0,0,0.2)';
+                ctx.shadowBlur = 5;
+                ctx.shadowOffsetY = 3;
+                const w = ctx.measureText(this.msg).width + 30;
+                
+                ctx.beginPath();
+                ctx.roundRect(-w/2, -30, w, 30, 10);
+                ctx.fill();
+                ctx.beginPath(); ctx.moveTo(-5, 0); ctx.lineTo(5, 0); ctx.lineTo(0, 10); ctx.fill();
+                
+                ctx.fillStyle = '#333';
+                ctx.shadowColor = 'transparent';
+                ctx.fillText(this.msg, 0, -10);
+                ctx.restore();
+            }
+        }
+
+        // ==================================================
+        // 4. ENGINE
+        // ==================================================
+        const canvas = document.getElementById('arcadeCanvas');
+        const container = document.getElementById('canvasContainer');
+        const ctx = canvas.getContext('2d');
+        let avatares = [];
+        let lastTime = 0;
+        let myAvatar = null;
+
+        function initArcade() {
+            // 1. Cria o Avatar PRIMEIRO
+            myAvatar = new Avatar("Eu", true);
+            avatares.push(myAvatar);
