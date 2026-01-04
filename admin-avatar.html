@@ -29,13 +29,13 @@
 
         /* COLUNA 1: LISTA DE PEÇAS */
         .sidebar {
-            width: 200px; background: #252526; border-right: 1px solid #444;
+            width: 220px; background: #252526; border-right: 1px solid #444;
             overflow-y: auto; padding: 10px;
         }
         .part-btn {
             display: block; width: 100%; padding: 10px; margin-bottom: 5px;
             background: #333; border: 1px solid #444; color: #aaa;
-            text-align: left; cursor: pointer; border-radius: 4px;
+            text-align: left; cursor: pointer; border-radius: 4px; font-size: 0.9rem;
         }
         .part-btn:hover { background: #3e3e42; }
         .part-btn.active { 
@@ -47,6 +47,7 @@
         .viewport {
             flex: 1; background: #111; position: relative;
             display: flex; justify-content: center; align-items: center;
+            overflow: hidden;
         }
         canvas {
             background-image: linear-gradient(45deg, #222 25%, transparent 25%), 
@@ -61,14 +62,14 @@
 
         /* COLUNA 3: CONTROLES */
         .inspector {
-            width: 300px; background: #252526; border-left: 1px solid #444;
+            width: 320px; background: #252526; border-left: 1px solid #444;
             padding: 20px; overflow-y: auto;
         }
         .control-group { margin-bottom: 20px; background: #333; padding: 15px; border-radius: 8px; }
         .control-label { display: block; margin-bottom: 5px; font-size: 0.8rem; color: #ccc; }
         .slider-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
-        input[type=range] { flex: 1; }
-        input[type=number] { width: 50px; background: #222; border: 1px solid #555; color: white; padding: 3px; }
+        input[type=range] { flex: 1; cursor: pointer; }
+        input[type=number] { width: 60px; background: #222; border: 1px solid #555; color: white; padding: 5px; border-radius: 4px; }
 
         /* MODO LOGIN */
         #login-overlay {
@@ -100,20 +101,27 @@
 
         <!-- CANVAS -->
         <div class="viewport">
-            <canvas id="editorCanvas" width="500" height="600"></canvas>
-            <div style="position: absolute; bottom: 10px; left: 10px; color: #555; font-size: 0.8rem;">
-                Use o scroll do mouse para Zoom na visualização (não implementado no canvas, use sliders)
-            </div>
+            <canvas id="editorCanvas" width="600" height="600"></canvas>
         </div>
 
         <!-- PROPRIEDADES -->
         <div class="inspector">
+            
+            <!-- NOVO: CONTROLE DE ZOOM -->
+            <div class="control-group" style="background: #2D2D30; border: 1px solid #444;">
+                <label class="control-label" style="color: #4CAF50; font-weight: bold;">🔍 ZOOM DA CÂMERA</label>
+                <div class="slider-row">
+                    <input type="range" id="globalZoom" min="0.5" max="3" step="0.1" value="1" oninput="updateZoom(this.value)">
+                    <span id="zoomDisplay" style="width: 30px; text-align: right; font-size: 0.8rem;">1.0x</span>
+                </div>
+            </div>
+
             <h3 id="selectedPartName" style="margin-top:0; color:#2196F3;">Selecione uma peça</h3>
             
             <div class="control-group">
                 <label class="control-label">📍 Posição X (Offset)</label>
                 <div class="slider-row">
-                    <input type="range" id="inpX" min="-200" max="200" step="1" oninput="updateConfig('x', this.value)">
+                    <input type="range" id="inpX" min="-300" max="300" step="1" oninput="updateConfig('x', this.value)">
                     <input type="number" id="numX" onchange="updateConfig('x', this.value)">
                 </div>
 
@@ -165,22 +173,42 @@
         const db = getFirestore(app);
         const provider = new GoogleAuthProvider();
 
-        // SEU ID ADMIN (Segurança extra no front)
         const ADMIN_ID = "0wCjH6RgGmgpYfRcRQunjmymy4O2";
 
-        // --- DADOS DO AVATAR (Estado Inicial com suas medidas) ---
-        // A chave agora é o nome da peça para facilitar
+        // --- VARIÁVEIS DO EDITOR ---
+        let viewportZoom = 1.0;
+
+        // --- DADOS DO AVATAR ---
         let avatarConfig = {
-            scale: 0.22, // Escala fixa de renderização
+            scale: 0.22, 
             parts: {
-                // A Ordem das chaves não importa aqui, importa no array LAYER_ORDER
-                  'capa',             // 0
+                // Configuração inicial (placeholder) - você vai ajustar visualmente
+                'capa': { x: 0, y: 0, pivX: 0.5, pivY: 0.5 },
+                'perna_tras': { x: -24, y: 50, pivX: 0.67, pivY: 0.11 },
+                'perna_frente': { x: 24, y: 50, pivX: 0.29, pivY: 0.13 },
+                'escudo_tras': { x: 0, y: 0, pivX: 0.5, pivY: 0.5 },
+                'braco_tras': { x: -37, y: -150, pivX: 0.76, pivY: 0.11 },
+                'tronco': { x: 0, y: 0, pivX: 0.47, pivY: 0.75 },
+                'cintura': { x: 0, y: 0, pivX: 0.5, pivY: 0.5 },
+                'cabeca': { x: 0, y: -230, pivX: 0.50, pivY: 0.89 },
+                'rosto': { x: 0, y: -230, pivX: 0.5, pivY: 0.5 },
+                'mascara': { x: 0, y: -230, pivX: 0.5, pivY: 0.5 },
+                'cabelo': { x: 0, y: -230, pivX: 0.5, pivY: 0.5 },
+                'arma_frente': { x: 0, y: 0, pivX: 0.5, pivY: 0.5 },
+                'braco_frente': { x: 47, y: -150, pivX: 0.26, pivY: 0.12 },
+                'escudo_frente': { x: 0, y: 0, pivX: 0.5, pivY: 0.5 }
+            }
+        };
+
+        // NOVA ORDEM DE RENDERIZAÇÃO SOLICITADA
+        const LAYER_ORDER = [
+            'capa',             // 0
             'braco_tras',       // 1
             'perna_tras',       // 2
             'perna_frente',     // 3
             'escudo_tras',      // 4
             'tronco',           // 5
-            'cintura',          // 6
+            'cintura',          // 6 (novo)
             'cabeca',           // 7
             'rosto',            // 8
             'mascara',          // 9
@@ -188,14 +216,6 @@
             'arma_frente',      // 11
             'braco_frente',     // 12
             'escudo_frente'     // 13
-            }
-        };
-
-        // ORDEM DE RENDERIZAÇÃO (Z-INDEX) - Vc definiu esta ordem:
-        const LAYER_ORDER = [
-            'capa', 'perna_tras', 'perna_frente', 'escudo_tras', 'braco_tras', 
-            'tronco', 'cintura', 'cabeca', 'rosto', 'mascara', 'cabelo', 
-            'arma_frente', 'braco_frente', 'escudo_frente'
         ];
 
         const images = {};
@@ -215,9 +235,9 @@
             LAYER_ORDER.forEach((key, index) => {
                 const btn = document.createElement('div');
                 btn.className = 'part-btn';
-                btn.innerText = `${index}. ${key.toUpperCase()}`;
+                btn.innerText = `${index}. ${key.toUpperCase().replace('_', ' ')}`;
                 btn.onclick = () => selectPart(key, btn);
-                if (key === 'tronco') btn.classList.add('active'); // Seleciona tronco por padrão
+                if (key === 'tronco') btn.classList.add('active'); 
                 list.appendChild(btn);
             });
         }
@@ -227,26 +247,19 @@
                 const img = new Image();
                 img.src = `${BASE_URL}${name}.png`;
                 img.onload = () => console.log(`Carregado: ${name}`);
-                img.onerror = () => {
-                    // console.warn(`Faltando: ${name}`);
-                    img.isMissing = true;
-                };
+                img.onerror = () => img.isMissing = true;
                 images[name] = img;
             });
         }
 
         function selectPart(key, btnElement) {
             activePart = key;
-            
-            // Atualiza UI da Sidebar
             document.querySelectorAll('.part-btn').forEach(b => b.classList.remove('active'));
             btnElement.classList.add('active');
             
-            // Atualiza Painel da Direita
-            document.getElementById('selectedPartName').innerText = key.toUpperCase();
+            document.getElementById('selectedPartName').innerText = key.toUpperCase().replace('_', ' ');
             const data = avatarConfig.parts[key];
             
-            // Preenche inputs
             setInput('X', data.x);
             setInput('Y', data.y);
             setInput('PivX', data.pivX);
@@ -259,18 +272,22 @@
             document.getElementById('num' + suffix).value = val;
         }
 
-        // Função global para o HTML chamar
         window.updateConfig = function(field, val) {
             const num = parseFloat(val);
             avatarConfig.parts[activePart][field] = num;
             
-            // Sincroniza Slider <-> Number
             const suffix = field.charAt(0).toUpperCase() + field.slice(1);
-            if(document.activeElement.type === 'range') {
-                document.getElementById('num' + (field.startsWith('piv') ? 'Piv' + field.charAt(3) : suffix)).value = num;
-            } else {
-                document.getElementById('inp' + (field.startsWith('piv') ? 'Piv' + field.charAt(3) : suffix)).value = num;
-            }
+            const numId = 'num' + (field.startsWith('piv') ? 'Piv' + field.charAt(3) : suffix);
+            const rngId = 'inp' + (field.startsWith('piv') ? 'Piv' + field.charAt(3) : suffix);
+            
+            if(document.activeElement.type === 'range') document.getElementById(numId).value = num;
+            else document.getElementById(rngId).value = num;
+        }
+
+        // NOVO: Atualiza o Zoom
+        window.updateZoom = function(val) {
+            viewportZoom = parseFloat(val);
+            document.getElementById('zoomDisplay').innerText = viewportZoom.toFixed(1) + 'x';
         }
 
         // --- RENDERIZAÇÃO ---
@@ -280,16 +297,16 @@
         function drawPart(key) {
             const img = images[key];
             const cfg = avatarConfig.parts[key];
-            const s = 1.0; // No editor usamos zoom 100% relativo ao canvas, não a escala do jogo 0.22
 
+            // Desenha placeholder se faltar a imagem
             if (!img || img.isMissing) {
-                // Desenha quadrado fantasma se faltar imagem (para saber onde está)
+                // Mostra um quadrado semitransparente apenas para peças essenciais para orientar
                 if(['tronco','cabeca','braco','perna'].some(k => key.includes(k))) {
                     ctx.save();
-                    ctx.translate(250 + cfg.x, 300 + cfg.y);
-                    ctx.fillStyle = 'rgba(255,255,255,0.1)';
-                    ctx.strokeStyle = '#555';
-                    ctx.fillRect(-25, -25, 50, 50);
+                    ctx.translate(300 + cfg.x, 300 + cfg.y);
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+                    ctx.strokeStyle = '#666';
+                    ctx.setLineDash([5, 5]);
                     ctx.strokeRect(-25, -25, 50, 50);
                     ctx.restore();
                 }
@@ -297,8 +314,8 @@
             }
 
             ctx.save();
-            // Centraliza na tela (250, 300) + Offset da peça
-            ctx.translate(250 + cfg.x, 300 + cfg.y);
+            // Centraliza na tela (300, 300) + Offset
+            ctx.translate(300 + cfg.x, 300 + cfg.y);
             
             const w = img.width;
             const h = img.height;
@@ -306,13 +323,13 @@
             // Desenha com Pivô
             ctx.drawImage(img, -w * cfg.pivX, -h * cfg.pivY);
 
-            // Desenha Gizmo (Ponto Vermelho) se for a peça selecionada
+            // Gizmo (Se selecionado)
             if (key === activePart) {
-                ctx.fillStyle = 'red';
-                ctx.beginPath(); ctx.arc(0,0, 5, 0, Math.PI*2); ctx.fill();
-                ctx.strokeStyle = 'yellow';
-                ctx.lineWidth = 2;
-                ctx.strokeRect(-w * cfg.pivX, -h * cfg.pivY, w, h); // Box em volta
+                ctx.fillStyle = '#FF5722';
+                ctx.beginPath(); ctx.arc(0,0, 6/viewportZoom, 0, Math.PI*2); ctx.fill(); // Ponto ajusta com zoom
+                ctx.strokeStyle = '#FFC107';
+                ctx.lineWidth = 2 / viewportZoom;
+                ctx.strokeRect(-w * cfg.pivX, -h * cfg.pivY, w, h);
             }
 
             ctx.restore();
@@ -321,34 +338,51 @@
         function loop() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             
-            // Linhas Guia (Centro)
-            ctx.strokeStyle = '#333';
-            ctx.beginPath(); ctx.moveTo(250,0); ctx.lineTo(250,600); ctx.stroke();
-            ctx.beginPath(); ctx.moveTo(0,300); ctx.lineTo(500,300); ctx.stroke();
+            ctx.save();
+            
+            // --- APLICA O ZOOM GLOBAL ---
+            // 1. Move para o centro
+            ctx.translate(300, 300);
+            // 2. Aplica escala
+            ctx.scale(viewportZoom, viewportZoom);
+            // 3. Move de volta (para que o zoom seja no centro, não no canto 0,0)
+            ctx.translate(-300, -300);
 
-            // Desenha na ordem das camadas
+            // Linhas Guia
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 1 / viewportZoom; // Mantém a linha fina mesmo com zoom
+            ctx.beginPath(); ctx.moveTo(300,0); ctx.lineTo(300,600); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(0,300); ctx.lineTo(600,300); ctx.stroke();
+
+            // Desenha na ordem
             LAYER_ORDER.forEach(key => {
-                // Filtro de brilho para peças de trás
                 if (key.includes('tras') || key === 'capa') ctx.filter = "brightness(0.7)";
                 drawPart(key);
                 ctx.filter = "none";
             });
+            
+            ctx.restore(); // Remove o zoom para o próximo frame
 
             requestAnimationFrame(loop);
         }
 
-        // --- SALVAR / LOGIN ---
+        // --- SALVAR ---
         window.salvarNoFirebase = async function() {
-            if(!confirm("Salvar essa configuração como PADRÃO para todos os usuários?")) return;
+            if(!confirm("Salvar configuração PADRÃO? Isso afetará todos os jogadores.")) return;
             try {
-                await setDoc(doc(db, "config", "avatar_base"), avatarConfig);
-                alert("✅ Configuração Salva! O site 'comunidade.html' lerá isso agora.");
+                // Adiciona o Layer Order no objeto salvo para garantir integridade
+                const dadosParaSalvar = {
+                    ...avatarConfig,
+                    layerOrder: LAYER_ORDER
+                };
+                
+                await setDoc(doc(db, "config", "avatar_base"), dadosParaSalvar);
+                alert("✅ Configuração Salva! Vá para a Parte 3 para integrar.");
             } catch(e) {
                 alert("Erro ao salvar: " + e.message);
             }
         }
 
-        // Auth Simples
         document.getElementById('btnLogin').addEventListener('click', () => {
             signInWithPopup(auth, provider).then((result) => {
                 if(result.user.uid === ADMIN_ID) {
@@ -360,7 +394,6 @@
             });
         });
 
-        // Auto-login se já tiver cookie
         onAuthStateChanged(auth, (user) => {
             if(user && user.uid === ADMIN_ID) {
                 document.getElementById('login-overlay').style.display = 'none';
