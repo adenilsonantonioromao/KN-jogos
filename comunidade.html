@@ -103,8 +103,8 @@
         /* MOBILE */
         @media (max-width: 850px) {
             .main-layout { flex-direction: column; padding: 10px; gap: 10px; }
-            .game-column { flex: 1; height: 50%; } /* Jogo 50% */
-            .right-column { flex: 1; min-width: auto; border-radius: 25px; height: 50%; } /* Painel 50% */
+            .game-column { flex: 1; height: 50%; } /* Jogo ocupa metade */
+            .right-column { flex: 1; min-width: auto; border-radius: 25px; height: 50%; } /* Painel ocupa metade */
             .controls-dock { height: 70px; padding: 5px; }
             .action-btn { width: 55px; height: 55px; }
             .action-btn span { font-size: 1.5rem; }
@@ -179,7 +179,7 @@
                     <button class="inv-tab-btn active" onclick="mudarAba('inventory', 'corpo')">👕 Corpo</button>
                     <button class="inv-tab-btn" onclick="mudarAba('inventory', 'acessorios')">👓 Acessórios</button>
                 </div>
-                <div id="inventoryList" class="inventory-grid">
+                <div id="inventoryList" class="inventory-grid" style="padding:15px;">
                     <p style="color:#999; text-align:center;">Carregando...</p>
                 </div>
             </div>
