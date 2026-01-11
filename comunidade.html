@@ -25,7 +25,7 @@
             flex: 1; /* Ocupa o espaço que sobrar */
             background: #81D4FA; border-radius: 30px; overflow: hidden; 
             box-shadow: var(--shadow); position: relative; border: 5px solid white; 
-            min-height: 150px; /* Altura mínima para não sumir quando a mochila abrir */
+            min-height: 200px; /* Altura mínima para não sumir quando a mochila abrir */
             display: flex; transition: flex 0.3s ease; 
         }
         canvas { display: block; width: 100%; height: 100%; background: linear-gradient(to bottom, #81D4FA, #B2EBF2); }
@@ -105,6 +105,7 @@
             .controls-dock { height: 80px; padding: 5px; }
             .action-btn { width: 60px; height: 60px; }
             .action-btn label { display: none; }
+            /* No mobile, a mochila empurra o chat pra baixo se precisar, ou fica scrollavel */
         }
     </style>
 </head>
@@ -112,44 +113,41 @@
 
     <div class="main-layout">
         <div class="game-column">
-            <!-- JOGO -->
             <div class="canvas-card" id="canvasContainer">
                 <canvas id="arcadeCanvas"></canvas>
                 <div class="overlay-ui">
                     <a href="index.html" class="btn-back">⬅️ Voltar</a>
                     <div class="online-badge">🟢 <span id="online-count">1</span> Online</div>
                 </div>
+                
+                <!-- PAINEL DE INVENTÁRIO (DENTRO DO CARD PARA EMPURRAR) -->
+                <div id="inventoryPanel" class="inventory-panel">
+                    <div class="inv-header">
+                        <h3 style="margin:0; color:var(--dark);">🎒 Mochila</h3>
+                        <button class="close-btn" onclick="toggleInventory()">×</button>
+                    </div>
+                    
+                    <!-- ABAS -->
+                    <div class="inv-tabs">
+                        <button class="inv-tab-btn active" onclick="mudarAbaInv('corpo')">👕 Corpo</button>
+                        <button class="inv-tab-btn" onclick="mudarAbaInv('acessorios')">👓 Acessórios</button>
+                    </div>
+
+                    <!-- LISTA DE ITENS -->
+                    <div id="inventoryList" class="inventory-grid">
+                        <p style="color:#999; width:100%; text-align:center;">Carregando...</p>
+                    </div>
+                </div>
             </div>
 
-            <!-- CONTROLES -->
             <div class="controls-dock">
                 <button class="action-btn" onclick="alert('Loja em breve!')"><span>🏪</span><label>Loja</label></button>
                 <button class="action-btn" onclick="toggleInventory()"><span>🎒</span><label>Mochila</label></button>
                 <button class="action-btn" id="btnAddBot" style="background: #E3F2FD;"><span>➕</span><label>Bot</label></button>
                 <button class="action-btn" onclick="alert('Cores em breve!')"><span>🎨</span><label>Cor</label></button>
             </div>
-
-            <!-- MOCHILA (PAINEL EXPANSÍVEL) -->
-            <div id="inventoryPanel" class="inventory-panel">
-                <div class="inv-header">
-                    <h3 style="margin:0; color:var(--dark);">🎒 Mochila</h3>
-                    <button class="close-btn" onclick="toggleInventory()">×</button>
-                </div>
-                
-                <!-- ABAS -->
-                <div class="inv-tabs">
-                    <button class="inv-tab-btn active" onclick="mudarAbaInv('corpo')">👕 Corpo</button>
-                    <button class="inv-tab-btn" onclick="mudarAbaInv('acessorios')">👓 Acessórios</button>
-                </div>
-
-                <!-- LISTA DE ITENS -->
-                <div id="inventoryList" class="inventory-grid">
-                    <p style="color:#999; width:100%; text-align:center;">Carregando...</p>
-                </div>
-            </div>
         </div>
 
-        <!-- CHAT -->
         <div class="chat-column">
             <div class="chat-header">💬 Chat da Galera</div>
             <div class="chat-history" id="chatHistory">
@@ -188,6 +186,7 @@
         let myOutfit = {}; 
         let currentInvTab = 'corpo'; // 'corpo' ou 'acessorios'
         
+        // CONFIGURAÇÃO DO AVATAR (Mantendo seus pivôs originais)
         let AVATAR_CONFIG = {
             scale: 0.22,
             parts: {
@@ -304,11 +303,9 @@
 
         window.mudarAbaInv = function(aba) {
             currentInvTab = aba;
-            // Atualiza botões
             document.querySelectorAll('.inv-tab-btn').forEach(b => b.classList.remove('active'));
             const btnIndex = aba === 'corpo' ? 0 : 1;
             document.querySelectorAll('.inv-tab-btn')[btnIndex].classList.add('active');
-            
             renderizarInventario();
         }
 
@@ -321,23 +318,18 @@
             
             list.innerHTML = '';
             
-            // Filtra itens pela aba selecionada
             const itensFiltrados = inv.filter(itemFile => {
                 let categoria = null;
-                // Descobre a categoria do item
                 for (const layer of LAYER_ORDER) {
                     if (itemFile.includes(layer) || STARTER_KIT[layer] === itemFile) {
-                        categoria = layer;
-                        break;
+                        categoria = layer; break;
                     }
                 }
-                // Correções manuais
                 if(itemFile.includes('Espada')) categoria = 'arma_frente';
                 if(itemFile.includes('bainha')) categoria = 'cintura';
 
                 if (!categoria) return false;
 
-                // Verifica se a categoria pertence à aba atual
                 if (currentInvTab === 'corpo') return CATEGORIA_CORPO.includes(categoria);
                 if (currentInvTab === 'acessorios') return CATEGORIA_ACESSORIOS.includes(categoria);
                 return false;
@@ -349,7 +341,6 @@
             }
 
             itensFiltrados.forEach(itemFile => {
-                // Redescobre categoria para equipar
                 let categoria = null;
                 for (const layer of LAYER_ORDER) {
                     if (itemFile.includes(layer) || STARTER_KIT[layer] === itemFile) {
@@ -365,7 +356,6 @@
                 div.className = `inv-item ${isEquipped ? 'equipped' : ''}`;
                 div.onclick = () => equiparItem(categoria, itemFile);
                 
-                // Nome amigável (remove .png e _padrao)
                 let nomeAmigavel = itemFile.replace('.png', '').replace('_padrao', '').replace('_simples', '');
                 
                 div.innerHTML = `
@@ -380,7 +370,6 @@
         window.equiparItem = async function(categoria, itemFile) {
             if (!currentUser) return alert("Faça login!");
 
-            // Lógica: Acessórios podem ser removidos, Corpo apenas substituído
             const isAcessorio = CATEGORIA_ACESSORIOS.includes(categoria);
             
             if (myOutfit[categoria] === itemFile && isAcessorio) {
@@ -390,7 +379,7 @@
             }
 
             carregarAssetsDoUsuario();
-            renderizarInventario(); // Atualiza o "check" verde
+            renderizarInventario(); 
 
             await updateDoc(doc(db, "users", currentUser.uid), {
                 avatar_equipado: myOutfit
@@ -414,7 +403,6 @@
                 if (this.msg) this.drawBalloon(ctx, s);
                 ctx.scale(-this.dir, 1); 
                 LAYER_ORDER.forEach(partName => {
-                    // Se for EU, uso minhas roupas. Se for bot, usa o que tiver carregado
                     const itemFile = this.isMe ? myOutfit[partName] : STARTER_KIT[partName];
                     if(!itemFile) return; 
                     const cfg = AVATAR_CONFIG.parts[partName] || { x:0, y:0, pivX:0.5, pivY:0.5 };
