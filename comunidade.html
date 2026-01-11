@@ -8,7 +8,566 @@
         @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;700&display=swap');
         
         :root { 
+            --primary: #FF5722; --bg: #f0fdf4; --dark: #37474F; --green<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Comunidade KN - Ava-Arcade</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;700&display=swap');
+        
+        :root { 
             --primary: #FF5722; --bg: #f0fdf4; --dark: #37474F; --green: #4CAF50;
+            --shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+        * { box-sizing: border-box; }
+        body { margin: 0; height: 100vh; background-color: var(--bg); font-family: 'Nunito', sans-serif; overflow: hidden; display: flex; flex-direction: column; color: var(--dark); }
+        .main-layout { display: flex; flex: 1; height: 100%; padding: 15px; gap: 15px; overflow: hidden; }
+        
+        .game-column { 
+            flex: 2; display: flex; flex-direction: column; gap: 15px; position: relative; min-width: 0; 
+            transition: all 0.3s ease;
+        }
+        
+        .canvas-card { 
+            flex: 1; background: #81D4FA; border-radius: 30px; overflow: hidden; 
+            box-shadow: var(--shadow); position: relative; border: 5px solid white; 
+            min-height: 150px; display: flex; transition: flex 0.3s ease; 
+        }
+        canvas { display: block; width: 100%; height: 100%; background: linear-gradient(to bottom, #81D4FA, #B2EBF2); }
+        
+        .overlay-ui { position: absolute; top: 15px; left: 15px; right: 15px; display: flex; justify-content: space-between; pointer-events: none; }
+        .btn-back { background: white; color: var(--primary); text-decoration: none; padding: 10px 20px; border-radius: 50px; font-weight: bold; font-family: 'Fredoka One'; pointer-events: auto; box-shadow: 0 4px 10px rgba(0,0,0,0.1); display: flex; align-items: center; gap: 5px; }
+        .online-badge { background: rgba(255,255,255,0.9); color: var(--green); padding: 8px 20px; border-radius: 50px; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .my-coins { background: #FFC107; color: #3E2723; padding: 5px 15px; border-radius: 20px; font-weight: bold; font-size: 0.9rem; margin-top: 5px; display:inline-block; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+
+        .controls-dock { background: white; height: 90px; border-radius: 25px; padding: 10px 20px; display: flex; align-items: center; justify-content: center; gap: 15px; box-shadow: var(--shadow); flex-shrink: 0; z-index: 10; }
+        .action-btn { background: var(--bg); color: var(--dark); border: none; border-radius: 20px; width: 70px; height: 70px; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: all 0.2s; }
+        .action-btn:active { transform: scale(0.9); }
+        .action-btn span { font-size: 1.8rem; }
+        .action-btn label { font-size: 0.7rem; font-weight: bold; color: #777; }
+
+        /* --- PAINÉIS (GAVETA) --- */
+        .drawer-panel {
+            height: 0; overflow: hidden; background: white; border-radius: 25px;
+            box-shadow: var(--shadow); transition: height 0.3s ease, padding 0.3s ease;
+            display: flex; flex-direction: column;
+        }
+        .drawer-panel.open { height: 320px; padding: 15px; margin-top: -5px; }
+
+        .inv-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .close-btn { background: #eee; border: none; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; font-weight: bold; }
+        
+        .inv-tabs { display: flex; gap: 10px; margin-bottom: 10px; background: #f0f0f0; padding: 5px; border-radius: 15px; flex-shrink: 0; }
+        .inv-tab-btn { flex: 1; padding: 8px; border: none; background: transparent; border-radius: 10px; cursor: pointer; font-weight: bold; color: #666; transition: 0.2s; }
+        .inv-tab-btn.active { background: white; color: var(--primary); box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+
+        /* GRID DA MOCHILA */
+        .inventory-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); gap: 10px; overflow-y: auto; padding-bottom: 10px; flex: 1; }
+        
+        /* LINHAS DA LOJA */
+        .store-rows-container { overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 15px; padding-bottom: 10px; }
+        .store-row { display: flex; flex-direction: column; gap: 5px; }
+        .store-row-title { font-size: 0.8rem; font-weight: bold; color: #555; text-transform: uppercase; margin-left: 5px; }
+        .store-row-scroll { display: flex; gap: 10px; overflow-x: auto; padding: 5px; }
+        
+        /* CARD DE ITEM (Comum para Loja e Mochila) */
+        .item-card { 
+            min-width: 80px; width: 80px; background: #f9f9f9; border-radius: 12px; padding: 5px; cursor: pointer; 
+            border: 2px solid transparent; display: flex; flex-direction: column; align-items: center;
+            position: relative; transition: 0.2s;
+        }
+        .item-card:hover { background: #fff; border-color: #ddd; }
+        .item-card img { width: 100%; height: 50px; object-fit: contain; }
+        .item-card.equipped { border-color: var(--green); background: #E8F5E9; }
+        .item-card.owned { border-color: #90CAF9; } /* Item comprado mas não equipado */
+        
+        .item-name { font-size: 0.6rem; margin-top: 5px; text-align: center; color: #666; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; }
+        .item-price { font-size: 0.7rem; font-weight: bold; color: #FFC107; background: #333; padding: 2px 6px; border-radius: 8px; margin-top: 2px; }
+        .check-icon { position: absolute; top: 2px; right: 2px; color: var(--green); font-size: 0.8rem; display: none; }
+        .item-card.equipped .check-icon { display: block; }
+
+        /* CHAT */
+        .chat-column { flex: 1; min-width: 320px; background: white; border-radius: 30px; box-shadow: var(--shadow); display: flex; flex-direction: column; overflow: hidden; border: 5px solid white; }
+        .chat-header { background: var(--primary); color: white; padding: 20px; font-family: 'Fredoka One'; text-align: center; font-size: 1.2rem; flex-shrink: 0; }
+        .chat-history { flex: 1; padding: 20px; overflow-y: auto; background: #f8f9fa; display: flex; flex-direction: column; gap: 12px; }
+        .msg { background: white; padding: 10px 15px; border-radius: 18px; border-bottom-left-radius: 4px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); font-size: 0.95rem; max-width: 85%; align-self: flex-start; }
+        .msg strong { color: var(--primary); display: block; font-size: 0.75rem; margin-bottom: 3px; }
+        .msg.me { align-self: flex-end; background: #FFF3E0; border-bottom-left-radius: 18px; border-bottom-right-radius: 4px; }
+        .chat-input-area { padding: 15px; background: white; border-top: 1px solid #eee; display: flex; gap: 10px; align-items: center; flex-shrink: 0; }
+        .chat-input { flex: 1; padding: 12px 20px; border: 2px solid #eee; border-radius: 50px; outline: none; font-size: 1rem; background: #f9f9f9; }
+        .btn-send { background: var(--green); color: white; border: none; width: 45px; height: 45px; border-radius: 50%; cursor: pointer; font-size: 1.2rem; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(76, 175, 80, 0.3); }
+
+        @media (max-width: 850px) {
+            .main-layout { flex-direction: column; padding: 10px; gap: 10px; }
+            .game-column { flex: 1.5; min-height: 50vh; }
+            .chat-column { flex: 1; min-width: auto; border-radius: 25px; }
+            .controls-dock { height: 80px; padding: 5px; }
+            .action-btn { width: 60px; height: 60px; }
+            .action-btn label { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="main-layout">
+        <div class="game-column">
+            <div class="canvas-card" id="canvasContainer">
+                <canvas id="arcadeCanvas"></canvas>
+                <div class="overlay-ui">
+                    <a href="index.html" class="btn-back">⬅️ Voltar</a>
+                    <div style="text-align:right;">
+                        <div class="online-badge">🟢 <span id="online-count">1</span></div>
+                        <div id="coinDisplay" class="my-coins">🪙 ...</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="controls-dock">
+                <button class="action-btn" onclick="toggleDrawer('store')"><span>🏪</span><label>Loja</label></button>
+                <button class="action-btn" onclick="toggleDrawer('inventory')"><span>🎒</span><label>Mochila</label></button>
+                <button class="action-btn" id="btnAddBot" style="background: #E3F2FD;"><span>➕</span><label>Bot</label></button>
+                <button class="action-btn" onclick="alert('Cores em breve!')"><span>🎨</span><label>Cor</label></button>
+            </div>
+
+            <!-- GAVETA: MOCHILA -->
+            <div id="panel-inventory" class="drawer-panel">
+                <div class="inv-header">
+                    <h3 style="margin:0; color:var(--dark);">🎒 Sua Mochila</h3>
+                    <button class="close-btn" onclick="closeDrawers()">×</button>
+                </div>
+                <div class="inv-tabs">
+                    <button class="inv-tab-btn active" onclick="mudarAba('inventory', 'corpo')">👕 Corpo</button>
+                    <button class="inv-tab-btn" onclick="mudarAba('inventory', 'acessorios')">👓 Acessórios</button>
+                </div>
+                <div id="inventoryList" class="inventory-grid"></div>
+            </div>
+
+            <!-- GAVETA: LOJA (ESTRUTURA EM LINHAS) -->
+            <div id="panel-store" class="drawer-panel">
+                <div class="inv-header">
+                    <h3 style="margin:0; color:var(--primary);">🏪 Loja de Itens</h3>
+                    <button class="close-btn" onclick="closeDrawers()">×</button>
+                </div>
+                <div class="inv-tabs">
+                    <button class="inv-tab-btn active" onclick="mudarAba('store', 'corpo')">👕 Corpo</button>
+                    <button class="inv-tab-btn" onclick="mudarAba('store', 'acessorios')">👓 Acessórios</button>
+                </div>
+                <div id="storeList" class="store-rows-container">
+                    <!-- Linhas geradas via JS -->
+                </div>
+            </div>
+
+        </div>
+
+        <div class="chat-column">
+            <div class="chat-header">💬 Chat da Galera</div>
+            <div class="chat-history" id="chatHistory">
+                <div class="msg" style="text-align:center; background:none; box-shadow:none; color:#999; font-size:0.8rem;">
+                    Bem-vindo à Praça KN!
+                </div>
+            </div>
+            <div class="chat-input-area">
+                <input type="text" id="msgInput" class="chat-input" placeholder="Digite algo..." maxlength="50">
+                <button class="btn-send" id="btnSend">➤</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, getDocs, arrayUnion, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app-check.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBIR7CqYYvMZVQxtO67JCQoJ3OLT1cvAx8",
+            authDomain: "kn-jogos.firebaseapp.com",
+            projectId: "kn-jogos",
+            storageBucket: "kn-jogos.firebasestorage.app",
+            messagingSenderId: "273132829744",
+            appId: "1:273132829744:web:a03e85b80ffabfa24101f5"
+        };
+        const app = initializeApp(firebaseConfig);
+        try { const appCheck = initializeAppCheck(app, { provider: new ReCaptchaV3Provider('6Lc5vjgsAAAAANx2ia8s_Fh0_KS0_YNaAlSIYpJC'), isTokenAutoRefreshEnabled: true }); } catch(e) {}
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        // --- DADOS ---
+        let currentUser = null;
+        let myData = { fichas: 0 };
+        let myOutfit = {}; 
+        let currentTab = 'corpo'; 
+        let storeItemsCache = []; // Cache dos itens da loja
+
+        let AVATAR_CONFIG = {
+            scale: 0.22,
+            offsets: { headY: -230, armY: -150, legY: 50, spreadX: -47, legSpread: -24 },
+            parts: {
+                'tronco': { x: 0, y: 0, pivX: 0.5, pivY: 0.75 },
+                'cabeca': { x: 0, y: -230, pivX: 0.5, pivY: 0.89 },
+                'braco_frente': { x: 47, y: -150, pivX: 0.26, pivY: 0.12 },
+                'braco_tras': { x: -37, y: -150, pivX: 0.76, pivY: 0.11 },
+                'perna_frente': { x: 24, y: 50, pivX: 0.29, pivY: 0.13 },
+                'perna_tras': { x: -24, y: 50, pivX: 0.67, pivY: 0.11 }
+            }
+        };
+
+        const LAYER_ORDER = [
+            'capa', 'escudo_tras', 'braco_tras', 'perna_tras', 'perna_frente',
+            'tronco', 'cintura', 'cabeca', 'rosto', 'mascara', 'cabelo',
+            'arma_frente', 'braco_frente', 'escudo_frente'
+        ];
+
+        // Mapeamento Amigável para Títulos
+        const CATEGORY_NAMES = {
+            'cabeca': 'Cabeça', 'tronco': 'Tronco', 'perna_frente': 'Pernas', 
+            'braco_frente': 'Braços', 'cabelo': 'Cabelo', 'arma_frente': 'Mão (Arma)',
+            'escudo_frente': 'Mão (Escudo)', 'capa': 'Costas', 'mascara': 'Rosto'
+        };
+
+        const CATEGORIA_CORPO = ['cabeca', 'tronco', 'perna_frente', 'perna_tras', 'braco_frente', 'braco_tras', 'rosto'];
+        const CATEGORIA_ACESSORIOS = ['cabelo', 'capa', 'mascara', 'arma_frente', 'escudo_frente', 'escudo_tras', 'cintura'];
+
+        const STARTER_KIT = {
+            'tronco': 'tronco_padrao.png', 'cabeca': 'cabeca_padrao.png',
+            'braco_frente': 'braco_frente_padrao.png', 'braco_tras': 'braco_tras_padrao.png',
+            'perna_frente': 'perna_frente_padrao.png', 'perna_tras': 'perna_tras_padrao.png',
+            'rosto': 'rosto_padrao.png', 'cabelo': 'cabelo_simples.png', 
+            'capa': 'capa_simples.png', 'mascara': 'mascara_simples.png',
+            'arma_frente': 'Espada_simples.png', 'escudo_frente': 'escudo_simples.png',
+            'escudo_tras': 'escudo_simples_tras.png'
+        };
+
+        const avatarImages = {};
+        const BASE_ASSETS_URL = 'assets/avatar/'; 
+
+        // --- AUTH ---
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                currentUser = user;
+                await carregarDadosUsuario(user.uid);
+                carregarAssetsDoUsuario();
+                carregarLojaDoBanco(); // Baixa os itens da loja
+            } else {
+                myOutfit = { ...STARTER_KIT };
+                carregarAssetsDoUsuario();
+            }
+        });
+
+        async function carregarDadosUsuario(uid) {
+            const userRef = doc(db, "users", uid);
+            const snap = await getDoc(userRef);
+            if (snap.exists()) {
+                myData = snap.data();
+                if (myData.avatar_equipado) myOutfit = myData.avatar_equipado;
+                else {
+                    myOutfit = { ...STARTER_KIT };
+                    await updateDoc(userRef, { avatar_equipado: myOutfit, inventario: Object.values(STARTER_KIT) });
+                }
+                document.getElementById('coinDisplay').innerText = `🪙 ${myData.fichas || 0}`;
+            }
+        }
+
+        async function carregarLojaDoBanco() {
+            try {
+                const snap = await getDocs(collection(db, "listaItens"));
+                storeItemsCache = [];
+                snap.forEach(d => storeItemsCache.push(d.data()));
+                console.log("Loja carregada:", storeItemsCache.length, "itens.");
+            } catch(e) { console.error("Erro loja:", e); }
+        }
+
+        // --- SISTEMA DE GAVETAS (UI) ---
+        window.toggleDrawer = function(type) {
+            const store = document.getElementById('panel-store');
+            const inv = document.getElementById('panel-inventory');
+            
+            // Fecha tudo primeiro
+            store.classList.remove('open');
+            inv.classList.remove('open');
+
+            // Abre o solicitado (se não estiver aberto)
+            if(type === 'store') {
+                store.classList.add('open');
+                renderizarLoja();
+            }
+            if(type === 'inventory') {
+                inv.classList.add('open');
+                renderizarInventario();
+            }
+
+            // Animação do Canvas
+            setTimeout(resize, 50); setTimeout(resize, 300);
+        }
+
+        window.closeDrawers = function() {
+            document.getElementById('panel-store').classList.remove('open');
+            document.getElementById('panel-inventory').classList.remove('open');
+            setTimeout(resize, 300);
+        }
+
+        window.mudarAba = function(panelType, aba) {
+            currentTab = aba;
+            const container = document.getElementById(panelType === 'store' ? 'panel-store' : 'panel-inventory');
+            container.querySelectorAll('.inv-tab-btn').forEach(b => b.classList.remove('active'));
+            const idx = aba === 'corpo' ? 0 : 1;
+            container.querySelectorAll('.inv-tab-btn')[idx].classList.add('active');
+
+            if(panelType === 'store') renderizarLoja();
+            else renderizarInventario();
+        }
+
+        // --- RENDERIZAÇÃO DA LOJA (O PONTO CHAVE) ---
+        function renderizarLoja() {
+            const container = document.getElementById('storeList');
+            container.innerHTML = '';
+
+            const categoriasParaMostrar = currentTab === 'corpo' ? CATEGORIA_CORPO : CATEGORIA_ACESSORIOS;
+
+            categoriasParaMostrar.forEach(cat => {
+                // Filtra itens do banco desta categoria
+                const itensDb = storeItemsCache.filter(i => i.categoria === cat);
+                
+                // Só mostra a linha se tiver algo pra vender ou se for uma parte essencial
+                if (itensDb.length === 0 && !STARTER_KIT[cat]) return;
+
+                // 1. Título da Linha
+                const row = document.createElement('div');
+                row.className = 'store-row';
+                row.innerHTML = `<div class="store-row-title">${CATEGORY_NAMES[cat] || cat}</div>`;
+                
+                // 2. Container Horizontal
+                const scrollBox = document.createElement('div');
+                scrollBox.className = 'store-row-scroll';
+
+                // 3. Slot 0 (O Item Padrão/Grátis)
+                // Se existe um padrão no Starter Kit, ele é o primeiro
+                if (STARTER_KIT[cat]) {
+                    const padraoId = STARTER_KIT[cat];
+                    const isOwned = true; // Todo mundo tem o padrão
+                    const isEquipped = myOutfit[cat] === padraoId;
+
+                    const slot0 = document.createElement('div');
+                    slot0.className = `item-card ${isEquipped ? 'equipped' : 'owned'}`;
+                    slot0.onclick = () => equiparItem(cat, padraoId);
+                    slot0.innerHTML = `
+                        <img src="${BASE_ASSETS_URL}${cat}/${padraoId}">
+                        <div class="item-name">Padrão</div>
+                        <div class="item-price" style="background:#4CAF50;">GRÁTIS</div>
+                        ${isEquipped ? '<div class="check-icon">✔</div>' : ''}
+                    `;
+                    scrollBox.appendChild(slot0);
+                }
+
+                // 4. Slots Pagos (Do Banco)
+                itensDb.forEach(item => {
+                    const jaTem = (myData.inventario || []).includes(item.id);
+                    const isEquipped = myOutfit[cat] === item.id;
+                    
+                    const slot = document.createElement('div');
+                    slot.className = `item-card ${isEquipped ? 'equipped' : (jaTem ? 'owned' : '')}`;
+                    
+                    if (jaTem) {
+                        slot.onclick = () => equiparItem(cat, item.id);
+                        slot.innerHTML = `
+                            <img src="${BASE_ASSETS_URL}${cat}/${item.id}">
+                            <div class="item-name">${item.nome}</div>
+                            <div class="item-price" style="background:#2196F3;">COMPRADO</div>
+                            ${isEquipped ? '<div class="check-icon">✔</div>' : ''}
+                        `;
+                    } else {
+                        slot.onclick = () => comprarItem(item);
+                        slot.innerHTML = `
+                            <img src="${BASE_ASSETS_URL}${cat}/${item.id}">
+                            <div class="item-name">${item.nome}</div>
+                            <div class="item-price">🪙 ${item.preco}</div>
+                        `;
+                    }
+                    scrollBox.appendChild(slot);
+                });
+
+                row.appendChild(scrollBox);
+                container.appendChild(row);
+            });
+        }
+
+        // --- COMPRA DE ITEM ---
+        window.comprarItem = async function(item) {
+            if (!currentUser) return alert("Faça login!");
+            
+            if (myData.fichas < item.preco) {
+                return alert(`Saldo insuficiente! Você tem ${myData.fichas}, precisa de ${item.preco}.`);
+            }
+
+            if (!confirm(`Comprar "${item.nome}" por ${item.preco} Fichas?`)) return;
+
+            // ⚠️ ATENÇÃO: Regras de Segurança devem permitir isso!
+            try {
+                const userRef = doc(db, "users", currentUser.uid);
+                await updateDoc(userRef, {
+                    fichas: increment(-item.preco),
+                    inventario: arrayUnion(item.id)
+                });
+                
+                // Atualiza localmente
+                myData.fichas -= item.preco;
+                myData.inventario.push(item.id);
+                document.getElementById('coinDisplay').innerText = `🪙 ${myData.fichas}`;
+                
+                alert(`Compra realizada! Agora equipe seu item.`);
+                renderizarLoja(); // Atualiza visual (vira "Comprado")
+                
+            } catch(e) {
+                console.error(e);
+                alert("Erro na compra. Tente novamente.");
+            }
+        }
+
+        // --- EQUIPAR ITEM (IGUAL ANTES) ---
+        window.equiparItem = async function(categoria, itemFile) {
+            if (!currentUser) return;
+            const isAcessorio = CATEGORIA_ACESSORIOS.includes(categoria);
+            
+            if (myOutfit[categoria] === itemFile && isAcessorio) myOutfit[categoria] = null;
+            else myOutfit[categoria] = itemFile;
+
+            carregarAssetsDoUsuario();
+            if(document.getElementById('panel-store').classList.contains('open')) renderizarLoja();
+            if(document.getElementById('panel-inventory').classList.contains('open')) renderizarInventario();
+
+            await updateDoc(doc(db, "users", currentUser.uid), { avatar_equipado: myOutfit });
+        }
+
+        // --- RENDER INVENTÁRIO (SIMPLES) ---
+        function renderizarInventario() {
+            const list = document.getElementById('inventoryList');
+            list.innerHTML = '';
+            const inv = myData.inventario || [];
+            
+            const itensFiltrados = inv.filter(itemFile => {
+                let cat = null;
+                // Descobre categoria
+                for (const layer of LAYER_ORDER) {
+                    if (itemFile.includes(layer) || STARTER_KIT[layer] === itemFile) { cat = layer; break; }
+                }
+                // Hacks para nomes
+                if(itemFile.includes('Espada')) cat = 'arma_frente';
+                if(itemFile.includes('bainha')) cat = 'cintura';
+                
+                if (!cat) return false;
+                if (currentTab === 'corpo') return CATEGORIA_CORPO.includes(cat);
+                return CATEGORIA_ACESSORIOS.includes(cat);
+            });
+
+            if (itensFiltrados.length === 0) list.innerHTML = '<p style="width:100%;text-align:center;color:#999;">Vazio</p>';
+
+            itensFiltrados.forEach(file => {
+                let cat = null;
+                for (const layer of LAYER_ORDER) if (file.includes(layer) || STARTER_KIT[layer] === file) { cat = layer; break; }
+                if(file.includes('Espada')) cat = 'arma_frente';
+                if(file.includes('bainha')) cat = 'cintura';
+
+                const div = document.createElement('div');
+                div.className = `inv-item ${myOutfit[cat] === file ? 'equipped' : ''}`;
+                div.onclick = () => equiparItem(cat, file);
+                div.innerHTML = `<img src="${BASE_ASSETS_URL}${cat}/${file}"><span>${file.slice(0,8)}...</span>${myOutfit[cat] === file ? '<div class="check-icon">✔</div>' : ''}`;
+                list.appendChild(div);
+            });
+        }
+
+        // (Resto do código do Avatar e Engine gráfica mantido idêntico ao anterior...)
+        // Para economizar espaço na resposta, considere que o código da Engine (Classe Avatar, Loop, etc) continua aqui.
+        // Se precisar que eu cole ele de novo, me avise.
+        
+        // --- COPIE AQUI A ENGINE GRÁFICA DO CÓDIGO ANTERIOR SE NECESSÁRIO ---
+        
+        async function start() {
+            try {
+                const snap = await getDoc(doc(db, "config", "avatar_base"));
+                if(snap.exists()) {
+                    const data = snap.data();
+                    if(data.scale) AVATAR_CONFIG.scale = data.scale;
+                    if(data.parts) AVATAR_CONFIG.parts = { ...AVATAR_CONFIG.parts, ...data.parts };
+                }
+            } catch(e) {}
+        }
+        
+        function carregarAssetsDoUsuario() {
+            let toLoad = 0;
+            LAYER_ORDER.forEach(layer => {
+                const itemFile = myOutfit[layer];
+                if (itemFile) {
+                    const img = new Image();
+                    img.src = `${BASE_ASSETS_URL}${layer}/${itemFile}`;
+                    img.onload = () => { toLoad++; if(toLoad >= 5) initArcade(); };
+                    img.onerror = () => { img.isBroken = true; toLoad++; if(toLoad >= 5) initArcade(); };
+                    avatarImages[layer] = img;
+                } else { delete avatarImages[layer]; }
+            });
+            setTimeout(() => { if(!initCalled) initArcade(); }, 2000);
+        }
+        
+        const canvas = document.getElementById('arcadeCanvas');
+        const container = document.getElementById('canvasContainer');
+        const ctx = canvas.getContext('2d');
+        let avatares = []; let lastTime = 0; let myAvatar = null; let initCalled = false;
+
+        function initArcade() {
+            if(initCalled) return; initCalled = true;
+            myAvatar = new Avatar("Eu", true); avatares.push(myAvatar);
+            window.addEventListener('resize', resize); resize(); requestAnimationFrame(loop);
+        }
+        function resize() {
+            const dpr = window.devicePixelRatio || 1; const rect = container.getBoundingClientRect();
+            if(rect.width === 0 || rect.height === 0) return;
+            canvas.width = rect.width * dpr; canvas.height = rect.height * dpr;
+            ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.scale(dpr, dpr);
+            const chaoY = rect.height - 90; 
+            avatares.forEach(a => { a.y = chaoY; if(a.x === 0) a.x = rect.width / 2; });
+        }
+        function loop(timestamp) {
+            if (!lastTime) lastTime = timestamp; const dt = (timestamp - lastTime) / 1000; lastTime = timestamp;
+            const w = canvas.clientWidth; const h = canvas.clientHeight;
+            ctx.clearRect(0, 0, w, h);
+            ctx.fillStyle = '#81C784'; ctx.beginPath(); ctx.ellipse(w/2, h + 80, w * 0.9, 150, 0, 0, Math.PI * 2); ctx.fill();
+            ctx.strokeStyle = '#4CAF50'; ctx.lineWidth = 10; ctx.stroke();
+            avatares.sort((a, b) => a.y - b.y); avatares.forEach(av => { av.update(dt); av.draw(ctx); });
+            requestAnimationFrame(loop);
+        }
+        
+        class Avatar {
+            constructor(nome, isMe = false) {
+                this.nome = nome; this.isMe = isMe; this.msg = ""; this.msgTimer = 0; this.x = 0; this.y = 0; this.dir = Math.random() > 0.5 ? 1 : -1; this.speed = Math.random() * 0.8 + 0.5; this.state = 'walk'; this.timer = Math.random() * 100; this.targetX = this.x; setTimeout(() => this.escolherNovoAlvo(), 500);
+            }
+            falar(texto) { this.msg = texto; this.msgTimer = 300; this.timer = 0; }
+            escolherNovoAlvo() { const canvasEl = document.getElementById('arcadeCanvas'); if(!canvasEl) return; const width = canvasEl.clientWidth; const margem = 50; this.targetX = Math.random() * (width - margem*2) + margem; this.dir = this.targetX > this.x ? 1 : -1; this.state = 'walk'; setTimeout(() => { this.state = 'idle'; setTimeout(() => this.escolherNovoAlvo(), Math.random() * 2000 + 1000); }, Math.random() * 4000 + 2000); }
+            update(dt) { this.timer += dt * 5; if(this.msgTimer > 0) this.msgTimer--; else this.msg = ""; if (this.state === 'walk') { this.x += this.dir * this.speed; if (Math.abs(this.x - this.targetX) < 10) this.state = 'idle'; } }
+            draw(ctx) {
+                const s = AVATAR_CONFIG.scale;
+                let walk = 0, bob = 0, breathe = Math.sin(this.timer * 0.5) * 0.05;
+                if (this.state === 'walk') { walk = Math.sin(this.timer); bob = Math.abs(Math.sin(this.timer)) * 10; }
+                ctx.save(); ctx.translate(this.x, this.y);
+                ctx.fillStyle = this.isMe ? '#FFC107' : 'white'; ctx.font = 'bold 12px Nunito'; ctx.textAlign = 'center'; ctx.shadowColor = 'rgba(0,0,0,0.8)'; ctx.shadowBlur = 3; ctx.fillText(this.nome, 0, -160 * s); ctx.shadowBlur = 0;
+                if (this.msg) this.drawBalloon(ctx, s);
+                ctx.scale(-this.dir, 1); 
+                LAYER_ORDER.forEach(partName => {
+                    const itemFile = this.isMe ? myOutfit[partName] : STARTER_KIT[partName];
+                    if(!itemFile) return; 
+                    const cfg = AVATAR_CONFIG.parts[partName] || { x:0, y:0, pivX:0.5, pivY:0.5 };
+                    let animX = 0, animY = 0, animRot = 0;
+                    if (partName === 'arma_frente' || partName === 'escudo_frente') {
+                        const parent = AVATAR_CONFIG.parts['braco_frente'] || {x:0, y:0};
+                        const pRot = (this.state === 'walk') ? -walk * 0.6 : 0;
+                        const relX = (cfg.x - parent.x) * s; const relY = (cfg.y - parent.y) * s;
+                        const rotX = relX * Math.cos(pRot) - relY * Math.sin(pRot); const rotY = relX * Math.sin(pRot) + relY * Math.cos(pRot);
+                        this.drawPartRaw(ctx, partName, ((parent.x * s) + rotX), ((parent.y * s) - (bob*s) + rotY), pRot); return;
+                    }
+                    if (partName === 'escudo_tras') {
+                        const parent = AVATAR_CONFIG.parts['braco_tras'] || {x:0, y:0};
+                        const pRot = (this.state === 'walk') ? walk * 0.6 : 0;
+                        const relX = (cfg.x - parent.x) * s; const relY = (: #4CAF50;
             --shadow: 0 10px 25px rgba(0,0,0,0.1);
         }
         * { box-sizing: border-box; }
