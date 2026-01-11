@@ -437,4 +437,71 @@
                 if (isAnimating) {
                     if (key.includes('perna')) {
                         const isFrente = key.includes('frente');
-                        animY = -b
+                        animY = -bob;
+                        animRot = (isFrente ? walk : -walk) * 0.5;
+                    } 
+                    else if (key.includes('braco') || key.includes('arma') || key.includes('escudo')) {
+                        const isFrente = key.includes('frente');
+                        animY = -bob;
+                        animRot = (isFrente ? -walk : walk) * 0.6;
+                    }
+                    else if (['cabeca', 'rosto', 'mascara', 'cabelo'].includes(key)) {
+                        animY = -bob + (breathe * 5);
+                        animRot = breathe * 0.2;
+                    }
+                    else { // Tronco, Capa
+                        animY = -bob;
+                    }
+                }
+
+                ctx.save();
+                // Posição Base + Animação
+                ctx.translate(250 + cfg.x + animX, 300 + cfg.y + animY);
+                ctx.rotate(animRot);
+                
+                ctx.drawImage(img, -img.width * cfg.pivX, -img.height * cfg.pivY);
+
+                // Gizmo de Seleção (Segue a animação)
+                if (key === activePart) {
+                    ctx.fillStyle = '#FF5722';
+                    ctx.beginPath(); ctx.arc(0,0, 5/viewportZoom, 0, Math.PI*2); ctx.fill();
+                    ctx.strokeStyle = '#FFC107'; ctx.lineWidth = 2/viewportZoom;
+                    ctx.strokeRect(-img.width * cfg.pivX, -img.height * cfg.pivY, img.width, img.height);
+                }
+                ctx.restore();
+            });
+            ctx.restore();
+            requestAnimationFrame(loop);
+        }
+
+        // --- SALVAR ---
+        window.salvarNoFirebase = async function() {
+            if(!MEU_UID_ATUAL) return alert("Você não está logado!");
+            if(!confirm("Publicar alterações?")) return;
+            try {
+                await setDoc(doc(db, "config", "avatar_base"), {
+                    ...avatarConfig,
+                    layerOrder: LAYER_ORDER,
+                    updatedBy: MEU_UID_ATUAL,
+                    updatedAt: new Date().toISOString()
+                });
+                alert("✅ PUBLICADO!");
+            } catch(e) { alert("Erro: " + e.message); }
+        }
+
+        document.getElementById('btnLogin').addEventListener('click', () => {
+            signInWithPopup(auth, provider).catch(alert);
+        });
+
+        onAuthStateChanged(auth, (user) => {
+            if(user) {
+                MEU_UID_ATUAL = user.uid; 
+                document.getElementById('debug-uid').innerText = user.uid.substring(0, 8) + "...";
+                document.getElementById('login-overlay').style.display = 'none';
+                init();
+            }
+        });
+
+    </script>
+</body>
+</html>
