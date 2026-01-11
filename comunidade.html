@@ -17,7 +17,7 @@
         /* LAYOUT PRINCIPAL */
         .main-layout { display: flex; flex: 1; height: 100%; padding: 15px; gap: 15px; overflow: hidden; }
         
-        /* --- COLUNA ESQUERDA (JOGO) --- */
+        /* --- COLUNA ESQUERDA (JOGO FIXO) --- */
         .game-column { 
             flex: 2; display: flex; flex-direction: column; gap: 15px; position: relative; min-width: 0; 
         }
@@ -34,7 +34,7 @@
         .online-badge { background: rgba(255,255,255,0.9); color: var(--green); padding: 8px 20px; border-radius: 50px; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
         .my-coins { background: #FFC107; color: #3E2723; padding: 5px 15px; border-radius: 20px; font-weight: bold; font-size: 0.9rem; margin-top: 5px; display:inline-block; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
 
-        /* CONTROLES (DOCK) */
+        /* CONTROLES */
         .controls-dock { background: white; height: 90px; border-radius: 25px; padding: 10px 20px; display: flex; align-items: center; justify-content: center; gap: 15px; box-shadow: var(--shadow); flex-shrink: 0; z-index: 10; }
         .action-btn { background: var(--bg); color: var(--dark); border: none; border-radius: 20px; width: 70px; height: 70px; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: all 0.2s; }
         .action-btn:active { transform: scale(0.9); }
@@ -50,38 +50,27 @@
             overflow: hidden; border: 5px solid white; position: relative;
         }
 
-        /* SISTEMA DE ABAS (VIEWS) */
-        .panel-view { 
-            display: none; flex-direction: column; height: 100%; width: 100%; 
-            animation: fadeIn 0.3s;
-        }
+        /* PAINÉIS (ALTERNANTES) */
+        .panel-view { display: none; flex-direction: column; height: 100%; width: 100%; animation: fadeIn 0.3s; }
         .panel-view.active { display: flex; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-        /* HEADER DOS PAINÉIS */
-        .panel-header {
-            background: var(--primary); color: white; padding: 20px;
-            font-family: 'Fredoka One'; text-align: center; font-size: 1.2rem; flex-shrink: 0;
-            display: flex; justify-content: space-between; align-items: center;
-        }
+        /* HEADER E CONTEÚDO DOS PAINÉIS */
+        .panel-header { background: var(--primary); color: white; padding: 20px; font-family: 'Fredoka One'; text-align: center; font-size: 1.2rem; flex-shrink: 0; display: flex; justify-content: space-between; align-items: center;}
         .close-panel-btn { background: rgba(255,255,255,0.2); border: none; color: white; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; font-weight: bold; }
-
-        /* ESTILOS COMUNS (LOJA/MOCHILA) */
+        
         .inv-tabs { display: flex; gap: 10px; margin: 10px; background: #f0f0f0; padding: 5px; border-radius: 15px; flex-shrink: 0; }
         .inv-tab-btn { flex: 1; padding: 8px; border: none; background: transparent; border-radius: 10px; cursor: pointer; font-weight: bold; color: #666; transition: 0.2s; }
         .inv-tab-btn.active { background: white; color: var(--primary); box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        
-        .items-scroll-area { flex: 1; overflow-y: auto; padding: 10px; display: flex; flex-direction: column; gap: 15px; }
-        .inventory-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); gap: 10px; padding: 10px; overflow-y: auto; }
 
+        .items-scroll-area, .inventory-grid { flex: 1; overflow-y: auto; padding: 10px; }
+        .inventory-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); gap: 10px; align-content: flex-start; }
+
+        .store-row { margin-bottom: 15px; }
         .store-row-title { font-size: 0.8rem; font-weight: bold; color: #555; text-transform: uppercase; margin-left: 5px; margin-bottom: 5px; }
         .store-row-scroll { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 5px; }
 
-        .item-card { 
-            min-width: 80px; width: 80px; background: #f9f9f9; border-radius: 12px; padding: 5px; cursor: pointer; 
-            border: 2px solid transparent; display: flex; flex-direction: column; align-items: center;
-            position: relative; transition: 0.2s; flex-shrink: 0;
-        }
+        .item-card { min-width: 80px; width: 80px; background: #f9f9f9; border-radius: 12px; padding: 5px; cursor: pointer; border: 2px solid transparent; display: flex; flex-direction: column; align-items: center; position: relative; transition: 0.2s; flex-shrink: 0; }
         .item-card:hover { background: #fff; border-color: #ddd; }
         .item-card img { width: 100%; height: 50px; object-fit: contain; }
         .item-card.equipped { border-color: var(--green); background: #E8F5E9; }
@@ -100,14 +89,13 @@
         .chat-input { flex: 1; padding: 12px 20px; border: 2px solid #eee; border-radius: 50px; outline: none; font-size: 1rem; background: #f9f9f9; }
         .btn-send { background: var(--green); color: white; border: none; width: 45px; height: 45px; border-radius: 50%; cursor: pointer; font-size: 1.2rem; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(76, 175, 80, 0.3); }
 
-        /* MOBILE */
+        /* MOBILE FIX */
         @media (max-width: 850px) {
             .main-layout { flex-direction: column; padding: 10px; gap: 10px; }
-            .game-column { flex: 1; height: 50%; } /* Jogo ocupa metade */
-            .right-column { flex: 1; min-width: auto; border-radius: 25px; height: 50%; } /* Painel ocupa metade */
+            .game-column { flex: 1; height: 50%; }
+            .right-column { flex: 1; min-width: auto; border-radius: 25px; height: 50%; }
             .controls-dock { height: 70px; padding: 5px; }
             .action-btn { width: 55px; height: 55px; }
-            .action-btn span { font-size: 1.5rem; }
             .action-btn label { display: none; }
         }
     </style>
@@ -115,7 +103,7 @@
 <body>
 
     <div class="main-layout">
-        <!-- ESQUERDA: JOGO -->
+        <!-- ESQUERDA: JOGO E DOCK -->
         <div class="game-column">
             <div class="canvas-card" id="canvasContainer">
                 <canvas id="arcadeCanvas"></canvas>
@@ -140,13 +128,11 @@
         <!-- DIREITA: PAINEL MULTIFUNCIONAL -->
         <div class="right-column">
             
-            <!-- 1. CHAT -->
+            <!-- 1. CHAT (Visível por padrão) -->
             <div id="view-chat" class="panel-view active">
                 <div class="panel-header">💬 Chat Global</div>
                 <div class="chat-history" id="chatHistory">
-                    <div class="msg" style="text-align:center; background:none; box-shadow:none; color:#999; font-size:0.8rem;">
-                        Bem-vindo à Praça KN!
-                    </div>
+                    <div class="msg" style="text-align:center; background:none; box-shadow:none; color:#999; font-size:0.8rem;">Bem-vindo à Praça KN!</div>
                 </div>
                 <div class="chat-input-area">
                     <input type="text" id="msgInput" class="chat-input" placeholder="Digite algo..." maxlength="50">
@@ -179,11 +165,10 @@
                     <button class="inv-tab-btn active" onclick="mudarAba('inventory', 'corpo')">👕 Corpo</button>
                     <button class="inv-tab-btn" onclick="mudarAba('inventory', 'acessorios')">👓 Acessórios</button>
                 </div>
-                <div id="inventoryList" class="inventory-grid" style="padding:15px;">
+                <div id="inventoryList" class="inventory-grid">
                     <p style="color:#999; text-align:center;">Carregando...</p>
                 </div>
             </div>
-
         </div>
     </div>
 
@@ -206,17 +191,11 @@
         const db = getFirestore(app);
         const auth = getAuth(app);
 
-        // --- DADOS GLOBAIS ---
-        let currentUser = null;
-        let myData = { fichas: 0 };
-        let myOutfit = {}; 
-        let currentTab = 'corpo'; 
-        let storeItemsCache = []; 
-
-        // CONFIGURAÇÃO DO AVATAR (Inicialmente vazia, será preenchida pelo banco)
+        // --- DADOS DO AVATAR ---
+        // Aqui declaramos, mas será preenchido pelo Banco
         let AVATAR_CONFIG = {
             scale: 0.22,
-            parts: {} // VAZIO: Força o uso do banco
+            parts: {} // VAZIO PARA FORÇAR O TESTE DO BANCO
         };
 
         const LAYER_ORDER = [
@@ -225,81 +204,55 @@
             'arma_frente', 'braco_frente', 'escudo_frente'
         ];
 
-        const CATEGORY_NAMES = {
-            'cabeca': 'Cabeça', 'tronco': 'Tronco', 'perna_frente': 'Pernas', 
-            'braco_frente': 'Braços', 'cabelo': 'Cabelo', 'arma_frente': 'Mão (Arma)',
-            'escudo_frente': 'Mão (Escudo)', 'capa': 'Costas', 'mascara': 'Rosto'
-        };
-
-        const CATEGORIA_CORPO = ['cabeca', 'tronco', 'perna_frente', 'perna_tras', 'braco_frente', 'braco_tras', 'rosto'];
-        const CATEGORIA_ACESSORIOS = ['cabelo', 'capa', 'mascara', 'arma_frente', 'escudo_frente', 'escudo_tras', 'cintura'];
-
-        const STARTER_KIT = {
-            'tronco': 'tronco_padrao.png', 'cabeca': 'cabeca_padrao.png',
-            'braco_frente': 'braco_frente_padrao.png', 'braco_tras': 'braco_tras_padrao.png',
-            'perna_frente': 'perna_frente_padrao.png', 'perna_tras': 'perna_tras_padrao.png',
-            'rosto': 'rosto_padrao.png', 'cabelo': 'cabelo_simples.png', 
-            'capa': 'capa_simples.png', 'mascara': 'mascara_simples.png',
-            'arma_frente': 'Espada_simples.png', 'escudo_frente': 'escudo_simples.png',
-            'escudo_tras': 'escudo_simples_tras.png'
-        };
-
-        const avatarImages = {};
-        const BASE_ASSETS_URL = 'assets/avatar/'; 
-
-        // --- INICIALIZAÇÃO ---
-        async function start() {
+        // STARTUP SEQUENCE CORRIGIDA
+        async function bootSystem() {
+            // 1. PRIMEIRO busca a configuração física no Firebase
             try {
+                console.log("Baixando configuração do Avatar...");
                 const snap = await getDoc(doc(db, "config", "avatar_base"));
                 if(snap.exists()) {
                     const data = snap.data();
                     if(data.scale) AVATAR_CONFIG.scale = data.scale;
-                    if(data.parts) AVATAR_CONFIG.parts = { ...AVATAR_CONFIG.parts, ...data.parts };
+                    if(data.parts) AVATAR_CONFIG.parts = data.parts; 
+                    console.log("✅ Configuração baixada!", AVATAR_CONFIG);
+                } else {
+                    console.error("❌ ERRO: Nenhuma configuração encontrada no banco 'config/avatar_base'");
                 }
-            } catch(e) {}
+            } catch(e) { console.error("Erro fatal ao baixar config:", e); }
+
+            // 2. DEPOIS inicia o carregamento de imagens
+            // Isso garante que quando desenhar, já tem as coordenadas
+            carregarAssetsEIniciar();
         }
 
-        // --- SISTEMA DE PAINÉIS (SWITCHER) ---
-        window.switchPanel = function(panelId) {
-            // Atualiza botões
-            document.querySelectorAll('.action-btn').forEach(b => b.classList.remove('active'));
-            if(panelId === 'chat') document.getElementById('btnChat').classList.add('active');
-            if(panelId === 'store') document.getElementById('btnLoja').classList.add('active');
-            if(panelId === 'inventory') document.getElementById('btnInv').classList.add('active');
+        // --- VARIAVEIS ---
+        let currentUser = null;
+        let myData = { fichas: 0 };
+        let myOutfit = {}; 
+        let currentTab = 'corpo'; 
+        let storeItemsCache = []; 
+        let avatares = [];
+        let avatarImages = {};
+        const BASE_ASSETS_URL = 'assets/avatar/'; 
 
-            // Troca visualização
-            document.querySelectorAll('.panel-view').forEach(p => p.classList.remove('active'));
-            document.getElementById('view-' + panelId).classList.add('active');
-
-            // Carrega dados se necessário
-            if(panelId === 'store' && currentUser) renderizarLoja();
-            if(panelId === 'inventory' && currentUser) renderizarInventario();
-
-            // Resize canvas (só pra garantir)
-            setTimeout(resize, 100);
-        }
-
-        window.mudarAba = function(panelType, aba) {
-            currentTab = aba;
-            const container = document.getElementById(panelType === 'store' ? 'view-store' : 'view-inventory');
-            container.querySelectorAll('.inv-tab-btn').forEach(b => b.classList.remove('active'));
-            const idx = aba === 'corpo' ? 0 : 1;
-            container.querySelectorAll('.inv-tab-btn')[idx].classList.add('active');
-
-            if(panelType === 'store') renderizarLoja();
-            else renderizarInventario();
-        }
+        const CATEGORY_NAMES = { 'cabeca': 'Cabeça', 'tronco': 'Tronco', 'perna_frente': 'Pernas', 'braco_frente': 'Braços', 'cabelo': 'Cabelo', 'arma_frente': 'Mão (Arma)', 'escudo_frente': 'Mão (Escudo)', 'capa': 'Costas', 'mascara': 'Rosto' };
+        const CATEGORIA_CORPO = ['cabeca', 'tronco', 'perna_frente', 'perna_tras', 'braco_frente', 'braco_tras', 'rosto'];
+        const CATEGORIA_ACESSORIOS = ['cabelo', 'capa', 'mascara', 'arma_frente', 'escudo_frente', 'escudo_tras', 'cintura'];
+        const STARTER_KIT = {
+            'tronco': 'tronco_padrao.png', 'cabeca': 'cabeca_padrao.png', 'braco_frente': 'braco_frente_padrao.png', 'braco_tras': 'braco_tras_padrao.png', 'perna_frente': 'perna_frente_padrao.png', 'perna_tras': 'perna_tras_padrao.png', 'rosto': 'rosto_padrao.png',
+            'cabelo': 'cabelo_simples.png', 'capa': 'capa_simples.png', 'mascara': 'mascara_simples.png', 'arma_frente': 'Espada_simples.png', 'escudo_frente': 'escudo_simples.png', 'escudo_tras': 'escudo_simples_tras.png'
+        };
 
         // --- AUTH ---
         onAuthStateChanged(auth, async (user) => {
             if (user) {
                 currentUser = user;
                 await carregarDadosUsuario(user.uid);
-                carregarAssetsDoUsuario();
+                atualizarMeuAvatar();
                 carregarLojaDoBanco();
             } else {
                 myOutfit = { ...STARTER_KIT };
-                carregarAssetsDoUsuario();
+                atualizarMeuAvatar();
             }
         });
 
@@ -325,7 +278,31 @@
             } catch(e) { console.error(e); }
         }
 
-        // --- RENDER LOJA ---
+        // --- SISTEMA DE PAINÉIS ---
+        window.switchPanel = function(panelId) {
+            document.querySelectorAll('.action-btn').forEach(b => b.classList.remove('active'));
+            if(panelId === 'chat') document.getElementById('btnChat').classList.add('active');
+            if(panelId === 'store') document.getElementById('btnLoja').classList.add('active');
+            if(panelId === 'inventory') document.getElementById('btnInv').classList.add('active');
+
+            document.querySelectorAll('.panel-view').forEach(p => p.classList.remove('active'));
+            document.getElementById('view-' + panelId).classList.add('active');
+
+            if(panelId === 'store' && currentUser) renderizarLoja();
+            if(panelId === 'inventory' && currentUser) renderizarInventario();
+            
+            setTimeout(resize, 100); // Garante que o canvas não quebre
+        }
+
+        window.mudarAba = function(panelType, aba) {
+            currentTab = aba;
+            const container = document.getElementById(panelType === 'store' ? 'view-store' : 'view-inventory');
+            container.querySelectorAll('.inv-tab-btn').forEach(b => b.classList.remove('active'));
+            const idx = aba === 'corpo' ? 0 : 1;
+            container.querySelectorAll('.inv-tab-btn')[idx].classList.add('active');
+            if(panelType === 'store') renderizarLoja(); else renderizarInventario();
+        }
+
         function renderizarLoja() {
             const container = document.getElementById('storeList');
             container.innerHTML = '';
@@ -350,7 +327,7 @@
                     scrollBox.appendChild(slot0);
                 }
 
-                // Itens Pagos
+                // Itens
                 itensDb.forEach(item => {
                     const jaTem = (myData.inventario || []).includes(item.id);
                     const isEquipped = myOutfit[cat] === item.id;
@@ -370,7 +347,6 @@
             });
         }
 
-        // --- RENDER MOCHILA ---
         function renderizarInventario() {
             const list = document.getElementById('inventoryList');
             list.innerHTML = '';
@@ -385,7 +361,7 @@
                 return CATEGORIA_ACESSORIOS.includes(cat);
             });
 
-            if (itensFiltrados.length === 0) list.innerHTML = '<p style="width:100%;text-align:center;color:#999;">Vazio</p>';
+            if (itensFiltrados.length === 0) { list.innerHTML = '<p style="width:100%;text-align:center;color:#999;">Vazio.</p>'; return; }
 
             itensFiltrados.forEach(file => {
                 let cat = null;
@@ -401,7 +377,6 @@
             });
         }
 
-        // --- TRANSAÇÕES ---
         window.comprarItem = async function(item) {
             if (!currentUser) return alert("Faça login!");
             if (myData.fichas < item.preco) return alert(`Saldo insuficiente!`);
@@ -423,39 +398,46 @@
             if (myOutfit[categoria] === itemFile && isAcessorio) myOutfit[categoria] = null;
             else myOutfit[categoria] = itemFile;
 
-            carregarAssetsDoUsuario();
+            atualizarMeuAvatar(); // Recarrega imagem
             if(document.getElementById('view-store').classList.contains('active')) renderizarLoja();
             if(document.getElementById('view-inventory').classList.contains('active')) renderizarInventario();
 
             await updateDoc(doc(db, "users", currentUser.uid), { avatar_equipado: myOutfit });
         }
 
-        // --- ENGINE GRÁFICA ---
-        function carregarAssetsDoUsuario() {
-            let toLoad = 0;
+        // --- ENGINE ---
+        function carregarAssetsEIniciar() {
+            let assetsLoaded = 0;
+            // Carrega TODAS as camadas para a memória, independente de estar usando
+            // Assim não temos lag ao trocar roupa
             LAYER_ORDER.forEach(layer => {
-                const itemFile = myOutfit[layer];
-                if (itemFile) {
-                    const img = new Image();
-                    img.src = `${BASE_ASSETS_URL}${layer}/${itemFile}`;
-                    img.onload = () => { toLoad++; if(toLoad >= 5) initArcade(); };
-                    img.onerror = () => { img.isBroken = true; toLoad++; if(toLoad >= 5) initArcade(); };
-                    avatarImages[layer] = img;
-                } else { delete avatarImages[layer]; }
+               // Placeholder: aqui o load real acontece no "drawPartRaw" dinamicamente 
+               // ou carregamos sob demanda. Para simplicidade, vamos iniciar o loop.
             });
-            setTimeout(() => { if(!initCalled) initArcade(); }, 2000);
+            initArcade();
         }
-        
+
+        function atualizarMeuAvatar() {
+            // Apenas um trigger para garantir que as imagens novas sejam baixadas
+            if(avatares.length > 0) avatares[0].outfit = myOutfit;
+        }
+
         const canvas = document.getElementById('arcadeCanvas');
         const container = document.getElementById('canvasContainer');
         const ctx = canvas.getContext('2d');
-        let avatares = []; let lastTime = 0; let myAvatar = null; let initCalled = false;
+        let lastTime = 0;
+        let initCalled = false;
 
         function initArcade() {
             if(initCalled) return; initCalled = true;
-            myAvatar = new Avatar("Eu", true); avatares.push(myAvatar);
+            // Cria EU
+            const me = new Avatar("Eu", true);
+            me.outfit = myOutfit; // Vincula outfit
+            avatares.push(me);
+            
             window.addEventListener('resize', resize); resize(); requestAnimationFrame(loop);
         }
+
         function resize() {
             const dpr = window.devicePixelRatio || 1; const rect = container.getBoundingClientRect();
             if(rect.width === 0 || rect.height === 0) return;
@@ -464,6 +446,7 @@
             const chaoY = rect.height - 90; 
             avatares.forEach(a => { a.y = chaoY; if(a.x === 0) a.x = rect.width / 2; });
         }
+
         function loop(timestamp) {
             if (!lastTime) lastTime = timestamp; const dt = (timestamp - lastTime) / 1000; lastTime = timestamp;
             const w = canvas.clientWidth; const h = canvas.clientHeight;
@@ -473,59 +456,81 @@
             avatares.sort((a, b) => a.y - b.y); avatares.forEach(av => { av.update(dt); av.draw(ctx); });
             requestAnimationFrame(loop);
         }
-        
+
         class Avatar {
             constructor(nome, isMe = false) {
-                this.nome = nome; this.isMe = isMe; this.msg = ""; this.msgTimer = 0; this.x = 0; this.y = 0; this.dir = Math.random() > 0.5 ? 1 : -1; this.speed = Math.random() * 0.8 + 0.5; this.state = 'walk'; this.timer = Math.random() * 100; this.targetX = this.x; setTimeout(() => this.escolherNovoAlvo(), 500);
+                this.nome = nome; this.isMe = isMe; this.outfit = {}; 
+                this.msg = ""; this.msgTimer = 0; this.x = 0; this.y = 0; this.dir = Math.random() > 0.5 ? 1 : -1; 
+                this.speed = Math.random() * 0.8 + 0.5; this.state = 'walk'; this.timer = Math.random() * 100; 
+                this.targetX = this.x; setTimeout(() => this.escolherNovoAlvo(), 500);
             }
             falar(texto) { this.msg = texto; this.msgTimer = 300; this.timer = 0; }
             escolherNovoAlvo() { const canvasEl = document.getElementById('arcadeCanvas'); if(!canvasEl) return; const width = canvasEl.clientWidth; const margem = 50; this.targetX = Math.random() * (width - margem*2) + margem; this.dir = this.targetX > this.x ? 1 : -1; this.state = 'walk'; setTimeout(() => { this.state = 'idle'; setTimeout(() => this.escolherNovoAlvo(), Math.random() * 2000 + 1000); }, Math.random() * 4000 + 2000); }
             update(dt) { this.timer += dt * 5; if(this.msgTimer > 0) this.msgTimer--; else this.msg = ""; if (this.state === 'walk') { this.x += this.dir * this.speed; if (Math.abs(this.x - this.targetX) < 10) this.state = 'idle'; } }
             draw(ctx) {
-                const s = AVATAR_CONFIG.scale;
+                const s = AVATAR_CONFIG.scale || 0.22;
                 let walk = 0, bob = 0, breathe = Math.sin(this.timer * 0.5) * 0.05;
                 if (this.state === 'walk') { walk = Math.sin(this.timer); bob = Math.abs(Math.sin(this.timer)) * 10; }
+                
                 ctx.save(); ctx.translate(this.x, this.y);
                 ctx.fillStyle = this.isMe ? '#FFC107' : 'white'; ctx.font = 'bold 12px Nunito'; ctx.textAlign = 'center'; ctx.shadowColor = 'rgba(0,0,0,0.8)'; ctx.shadowBlur = 3; ctx.fillText(this.nome, 0, -160 * s); ctx.shadowBlur = 0;
                 if (this.msg) this.drawBalloon(ctx, s);
                 ctx.scale(-this.dir, 1); 
+
                 LAYER_ORDER.forEach(partName => {
-                    const itemFile = this.isMe ? myOutfit[partName] : STARTER_KIT[partName];
-                    if(!itemFile) return; 
+                    // Decide qual roupa usar (Minha ou do Bot/Default)
+                    let itemFile = (this.isMe) ? (this.outfit[partName] || myOutfit[partName]) : STARTER_KIT[partName];
+                    if(!itemFile) return;
+
+                    // Busca configuração DO BANCO
                     const cfg = AVATAR_CONFIG.parts[partName] || { x:0, y:0, pivX:0.5, pivY:0.5 };
+                    
                     let animX = 0, animY = 0, animRot = 0;
+                    
+                    // Lógica de Parenting (Arma segue braço)
                     if (partName === 'arma_frente' || partName === 'escudo_frente') {
                         const parent = AVATAR_CONFIG.parts['braco_frente'] || {x:0, y:0};
                         const pRot = (this.state === 'walk') ? -walk * 0.6 : 0;
                         const relX = (cfg.x - parent.x) * s; const relY = (cfg.y - parent.y) * s;
                         const rotX = relX * Math.cos(pRot) - relY * Math.sin(pRot); const rotY = relX * Math.sin(pRot) + relY * Math.cos(pRot);
-                        this.drawPartRaw(ctx, partName, ((parent.x * s) + rotX), ((parent.y * s) - (bob*s) + rotY), pRot); return;
+                        this.drawPartRaw(ctx, partName, itemFile, ((parent.x * s) + rotX), ((parent.y * s) - (bob*s) + rotY), pRot, cfg); return;
                     }
                     if (partName === 'escudo_tras') {
                         const parent = AVATAR_CONFIG.parts['braco_tras'] || {x:0, y:0};
                         const pRot = (this.state === 'walk') ? walk * 0.6 : 0;
                         const relX = (cfg.x - parent.x) * s; const relY = (cfg.y - parent.y) * s;
                         const rotX = relX * Math.cos(pRot) - relY * Math.sin(pRot); const rotY = relX * Math.sin(pRot) + relY * Math.cos(pRot);
-                        this.drawPartRaw(ctx, partName, ((parent.x * s) + rotX), ((parent.y * s) - (bob*s) + rotY), pRot); return;
+                        this.drawPartRaw(ctx, partName, itemFile, ((parent.x * s) + rotX), ((parent.y * s) - (bob*s) + rotY), pRot, cfg); return;
                     }
+
                     if (partName.includes('perna')) { const isFrente = partName.includes('frente'); animY = -bob; animRot = (isFrente ? walk : -walk) * 0.5; } 
                     else if (partName.includes('braco')) { const isFrente = partName.includes('frente'); animY = -bob; animRot = (isFrente ? -walk : walk) * 0.6; } 
                     else if (['cabeca', 'rosto', 'mascara', 'cabelo'].includes(partName)) { animY = -bob + (breathe * 5); animRot = breathe * 0.2; } 
                     else { animY = -bob; }
-                    this.drawPartRaw(ctx, partName, (cfg.x * s) + (animX * s), (cfg.y * s) + (animY * s), animRot);
+                    
+                    this.drawPartRaw(ctx, partName, itemFile, (cfg.x * s) + (animX * s), (cfg.y * s) + (animY * s), animRot, cfg);
                 });
                 ctx.restore();
             }
-            drawPartRaw(ctx, name, finalX, finalY, rot) {
-                const img = avatarImages[name];
-                if (!img || !img.complete || img.isBroken || img.naturalWidth === 0) return;
-                const cfg = AVATAR_CONFIG.parts[name] || { x:0, y:0, pivX:0.5, pivY:0.5 };
-                const s = AVATAR_CONFIG.scale;
+
+            drawPartRaw(ctx, name, filename, finalX, finalY, rot, cfg) {
+                // Cache ou Load dinâmico
+                let img = avatarImages[`${name}_${filename}`];
+                if (!img) {
+                    img = new Image();
+                    img.src = `${BASE_ASSETS_URL}${name}/${filename}`;
+                    avatarImages[`${name}_${filename}`] = img;
+                }
+                
+                if (!img.complete || img.naturalWidth === 0) return;
+
+                const s = AVATAR_CONFIG.scale || 0.22;
                 ctx.save(); ctx.translate(finalX, finalY); ctx.rotate(rot);
                 if (name.includes('tras') || name === 'capa') ctx.filter = "brightness(0.85)";
                 ctx.drawImage(img, -img.width * s * cfg.pivX, -img.height * s * cfg.pivY, img.width * s, img.height * s);
                 ctx.filter = "none"; ctx.restore();
             }
+
             drawBalloon(ctx, s) {
                 ctx.save(); ctx.translate(0, -190 * s); ctx.fillStyle = 'white'; ctx.shadowColor = 'rgba(0,0,0,0.2)'; ctx.shadowBlur = 5; ctx.shadowOffsetY = 3;
                 const w = ctx.measureText(this.msg).width + 30;
@@ -535,7 +540,7 @@
             }
         }
 
-        // --- CHAT ---
+        // CHAT
         const input = document.getElementById('msgInput'); const history = document.getElementById('chatHistory');
         function enviarMensagem() {
             const txt = input.value.trim(); if(!txt) return;
@@ -551,7 +556,8 @@
             avatares.push(bot); document.getElementById('online-count').innerText = avatares.length;
         });
 
-        start();
+        // DISPARA TUDO
+        bootSystem();
     </script>
 </body>
 </html>
