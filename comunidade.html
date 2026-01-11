@@ -85,6 +85,8 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        // --- NOVO: IMPORTAÇÃO DO APP CHECK ---
+        import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app-check.js";
 
         // --- FIREBASE (Para ler a config do Admin) ---
         const firebaseConfig = {
@@ -96,6 +98,16 @@
             appId: "1:273132829744:web:a03e85b80ffabfa24101f5"
         };
         const app = initializeApp(firebaseConfig);
+        
+        // --- NOVO: INICIALIZAÇÃO DO APP CHECK (CRÍTICO) ---
+        try {
+            const appCheck = initializeAppCheck(app, { 
+                provider: new ReCaptchaV3Provider('6Lc5vjgsAAAAANx2ia8s_Fh0_KS0_YNaAlSIYpJC'), 
+                isTokenAutoRefreshEnabled: true 
+            });
+            console.log("App Check Inicializado na Comunidade!");
+        } catch(e) { console.warn("Erro App Check:", e); }
+
         const db = getFirestore(app);
 
         // --- DADOS GLOBAIS ---
@@ -132,7 +144,7 @@
                 if(snap.exists()) {
                     const data = snap.data();
                     if(data.scale) AVATAR_CONFIG.scale = data.scale;
-                    // Mescla as partes do banco com as locais
+                    // Mescla para garantir que todas as peças tenham dados
                     if(data.parts) {
                         AVATAR_CONFIG.parts = { ...AVATAR_CONFIG.parts, ...data.parts };
                     }
@@ -151,7 +163,7 @@
                 img.src = `${BASE_URL}${name}.png`;
                 img.onload = () => {
                     assetsLoaded++;
-                    if(assetsLoaded >= 5) initArcade(); // Inicia se tiver o básico
+                    if(assetsLoaded >= 5) initArcade(); // Inicia se carregar pelo menos 5 peças
                 };
                 img.onerror = () => {
                     img.isBroken = true; 
