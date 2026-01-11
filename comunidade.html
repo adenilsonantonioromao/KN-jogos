@@ -21,11 +21,12 @@
             transition: all 0.3s ease;
         }
         
+        /* O CARD DO JOGO (FLEX 1 faz ele ocupar o espaço que sobra) */
         .canvas-card { 
-            flex: 1; /* Ocupa o espaço que sobrar */
+            flex: 1; 
             background: #81D4FA; border-radius: 30px; overflow: hidden; 
             box-shadow: var(--shadow); position: relative; border: 5px solid white; 
-            min-height: 200px; /* Altura mínima para não sumir quando a mochila abrir */
+            min-height: 200px; /* Altura mínima de segurança */
             display: flex; transition: flex 0.3s ease; 
         }
         canvas { display: block; width: 100%; height: 100%; background: linear-gradient(to bottom, #81D4FA, #B2EBF2); }
@@ -42,26 +43,27 @@
         .action-btn label { font-size: 0.7rem; font-weight: bold; color: #777; }
 
         /* --- PAINEL DE INVENTÁRIO (MOCHILA) --- */
+        /* Ele começa com altura 0 e cresce, empurrando o canvas para cima */
         .inventory-panel {
-            height: 0; /* Fechado por padrão */
+            height: 0; 
             overflow: hidden;
             background: white;
             border-radius: 25px;
             box-shadow: var(--shadow);
-            transition: height 0.3s ease, padding 0.3s ease;
+            transition: height 0.3s ease, padding 0.3s ease, margin 0.3s ease;
             display: flex; flex-direction: column;
         }
         
         .inventory-panel.open {
-            height: 280px; /* Altura quando aberto */
+            height: 280px; /* Altura fixa quando aberto */
             padding: 15px;
-            margin-top: -5px;
+            margin-top: -5px; /* Gruda visualmente no dock */
         }
 
         .inv-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
         .close-btn { background: #eee; border: none; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; font-weight: bold; }
 
-        /* ABAS DO INVENTÁRIO */
+        /* ABAS */
         .inv-tabs { display: flex; gap: 10px; margin-bottom: 10px; background: #f0f0f0; padding: 5px; border-radius: 15px; }
         .inv-tab-btn {
             flex: 1; padding: 8px; border: none; background: transparent; 
@@ -70,7 +72,7 @@
         }
         .inv-tab-btn.active { background: white; color: var(--primary); box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
 
-        /* GRID DE ITENS */
+        /* GRID */
         .inventory-grid { 
             display: grid; grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); 
             gap: 10px; overflow-y: auto; padding-bottom: 10px; flex: 1;
@@ -105,7 +107,7 @@
             .controls-dock { height: 80px; padding: 5px; }
             .action-btn { width: 60px; height: 60px; }
             .action-btn label { display: none; }
-            /* No mobile, a mochila empurra o chat pra baixo se precisar, ou fica scrollavel */
+            .inventory-panel.open { height: 50%; } /* No mobile ocupa metade da tela */
         }
     </style>
 </head>
@@ -113,41 +115,44 @@
 
     <div class="main-layout">
         <div class="game-column">
+            <!-- JOGO (Encolhe quando a mochila abre) -->
             <div class="canvas-card" id="canvasContainer">
                 <canvas id="arcadeCanvas"></canvas>
                 <div class="overlay-ui">
                     <a href="index.html" class="btn-back">⬅️ Voltar</a>
                     <div class="online-badge">🟢 <span id="online-count">1</span> Online</div>
                 </div>
-                
-                <!-- PAINEL DE INVENTÁRIO (DENTRO DO CARD PARA EMPURRAR) -->
-                <div id="inventoryPanel" class="inventory-panel">
-                    <div class="inv-header">
-                        <h3 style="margin:0; color:var(--dark);">🎒 Mochila</h3>
-                        <button class="close-btn" onclick="toggleInventory()">×</button>
-                    </div>
-                    
-                    <!-- ABAS -->
-                    <div class="inv-tabs">
-                        <button class="inv-tab-btn active" onclick="mudarAbaInv('corpo')">👕 Corpo</button>
-                        <button class="inv-tab-btn" onclick="mudarAbaInv('acessorios')">👓 Acessórios</button>
-                    </div>
-
-                    <!-- LISTA DE ITENS -->
-                    <div id="inventoryList" class="inventory-grid">
-                        <p style="color:#999; width:100%; text-align:center;">Carregando...</p>
-                    </div>
-                </div>
             </div>
 
+            <!-- CONTROLES -->
             <div class="controls-dock">
                 <button class="action-btn" onclick="alert('Loja em breve!')"><span>🏪</span><label>Loja</label></button>
                 <button class="action-btn" onclick="toggleInventory()"><span>🎒</span><label>Mochila</label></button>
                 <button class="action-btn" id="btnAddBot" style="background: #E3F2FD;"><span>➕</span><label>Bot</label></button>
                 <button class="action-btn" onclick="alert('Cores em breve!')"><span>🎨</span><label>Cor</label></button>
             </div>
+
+            <!-- MOCHILA (PAINEL EXPANSÍVEL) -->
+            <div id="inventoryPanel" class="inventory-panel">
+                <div class="inv-header">
+                    <h3 style="margin:0; color:var(--dark);">🎒 Mochila</h3>
+                    <button class="close-btn" onclick="toggleInventory()">×</button>
+                </div>
+                
+                <!-- ABAS -->
+                <div class="inv-tabs">
+                    <button class="inv-tab-btn active" onclick="mudarAbaInv('corpo')">👕 Corpo</button>
+                    <button class="inv-tab-btn" onclick="mudarAbaInv('acessorios')">👓 Acessórios</button>
+                </div>
+
+                <!-- LISTA DE ITENS -->
+                <div id="inventoryList" class="inventory-grid">
+                    <p style="color:#999; width:100%; text-align:center;">Carregando...</p>
+                </div>
+            </div>
         </div>
 
+        <!-- CHAT -->
         <div class="chat-column">
             <div class="chat-header">💬 Chat da Galera</div>
             <div class="chat-history" id="chatHistory">
@@ -184,11 +189,18 @@
         // --- DADOS GLOBAIS ---
         let currentUser = null;
         let myOutfit = {}; 
-        let currentInvTab = 'corpo'; // 'corpo' ou 'acessorios'
+        let currentInvTab = 'corpo'; 
         
-        // CONFIGURAÇÃO DO AVATAR (Mantendo seus pivôs originais)
+        // CONFIGURAÇÃO DO AVATAR (COM SEUS VALORES CORRETOS HARDCODED)
         let AVATAR_CONFIG = {
             scale: 0.22,
+            offsets: { 
+                headY: -230,    
+                armY: -150,     
+                legY: 50, 
+                spreadX: -47,   
+                legSpread: -24  
+            },
             parts: {
                 'tronco': { x: 0, y: 0, pivX: 0.5, pivY: 0.75 },
                 'cabeca': { x: 0, y: -230, pivX: 0.5, pivY: 0.89 },
@@ -205,7 +217,7 @@
             'arma_frente', 'braco_frente', 'escudo_frente'
         ];
 
-        // DEFINIÇÃO DE CATEGORIAS (QUEM VAI EM QUAL ABA)
+        // CATEGORIAS
         const CATEGORIA_CORPO = ['tronco', 'cabeca', 'rosto', 'braco_frente', 'braco_tras', 'perna_frente', 'perna_tras'];
         const CATEGORIA_ACESSORIOS = ['capa', 'cabelo', 'mascara', 'arma_frente', 'escudo_frente', 'escudo_tras', 'cintura'];
 
@@ -230,12 +242,14 @@
 
         // --- INICIALIZAÇÃO ---
         async function start() {
+            // 1. Tenta baixar config do Firebase (mas já temos o padrão bom)
             try {
                 const snap = await getDoc(doc(db, "config", "avatar_base"));
                 if(snap.exists()) {
                     const data = snap.data();
                     if(data.scale) AVATAR_CONFIG.scale = data.scale;
                     if(data.parts) AVATAR_CONFIG.parts = { ...AVATAR_CONFIG.parts, ...data.parts };
+                    console.log("Config baixada do banco.");
                 }
             } catch(e) {}
         }
@@ -386,7 +400,7 @@
             });
         }
 
-        // --- CLASSE AVATAR (MANTIDA IGUAL) ---
+        // --- CLASSE AVATAR ---
         class Avatar {
             constructor(nome, isMe = false) {
                 this.nome = nome; this.isMe = isMe; this.msg = ""; this.msgTimer = 0; this.x = 0; this.y = 0; this.dir = Math.random() > 0.5 ? 1 : -1; this.speed = Math.random() * 0.8 + 0.5; this.state = 'walk'; this.timer = Math.random() * 100; this.targetX = this.x; setTimeout(() => this.escolherNovoAlvo(), 500);
@@ -407,6 +421,8 @@
                     if(!itemFile) return; 
                     const cfg = AVATAR_CONFIG.parts[partName] || { x:0, y:0, pivX:0.5, pivY:0.5 };
                     let animX = 0, animY = 0, animRot = 0;
+                    
+                    // LÓGICA DE PARENTING (ANEXAR)
                     if (partName === 'arma_frente' || partName === 'escudo_frente') {
                         const parent = AVATAR_CONFIG.parts['braco_frente'] || {x:0, y:0};
                         const pRot = (this.state === 'walk') ? -walk * 0.6 : 0;
@@ -421,10 +437,29 @@
                         const rotX = relX * Math.cos(pRot) - relY * Math.sin(pRot); const rotY = relX * Math.sin(pRot) + relY * Math.cos(pRot);
                         this.drawPartRaw(ctx, partName, ((parent.x * s) + rotX), ((parent.y * s) - (bob*s) + rotY), pRot); return;
                     }
-                    if (partName.includes('perna')) { const isFrente = partName.includes('frente'); animY = -bob; animRot = (isFrente ? walk : -walk) * 0.5; } 
-                    else if (partName.includes('braco')) { const isFrente = partName.includes('frente'); animY = -bob; animRot = (isFrente ? -walk : walk) * 0.6; } 
-                    else if (['cabeca', 'rosto', 'mascara', 'cabelo'].includes(partName)) { animY = -bob + (breathe * 5); animRot = breathe * 0.2; } 
+
+                    // ANIMAÇÃO PADRÃO COM OFFSETS
+                    if (partName.includes('perna')) { 
+                        const isFrente = partName.includes('frente'); 
+                        animY = -bob; 
+                        animRot = (isFrente ? walk : -walk) * 0.5; 
+                        // Aplica o offset de afastamento (legSpread)
+                        animX = isFrente ? -AVATAR_CONFIG.offsets.legSpread : AVATAR_CONFIG.offsets.legSpread;
+                    } 
+                    else if (partName.includes('braco')) { 
+                        const isFrente = partName.includes('frente'); 
+                        animY = -bob; 
+                        animRot = (isFrente ? -walk : walk) * 0.6; 
+                        // Aplica o offset de afastamento (spreadX)
+                        animX = isFrente ? -AVATAR_CONFIG.offsets.spreadX : (AVATAR_CONFIG.offsets.spreadX * 0.8);
+                    } 
+                    else if (['cabeca', 'rosto', 'mascara', 'cabelo'].includes(partName)) { 
+                        animY = -bob + (breathe * 5); 
+                        animRot = breathe * 0.2; 
+                    } 
                     else { animY = -bob; }
+
+                    // Soma a posição da peça (cfg.x) + a animação (animX)
                     this.drawPartRaw(ctx, partName, (cfg.x * s) + (animX * s), (cfg.y * s) + (animY * s), animRot);
                 });
                 ctx.restore();
