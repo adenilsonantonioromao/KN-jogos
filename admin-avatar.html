@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin - Editor de Avatar (Diagnóstico)</title>
+    <title>Admin - Editor de Avatar (Final)</title>
     <style>
         body { 
             background: #1e1e1e; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; 
@@ -79,7 +79,6 @@
             display: flex; justify-content: center; align-items: center;
         }
         
-        /* DEBUG UID */
         #debug-uid {
             background: #000; color: #FFEB3B; padding: 5px 10px; 
             font-family: monospace; font-size: 0.8rem; border: 1px solid #555;
@@ -97,8 +96,7 @@
 
     <header>
         <h2>Editor de Avatar</h2>
-        <!-- MOSTRADOR DE UID -->
-        <div id="debug-uid">Não logado</div>
+        <div id="debug-uid">Verificando...</div>
         
         <div style="display:flex; gap:10px; align-items:center;">
             <span style="font-size:0.8rem; color:#aaa;">Zoom:</span>
@@ -159,6 +157,8 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        // --- NOVO: IMPORTAÇÃO DO APP CHECK ---
+        import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app-check.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyBIR7CqYYvMZVQxtO67JCQoJ3OLT1cvAx8",
@@ -170,6 +170,16 @@
         };
 
         const app = initializeApp(firebaseConfig);
+        
+        // --- NOVO: INICIALIZAÇÃO DO APP CHECK (CRÍTICO) ---
+        try {
+            const appCheck = initializeAppCheck(app, { 
+                provider: new ReCaptchaV3Provider('6Lc5vjgsAAAAANx2ia8s_Fh0_KS0_YNaAlSIYpJC'), 
+                isTokenAutoRefreshEnabled: true 
+            });
+            console.log("App Check Inicializado!");
+        } catch(e) { console.warn("Erro App Check:", e); }
+
         const auth = getAuth(app);
         const db = getFirestore(app);
         const provider = new GoogleAuthProvider();
@@ -181,6 +191,7 @@
         const BASE_URL = 'assets/avatar/base/';
         let MEU_UID_ATUAL = ""; 
 
+        // ORDEM DE CAMADAS (14 Itens)
         const LAYER_ORDER = [
             'capa', 'escudo_tras', 'braco_tras', 'perna_tras', 'perna_frente',
             'tronco', 'cintura', 'cabeca', 'rosto', 'mascara', 'cabelo',
@@ -340,7 +351,6 @@
             if(!MEU_UID_ATUAL) return alert("Você não está logado!");
             
             try {
-                // Tenta salvar
                 await setDoc(doc(db, "config", "avatar_base"), {
                     ...avatarConfig,
                     layerOrder: LAYER_ORDER,
@@ -350,8 +360,7 @@
                 alert("✅ PUBLICADO COM SUCESSO! \nO banco de dados aceitou.");
             } catch(e) {
                 console.error(e);
-                // MENSAGEM DE ERRO DETALHADA
-                alert(`❌ ERRO DE PERMISSÃO!\n\nO Firebase bloqueou.\nSeu UID atual é:\n${MEU_UID_ATUAL}\n\nCopie esse código e coloque nas Regras do Firestore.`);
+                alert(`❌ ERRO DE PERMISSÃO!\n\n${e.message}`);
             }
         }
 
@@ -362,7 +371,7 @@
 
         onAuthStateChanged(auth, (user) => {
             if(user) {
-                MEU_UID_ATUAL = user.uid; // Captura o UID real
+                MEU_UID_ATUAL = user.uid; 
                 document.getElementById('debug-uid').innerText = "UID: " + user.uid;
                 document.getElementById('login-overlay').style.display = 'none';
                 init();
