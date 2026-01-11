@@ -254,10 +254,9 @@
                 if(snap.exists()) {
                     const data = snap.data();
                     if(data.scale) AVATAR_CONFIG.scale = data.scale;
-                    if(data.parts) AVATAR_CONFIG.parts = data.parts; // USA O BANCO
-                    console.log("Config baixada do banco.");
+                    if(data.parts) AVATAR_CONFIG.parts = { ...AVATAR_CONFIG.parts, ...data.parts };
                 }
-            } catch(e) { console.error("Erro config:", e); }
+            } catch(e) {}
         }
 
         // --- SISTEMA DE PAINÉIS (SWITCHER) ---
@@ -493,12 +492,8 @@
                 LAYER_ORDER.forEach(partName => {
                     const itemFile = this.isMe ? myOutfit[partName] : STARTER_KIT[partName];
                     if(!itemFile) return; 
-                    
-                    // USA A CONFIG DO BANCO (parts)
                     const cfg = AVATAR_CONFIG.parts[partName] || { x:0, y:0, pivX:0.5, pivY:0.5 };
                     let animX = 0, animY = 0, animRot = 0;
-                    
-                    // LÓGICA DE PARENTING (ANEXAR)
                     if (partName === 'arma_frente' || partName === 'escudo_frente') {
                         const parent = AVATAR_CONFIG.parts['braco_frente'] || {x:0, y:0};
                         const pRot = (this.state === 'walk') ? -walk * 0.6 : 0;
@@ -513,25 +508,10 @@
                         const rotX = relX * Math.cos(pRot) - relY * Math.sin(pRot); const rotY = relX * Math.sin(pRot) + relY * Math.cos(pRot);
                         this.drawPartRaw(ctx, partName, ((parent.x * s) + rotX), ((parent.y * s) - (bob*s) + rotY), pRot); return;
                     }
-
-                    // ANIMAÇÃO PADRÃO (Sem offsets fixos, usando apenas o banco)
-                    if (partName.includes('perna')) { 
-                        const isFrente = partName.includes('frente'); 
-                        animY = -bob; 
-                        animRot = (isFrente ? walk : -walk) * 0.5; 
-                    } 
-                    else if (partName.includes('braco')) { 
-                        const isFrente = partName.includes('frente'); 
-                        animY = -bob; 
-                        animRot = (isFrente ? -walk : walk) * 0.6; 
-                    } 
-                    else if (['cabeca', 'rosto', 'mascara', 'cabelo'].includes(partName)) { 
-                        animY = -bob + (breathe * 5); 
-                        animRot = breathe * 0.2; 
-                    } 
+                    if (partName.includes('perna')) { const isFrente = partName.includes('frente'); animY = -bob; animRot = (isFrente ? walk : -walk) * 0.5; } 
+                    else if (partName.includes('braco')) { const isFrente = partName.includes('frente'); animY = -bob; animRot = (isFrente ? -walk : walk) * 0.6; } 
+                    else if (['cabeca', 'rosto', 'mascara', 'cabelo'].includes(partName)) { animY = -bob + (breathe * 5); animRot = breathe * 0.2; } 
                     else { animY = -bob; }
-
-                    // Desenha usando a posição do banco (cfg.x) + animação
                     this.drawPartRaw(ctx, partName, (cfg.x * s) + (animX * s), (cfg.y * s) + (animY * s), animRot);
                 });
                 ctx.restore();
