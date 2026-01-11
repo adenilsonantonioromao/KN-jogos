@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Comunidade KN - Ava-Arcade</title>
+    <title>Comunidade KN</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;700&display=swap');
         
@@ -13,129 +13,109 @@
         }
         * { box-sizing: border-box; }
         body { margin: 0; height: 100vh; background-color: var(--bg); font-family: 'Nunito', sans-serif; overflow: hidden; display: flex; flex-direction: column; color: var(--dark); }
-        
-        /* LAYOUT PRINCIPAL */
         .main-layout { display: flex; flex: 1; height: 100%; padding: 15px; gap: 15px; overflow: hidden; }
-        
-        /* --- COLUNA ESQUERDA (JOGO FIXO) --- */
-        .game-column { 
-            flex: 2; display: flex; flex-direction: column; gap: 15px; position: relative; min-width: 0; 
+
+        /* LOADER (Spinner) */
+        #game-loader {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            border: 5px solid #f3f3f3; border-top: 5px solid var(--primary);
+            border-radius: 50%; width: 40px; height: 40px;
+            animation: spin 1s linear infinite; z-index: 50;
         }
+        @keyframes spin { 0% { transform: translate(-50%, -50%) rotate(0deg); } 100% { transform: translate(-50%, -50%) rotate(360deg); } }
         
-        .canvas-card { 
-            flex: 1; background: #81D4FA; border-radius: 30px; overflow: hidden; 
-            box-shadow: var(--shadow); position: relative; border: 5px solid white; 
-            display: flex; 
-        }
+        /* JOGO */
+        .game-column { flex: 2; display: flex; flex-direction: column; gap: 15px; position: relative; min-width: 0; }
+        .canvas-card { flex: 1; background: #81D4FA; border-radius: 30px; overflow: hidden; box-shadow: var(--shadow); position: relative; border: 5px solid white; display: flex; min-height: 200px; }
         canvas { display: block; width: 100%; height: 100%; background: linear-gradient(to bottom, #81D4FA, #B2EBF2); }
         
         .overlay-ui { position: absolute; top: 15px; left: 15px; right: 15px; display: flex; justify-content: space-between; pointer-events: none; }
         .btn-back { background: white; color: var(--primary); text-decoration: none; padding: 10px 20px; border-radius: 50px; font-weight: bold; font-family: 'Fredoka One'; pointer-events: auto; box-shadow: 0 4px 10px rgba(0,0,0,0.1); display: flex; align-items: center; gap: 5px; }
         .online-badge { background: rgba(255,255,255,0.9); color: var(--green); padding: 8px 20px; border-radius: 50px; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        .my-coins { background: #FFC107; color: #3E2723; padding: 5px 15px; border-radius: 20px; font-weight: bold; font-size: 0.9rem; margin-top: 5px; display:inline-block; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
-
+        
         /* CONTROLES */
         .controls-dock { background: white; height: 90px; border-radius: 25px; padding: 10px 20px; display: flex; align-items: center; justify-content: center; gap: 15px; box-shadow: var(--shadow); flex-shrink: 0; z-index: 10; }
         .action-btn { background: var(--bg); color: var(--dark); border: none; border-radius: 20px; width: 70px; height: 70px; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: all 0.2s; }
         .action-btn:active { transform: scale(0.9); }
         .action-btn span { font-size: 1.8rem; }
-        .action-btn label { font-size: 0.7rem; font-weight: bold; color: #777; }
         .action-btn.active { background: var(--primary); color: white; transform: translateY(-5px); box-shadow: 0 5px 15px rgba(255, 87, 34, 0.4); }
-        .action-btn.active label { color: white; }
-
-        /* --- COLUNA DIREITA (PAINEL MULTIFUNCIONAL) --- */
-        .right-column {
-            flex: 1; min-width: 320px; background: white; border-radius: 30px;
-            box-shadow: var(--shadow); display: flex; flex-direction: column;
-            overflow: hidden; border: 5px solid white; position: relative;
-        }
-
-        /* PAINÉIS (ALTERNANTES) */
+        
+        /* PAINEL DIREITO */
+        .right-column { flex: 1; min-width: 320px; background: white; border-radius: 30px; box-shadow: var(--shadow); display: flex; flex-direction: column; overflow: hidden; border: 5px solid white; position: relative; }
         .panel-view { display: none; flex-direction: column; height: 100%; width: 100%; animation: fadeIn 0.3s; }
         .panel-view.active { display: flex; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-        /* HEADER E CONTEÚDO DOS PAINÉIS */
-        .panel-header { background: var(--primary); color: white; padding: 20px; font-family: 'Fredoka One'; text-align: center; font-size: 1.2rem; flex-shrink: 0; display: flex; justify-content: space-between; align-items: center;}
-        .close-panel-btn { background: rgba(255,255,255,0.2); border: none; color: white; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; font-weight: bold; }
+        /* ELEMENTOS DO PAINEL */
+        .panel-header { background: var(--primary); color: white; padding: 20px; font-family: 'Fredoka One'; text-align: center; font-size: 1.2rem; flex-shrink: 0; display: flex; justify-content: space-between; align-items: center; }
+        .close-panel-btn { background: rgba(255,255,255,0.2); border: none; color: white; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; }
         
         .inv-tabs { display: flex; gap: 10px; margin: 10px; background: #f0f0f0; padding: 5px; border-radius: 15px; flex-shrink: 0; }
         .inv-tab-btn { flex: 1; padding: 8px; border: none; background: transparent; border-radius: 10px; cursor: pointer; font-weight: bold; color: #666; transition: 0.2s; }
         .inv-tab-btn.active { background: white; color: var(--primary); box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
 
-        .items-scroll-area, .inventory-grid { flex: 1; overflow-y: auto; padding: 10px; }
-        .inventory-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); gap: 10px; align-content: flex-start; }
-
-        .store-row { margin-bottom: 15px; }
-        .store-row-title { font-size: 0.8rem; font-weight: bold; color: #555; text-transform: uppercase; margin-left: 5px; margin-bottom: 5px; }
+        .items-scroll-area { flex: 1; overflow-y: auto; padding: 10px; display: flex; flex-direction: column; gap: 15px; }
+        .inventory-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); gap: 10px; padding: 10px; overflow-y: auto; }
+        
+        .store-row-title { font-size: 0.8rem; font-weight: bold; color: #555; text-transform: uppercase; margin-left: 5px; }
         .store-row-scroll { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 5px; }
-
-        .item-card { min-width: 80px; width: 80px; background: #f9f9f9; border-radius: 12px; padding: 5px; cursor: pointer; border: 2px solid transparent; display: flex; flex-direction: column; align-items: center; position: relative; transition: 0.2s; flex-shrink: 0; }
-        .item-card:hover { background: #fff; border-color: #ddd; }
+        
+        .item-card { min-width: 80px; width: 80px; background: #f9f9f9; border-radius: 12px; padding: 5px; cursor: pointer; border: 2px solid transparent; display: flex; flex-direction: column; align-items: center; position: relative; flex-shrink: 0; }
         .item-card img { width: 100%; height: 50px; object-fit: contain; }
         .item-card.equipped { border-color: var(--green); background: #E8F5E9; }
-        .item-card.owned { border-color: #90CAF9; } 
-        .item-name { font-size: 0.6rem; margin-top: 5px; text-align: center; color: #666; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; }
         .item-price { font-size: 0.7rem; font-weight: bold; color: #FFC107; background: #333; padding: 2px 6px; border-radius: 8px; margin-top: 2px; }
-        .check-icon { position: absolute; top: 2px; right: 2px; color: var(--green); font-size: 0.8rem; display: none; }
-        .item-card.equipped .check-icon { display: block; }
 
-        /* CHAT */
         .chat-history { flex: 1; padding: 20px; overflow-y: auto; background: #f8f9fa; display: flex; flex-direction: column; gap: 12px; }
-        .msg { background: white; padding: 10px 15px; border-radius: 18px; border-bottom-left-radius: 4px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); font-size: 0.95rem; max-width: 85%; align-self: flex-start; }
-        .msg strong { color: var(--primary); display: block; font-size: 0.75rem; margin-bottom: 3px; }
-        .msg.me { align-self: flex-end; background: #FFF3E0; border-bottom-left-radius: 18px; border-bottom-right-radius: 4px; }
         .chat-input-area { padding: 15px; background: white; border-top: 1px solid #eee; display: flex; gap: 10px; align-items: center; flex-shrink: 0; }
-        .chat-input { flex: 1; padding: 12px 20px; border: 2px solid #eee; border-radius: 50px; outline: none; font-size: 1rem; background: #f9f9f9; }
-        .btn-send { background: var(--green); color: white; border: none; width: 45px; height: 45px; border-radius: 50%; cursor: pointer; font-size: 1.2rem; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(76, 175, 80, 0.3); }
+        .chat-input { flex: 1; padding: 12px; border: 2px solid #eee; border-radius: 50px; outline: none; }
+        .btn-send { background: var(--green); color: white; border: none; width: 45px; height: 45px; border-radius: 50%; cursor: pointer; font-size: 1.2rem; }
 
-        /* MOBILE FIX */
         @media (max-width: 850px) {
             .main-layout { flex-direction: column; padding: 10px; gap: 10px; }
             .game-column { flex: 1; height: 50%; }
             .right-column { flex: 1; min-width: auto; border-radius: 25px; height: 50%; }
             .controls-dock { height: 70px; padding: 5px; }
             .action-btn { width: 55px; height: 55px; }
-            .action-btn label { display: none; }
         }
     </style>
 </head>
 <body>
 
     <div class="main-layout">
-        <!-- ESQUERDA: JOGO E DOCK -->
+        <!-- ESQUERDA: JOGO -->
         <div class="game-column">
             <div class="canvas-card" id="canvasContainer">
                 <canvas id="arcadeCanvas"></canvas>
+                <div id="game-loader"></div>
                 <div class="overlay-ui">
                     <a href="index.html" class="btn-back">⬅️ Voltar</a>
                     <div style="text-align:right;">
                         <div class="online-badge">🟢 <span id="online-count">1</span></div>
-                        <div id="coinDisplay" class="my-coins">🪙 ...</div>
+                        <div id="coinDisplay" class="my-coins" style="background:#FFC107; color:#3E2723; padding:5px 15px; border-radius:20px; font-weight:bold; font-size:0.9rem; margin-top:5px; display:inline-block; box-shadow:0 2px 5px rgba(0,0,0,0.2);">🪙 0</div>
                     </div>
                 </div>
             </div>
 
+            <!-- DOCK -->
             <div class="controls-dock">
                 <button class="action-btn active" id="btnChat" onclick="switchPanel('chat')"><span>💬</span><label>Chat</label></button>
                 <button class="action-btn" id="btnLoja" onclick="switchPanel('store')"><span>🏪</span><label>Loja</label></button>
                 <button class="action-btn" id="btnInv" onclick="switchPanel('inventory')"><span>🎒</span><label>Mochila</label></button>
                 <button class="action-btn" onclick="spawnarAvatarTeste()"><span>➕</span><label>Bot</label></button>
-                <button class="action-btn" onclick="alert('Cores em breve!')"><span>🎨</span><label>Cor</label></button>
             </div>
         </div>
 
-        <!-- DIREITA: PAINEL MULTIFUNCIONAL -->
+        <!-- DIREITA: PAINÉIS -->
         <div class="right-column">
             
-            <!-- 1. CHAT (Visível por padrão) -->
+            <!-- 1. CHAT -->
             <div id="view-chat" class="panel-view active">
                 <div class="panel-header">💬 Chat Global</div>
                 <div class="chat-history" id="chatHistory">
-                    <div class="msg" style="text-align:center; background:none; box-shadow:none; color:#999; font-size:0.8rem;">Bem-vindo à Praça KN!</div>
+                    <div class="msg" style="text-align:center; padding:10px; background:none;">Bem-vindo à Praça KN!</div>
                 </div>
                 <div class="chat-input-area">
-                    <input type="text" id="msgInput" class="chat-input" placeholder="Digite algo..." maxlength="50">
+                    <input type="text" id="msgInput" class="chat-input" placeholder="Digite...">
                     <button class="btn-send" id="btnSend">➤</button>
                 </div>
             </div>
@@ -143,32 +123,29 @@
             <!-- 2. LOJA -->
             <div id="view-store" class="panel-view">
                 <div class="panel-header" style="background:#FFF3E0; color:#E65100;">
-                    <span>🏪 Loja de Itens</span>
-                    <button class="close-panel-btn" onclick="switchPanel('chat')" style="color:#E65100; background:rgba(0,0,0,0.1);">✕</button>
+                    <span>🏪 Loja</span> <button class="close-panel-btn" onclick="switchPanel('chat')" style="color:#E65100;">✕</button>
                 </div>
                 <div class="inv-tabs">
                     <button class="inv-tab-btn active" onclick="mudarAba('store', 'corpo')">👕 Corpo</button>
                     <button class="inv-tab-btn" onclick="mudarAba('store', 'acessorios')">👓 Acessórios</button>
                 </div>
                 <div id="storeList" class="items-scroll-area">
-                    <p style="color:#999; text-align:center; margin-top:20px;">Carregando loja...</p>
+                    <p style="text-align:center; color:#999; margin-top:20px;">Carregando...</p>
                 </div>
             </div>
 
             <!-- 3. MOCHILA -->
             <div id="view-inventory" class="panel-view">
                 <div class="panel-header">
-                    <span>🎒 Sua Mochila</span>
-                    <button class="close-panel-btn" onclick="switchPanel('chat')">✕</button>
+                    <span>🎒 Mochila</span> <button class="close-panel-btn" onclick="switchPanel('chat')">✕</button>
                 </div>
                 <div class="inv-tabs">
                     <button class="inv-tab-btn active" onclick="mudarAba('inventory', 'corpo')">👕 Corpo</button>
                     <button class="inv-tab-btn" onclick="mudarAba('inventory', 'acessorios')">👓 Acessórios</button>
                 </div>
-                <div id="inventoryList" class="inventory-grid">
-                    <p style="color:#999; text-align:center;">Carregando...</p>
-                </div>
+                <div id="inventoryList" class="inventory-grid"></div>
             </div>
+
         </div>
     </div>
 
@@ -178,385 +155,416 @@
         import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, getDocs, arrayUnion, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
         import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app-check.js";
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyBIR7CqYYvMZVQxtO67JCQoJ3OLT1cvAx8",
-            authDomain: "kn-jogos.firebaseapp.com",
-            projectId: "kn-jogos",
-            storageBucket: "kn-jogos.firebasestorage.app",
-            messagingSenderId: "273132829744",
-            appId: "1:273132829744:web:a03e85b80ffabfa24101f5"
-        };
+        const firebaseConfig = { apiKey: "AIzaSyBIR7CqYYvMZVQxtO67JCQoJ3OLT1cvAx8", authDomain: "kn-jogos.firebaseapp.com", projectId: "kn-jogos", storageBucket: "kn-jogos.firebasestorage.app", messagingSenderId: "273132829744", appId: "1:273132829744:web:a03e85b80ffabfa24101f5" };
         const app = initializeApp(firebaseConfig);
-        try { const appCheck = initializeAppCheck(app, { provider: new ReCaptchaV3Provider('6Lc5vjgsAAAAANx2ia8s_Fh0_KS0_YNaAlSIYpJC'), isTokenAutoRefreshEnabled: true }); } catch(e) {}
+        try { initializeAppCheck(app, { provider: new ReCaptchaV3Provider('6Lc5vjgsAAAAANx2ia8s_Fh0_KS0_YNaAlSIYpJC'), isTokenAutoRefreshEnabled: true }); } catch(e) {}
         const db = getFirestore(app);
         const auth = getAuth(app);
 
-        // --- DADOS DO AVATAR ---
-        // Aqui declaramos, mas será preenchido pelo Banco
-        let AVATAR_CONFIG = {
-            scale: 0.22,
-            parts: {} // VAZIO PARA FORÇAR O TESTE DO BANCO
+        // --- CONSTANTES ---
+        const STARTER_KIT = {
+            'tronco': 'tronco_padrao.png', 'cabeca': 'cabeca_padrao.png',
+            'braco_frente': 'braco_frente_padrao.png', 'braco_tras': 'braco_tras_padrao.png',
+            'perna_frente': 'perna_frente_padrao.png', 'perna_tras': 'perna_tras_padrao.png',
+            'rosto': 'rosto_padrao.png', 'cabelo': 'cabelo_simples.png', 
+            'capa': 'capa_simples.png', 'mascara': 'mascara_simples.png',
+            'arma_frente': 'Espada_simples.png', 'escudo_frente': 'escudo_simples.png',
+            'escudo_tras': 'escudo_simples_tras.png'
         };
 
-        const LAYER_ORDER = [
-            'capa', 'escudo_tras', 'braco_tras', 'perna_tras', 'perna_frente',
-            'tronco', 'cintura', 'cabeca', 'rosto', 'mascara', 'cabelo',
-            'arma_frente', 'braco_frente', 'escudo_frente'
-        ];
-
-        // STARTUP SEQUENCE CORRIGIDA
-        async function bootSystem() {
-            // 1. PRIMEIRO busca a configuração física no Firebase
-            try {
-                console.log("Baixando configuração do Avatar...");
-                const snap = await getDoc(doc(db, "config", "avatar_base"));
-                if(snap.exists()) {
-                    const data = snap.data();
-                    if(data.scale) AVATAR_CONFIG.scale = data.scale;
-                    if(data.parts) AVATAR_CONFIG.parts = data.parts; 
-                    console.log("✅ Configuração baixada!", AVATAR_CONFIG);
-                } else {
-                    console.error("❌ ERRO: Nenhuma configuração encontrada no banco 'config/avatar_base'");
-                }
-            } catch(e) { console.error("Erro fatal ao baixar config:", e); }
-
-            // 2. DEPOIS inicia o carregamento de imagens
-            // Isso garante que quando desenhar, já tem as coordenadas
-            carregarAssetsEIniciar();
-        }
-
-        // --- VARIAVEIS ---
-        let currentUser = null;
-        let myData = { fichas: 0 };
-        let myOutfit = {}; 
-        let currentTab = 'corpo'; 
-        let storeItemsCache = []; 
-        let avatares = [];
-        let avatarImages = {};
-        const BASE_ASSETS_URL = 'assets/avatar/'; 
-
-        const CATEGORY_NAMES = { 'cabeca': 'Cabeça', 'tronco': 'Tronco', 'perna_frente': 'Pernas', 'braco_frente': 'Braços', 'cabelo': 'Cabelo', 'arma_frente': 'Mão (Arma)', 'escudo_frente': 'Mão (Escudo)', 'capa': 'Costas', 'mascara': 'Rosto' };
+        const LAYER_ORDER = ['capa', 'escudo_tras', 'braco_tras', 'perna_tras', 'perna_frente', 'tronco', 'cintura', 'cabeca', 'rosto', 'mascara', 'cabelo', 'arma_frente', 'braco_frente', 'escudo_frente'];
+        const BASE_ASSETS_URL = 'assets/avatar/';
+        
         const CATEGORIA_CORPO = ['cabeca', 'tronco', 'perna_frente', 'perna_tras', 'braco_frente', 'braco_tras', 'rosto'];
         const CATEGORIA_ACESSORIOS = ['cabelo', 'capa', 'mascara', 'arma_frente', 'escudo_frente', 'escudo_tras', 'cintura'];
-        const STARTER_KIT = {
-            'tronco': 'tronco_padrao.png', 'cabeca': 'cabeca_padrao.png', 'braco_frente': 'braco_frente_padrao.png', 'braco_tras': 'braco_tras_padrao.png', 'perna_frente': 'perna_frente_padrao.png', 'perna_tras': 'perna_tras_padrao.png', 'rosto': 'rosto_padrao.png',
-            'cabelo': 'cabelo_simples.png', 'capa': 'capa_simples.png', 'mascara': 'mascara_simples.png', 'arma_frente': 'Espada_simples.png', 'escudo_frente': 'escudo_simples.png', 'escudo_tras': 'escudo_simples_tras.png'
+        const CAT_NAMES = { 'cabeca': 'Cabeça', 'tronco': 'Tronco', 'perna_frente': 'Perna Dir', 'perna_tras': 'Perna Esq', 'braco_frente': 'Braço Dir', 'braco_tras': 'Braço Esq', 'rosto': 'Face', 'cabelo': 'Cabelo', 'capa': 'Capa', 'mascara': 'Acessório', 'arma_frente': 'Arma', 'escudo_frente': 'Escudo', 'escudo_tras': 'Escudo Tras', 'cintura': 'Cinto' };
+
+        // CONFIGURAÇÃO INICIAL (Seu backup hardcoded)
+        let AVATAR_CONFIG = {
+            scale: 0.22,
+            offsets: { headY: -230, armY: -150, legY: 50, spreadX: -47, legSpread: -24 },
+            parts: {
+                'tronco': { x: 0, y: 0, pivX: 0.5, pivY: 0.75 },
+                'cabeca': { x: 0, y: -230, pivX: 0.5, pivY: 0.89 },
+                'braco_frente': { x: 47, y: -150, pivX: 0.26, pivY: 0.12 },
+                'braco_tras': { x: -37, y: -150, pivX: 0.76, pivY: 0.11 },
+                'perna_frente': { x: 24, y: 50, pivX: 0.29, pivY: 0.13 },
+                'perna_tras': { x: -24, y: 50, pivX: 0.67, pivY: 0.11 }
+            }
         };
+
+        let currentUser = null;
+        let myData = { fichas: 0 };
+        let myOutfit = { ...STARTER_KIT }; 
+        let storeItems = [];
+        let avatarImages = {};
+        let currentTab = 'corpo';
+
+        // --- SISTEMA DE INICIALIZAÇÃO RÁPIDA ---
+        async function bootSystem() {
+            console.log("Iniciando...");
+            // 1. Inicia engine imediatamente (sem esperar rede)
+            carregarImagensDoOutfit();
+            
+            // 2. Busca config no banco (Background)
+            try {
+                const snap = await getDoc(doc(db, "config", "avatar_base"));
+                if(snap.exists()) {
+                    const d = snap.data();
+                    if(d.scale) AVATAR_CONFIG.scale = d.scale;
+                    if(d.parts) AVATAR_CONFIG.parts = { ...AVATAR_CONFIG.parts, ...d.parts }; // Merge com o local
+                    console.log("Config atualizada do DB.");
+                }
+            } catch(e) {}
+            
+            // 3. Busca Loja (Background)
+            try {
+                const snapLoja = await getDocs(collection(db, "listaItens"));
+                storeItems = [];
+                snapLoja.forEach(d => storeItems.push(d.data()));
+                if(currentUser && document.getElementById('view-store').classList.contains('active')) renderLoja();
+            } catch(e) {}
+        }
+
+        // --- IMAGENS E CACHE ---
+        function carregarImagensDoOutfit() {
+            let loaded = 0;
+            // Carrega o que está em myOutfit
+            LAYER_ORDER.forEach(cat => {
+                const file = myOutfit[cat];
+                if(file) {
+                    const key = `${cat}/${file}`;
+                    if(!avatarImages[key]) {
+                        const img = new Image();
+                        img.src = `${BASE_ASSETS_URL}${key}`;
+                        img.onload = () => { loaded++; checkLoad(); };
+                        img.onerror = () => { img.isBroken = true; loaded++; checkLoad(); };
+                        avatarImages[key] = img;
+                    } else { loaded++; }
+                } else { loaded++; }
+            });
+            checkLoad();
+            
+            function checkLoad() {
+                if(loaded >= LAYER_ORDER.length - 2) { // Margem de erro
+                    document.getElementById('game-loader').style.display = 'none';
+                    if(!initCalled) initEngine();
+                }
+            }
+        }
 
         // --- AUTH ---
         onAuthStateChanged(auth, async (user) => {
             if (user) {
                 currentUser = user;
-                await carregarDadosUsuario(user.uid);
-                atualizarMeuAvatar();
-                carregarLojaDoBanco();
-            } else {
-                myOutfit = { ...STARTER_KIT };
-                atualizarMeuAvatar();
+                // Busca dados do usuario
+                const snap = await getDoc(doc(db, "users", user.uid));
+                if(snap.exists()) {
+                    const d = snap.data();
+                    myData = d;
+                    if(d.avatar_equipado) myOutfit = d.avatar_equipado;
+                    else await garantirInventario(user.uid);
+                    document.getElementById('coinDisplay').innerText = `🪙 ${d.fichas || 0}`;
+                } else {
+                    await garantirInventario(user.uid);
+                }
+                carregarImagensDoOutfit();
+                if(avatares.length > 0) avatares[0].outfit = myOutfit;
             }
         });
 
-        async function carregarDadosUsuario(uid) {
-            const userRef = doc(db, "users", uid);
-            const snap = await getDoc(userRef);
-            if (snap.exists()) {
-                myData = snap.data();
-                if (myData.avatar_equipado) myOutfit = myData.avatar_equipado;
-                else {
-                    myOutfit = { ...STARTER_KIT };
-                    await updateDoc(userRef, { avatar_equipado: myOutfit, inventario: Object.values(STARTER_KIT) });
-                }
-                document.getElementById('coinDisplay').innerText = `🪙 ${myData.fichas || 0}`;
-            }
+        async function garantirInventario(uid) {
+            myOutfit = { ...STARTER_KIT };
+            await updateDoc(doc(db, "users", uid), { avatar_equipado: myOutfit, inventario: Object.values(STARTER_KIT) });
         }
 
-        async function carregarLojaDoBanco() {
-            try {
-                const snap = await getDocs(collection(db, "listaItens"));
-                storeItemsCache = [];
-                snap.forEach(d => storeItemsCache.push(d.data()));
-            } catch(e) { console.error(e); }
-        }
-
-        // --- SISTEMA DE PAINÉIS ---
-        window.switchPanel = function(panelId) {
+        // --- UI & TABS ---
+        window.switchPanel = function(id) {
             document.querySelectorAll('.action-btn').forEach(b => b.classList.remove('active'));
-            if(panelId === 'chat') document.getElementById('btnChat').classList.add('active');
-            if(panelId === 'store') document.getElementById('btnLoja').classList.add('active');
-            if(panelId === 'inventory') document.getElementById('btnInv').classList.add('active');
-
-            document.querySelectorAll('.panel-view').forEach(p => p.classList.remove('active'));
-            document.getElementById('view-' + panelId).classList.add('active');
-
-            if(panelId === 'store' && currentUser) renderizarLoja();
-            if(panelId === 'inventory' && currentUser) renderizarInventario();
+            if(id === 'chat') document.getElementById('btnChat').classList.add('active');
+            if(id === 'store') document.getElementById('btnLoja').classList.add('active');
+            if(id === 'inventory') document.getElementById('btnInv').classList.add('active');
             
-            setTimeout(resize, 100); // Garante que o canvas não quebre
+            document.querySelectorAll('.panel-view').forEach(p => p.classList.remove('active'));
+            document.getElementById('view-' + id).classList.add('active');
+            
+            if(id === 'store') renderLoja();
+            if(id === 'inventory') renderInventario();
+            
+            setTimeout(resizeCanvas, 100);
         }
 
-        window.mudarAba = function(panelType, aba) {
-            currentTab = aba;
-            const container = document.getElementById(panelType === 'store' ? 'view-store' : 'view-inventory');
-            container.querySelectorAll('.inv-tab-btn').forEach(b => b.classList.remove('active'));
-            const idx = aba === 'corpo' ? 0 : 1;
-            container.querySelectorAll('.inv-tab-btn')[idx].classList.add('active');
-            if(panelType === 'store') renderizarLoja(); else renderizarInventario();
+        window.mudarAba = function(panel, tab) {
+            currentTab = tab;
+            const root = document.getElementById('view-' + panel);
+            root.querySelectorAll('.inv-tab-btn').forEach(b => b.classList.remove('active'));
+            const idx = tab === 'corpo' ? 0 : 1;
+            root.querySelectorAll('.inv-tab-btn')[idx].classList.add('active');
+            if(panel === 'store') renderLoja(); else renderInventario();
         }
 
-        function renderizarLoja() {
-            const container = document.getElementById('storeList');
-            container.innerHTML = '';
-            const categoriasParaMostrar = currentTab === 'corpo' ? CATEGORIA_CORPO : CATEGORIA_ACESSORIOS;
-
-            categoriasParaMostrar.forEach(cat => {
-                const itensDb = storeItemsCache.filter(i => i.categoria === cat);
-                if (itensDb.length === 0 && !STARTER_KIT[cat]) return;
-
-                const row = document.createElement('div'); row.className = 'store-row';
-                row.innerHTML = `<div class="store-row-title">${CATEGORY_NAMES[cat] || cat}</div>`;
-                const scrollBox = document.createElement('div'); scrollBox.className = 'store-row-scroll';
-
-                // Slot 0 (Padrão)
-                if (STARTER_KIT[cat]) {
-                    const padraoId = STARTER_KIT[cat];
-                    const isEquipped = myOutfit[cat] === padraoId;
-                    const slot0 = document.createElement('div');
-                    slot0.className = `item-card ${isEquipped ? 'equipped' : 'owned'}`;
-                    slot0.onclick = () => equiparItem(cat, padraoId);
-                    slot0.innerHTML = `<img src="${BASE_ASSETS_URL}${cat}/${padraoId}"><div class="item-name">Padrão</div><div class="item-price" style="background:#4CAF50;">GRÁTIS</div>${isEquipped ? '<div class="check-icon">✔</div>' : ''}`;
-                    scrollBox.appendChild(slot0);
+        function renderLoja() {
+            const list = document.getElementById('storeList');
+            list.innerHTML = '';
+            const cats = currentTab === 'corpo' ? CATEGORIA_CORPO : CATEGORIA_ACESSORIOS;
+            
+            cats.forEach(cat => {
+                // Filtra itens do banco + Padrão
+                const itens = storeItems.filter(i => i.categoria === cat);
+                if(itens.length === 0 && !STARTER_KIT[cat]) return;
+                
+                const row = document.createElement('div');
+                row.className = 'store-row';
+                row.innerHTML = `<div class="store-row-title">${CAT_NAMES[cat] || cat}</div>`;
+                const scroll = document.createElement('div');
+                scroll.className = 'store-row-scroll';
+                
+                // Item Grátis (Padrão)
+                if(STARTER_KIT[cat]) {
+                    const f = STARTER_KIT[cat];
+                    const div = document.createElement('div');
+                    div.className = `item-card ${myOutfit[cat] === f ? 'equipped' : 'owned'}`;
+                    div.onclick = () => equipar(cat, f);
+                    div.innerHTML = `<img src="${BASE_ASSETS_URL}${cat}/${f}"><div class="item-price" style="background:#4CAF50">GRÁTIS</div>${myOutfit[cat]===f ? '<div class="check-icon">✔</div>' : ''}`;
+                    scroll.appendChild(div);
                 }
 
-                // Itens
-                itensDb.forEach(item => {
-                    const jaTem = (myData.inventario || []).includes(item.id);
-                    const isEquipped = myOutfit[cat] === item.id;
-                    const slot = document.createElement('div');
-                    slot.className = `item-card ${isEquipped ? 'equipped' : (jaTem ? 'owned' : '')}`;
+                itens.forEach(item => {
+                    const have = (myData.inventario||[]).includes(item.id);
+                    const div = document.createElement('div');
+                    div.className = `item-card ${myOutfit[cat] === item.id ? 'equipped' : (have ? 'owned' : '')}`;
                     
-                    if (jaTem) {
-                        slot.onclick = () => equiparItem(cat, item.id);
-                        slot.innerHTML = `<img src="${BASE_ASSETS_URL}${cat}/${item.id}"><div class="item-name">${item.nome}</div><div class="item-price" style="background:#2196F3;">COMPRADO</div>${isEquipped ? '<div class="check-icon">✔</div>' : ''}`;
+                    if(have) {
+                        div.onclick = () => equipar(cat, item.id);
+                        div.innerHTML = `<img src="${BASE_ASSETS_URL}${cat}/${item.id}"><div class="item-price" style="background:#2196F3">TEM</div>`;
                     } else {
-                        slot.onclick = () => comprarItem(item);
-                        slot.innerHTML = `<img src="${BASE_ASSETS_URL}${cat}/${item.id}"><div class="item-name">${item.nome}</div><div class="item-price">🪙 ${item.preco}</div>`;
+                        div.onclick = () => comprar(item);
+                        div.innerHTML = `<img src="${BASE_ASSETS_URL}${cat}/${item.id}"><div class="item-price">🪙 ${item.preco}</div>`;
                     }
-                    scrollBox.appendChild(slot);
+                    if(myOutfit[cat] === item.id) div.innerHTML += '<div class="check-icon">✔</div>';
+                    scroll.appendChild(div);
                 });
-                row.appendChild(scrollBox); container.appendChild(row);
+                row.appendChild(scroll); list.appendChild(row);
             });
         }
 
-        function renderizarInventario() {
+        function renderInventario() {
             const list = document.getElementById('inventoryList');
             list.innerHTML = '';
             const inv = myData.inventario || [];
             
-            const itensFiltrados = inv.filter(itemFile => {
+            const itens = inv.filter(f => {
                 let cat = null;
-                for (const layer of LAYER_ORDER) { if (itemFile.includes(layer) || STARTER_KIT[layer] === itemFile) { cat = layer; break; } }
-                if(itemFile.includes('Espada')) cat = 'arma_frente'; if(itemFile.includes('bainha')) cat = 'cintura';
-                if (!cat) return false;
-                if (currentTab === 'corpo') return CATEGORIA_CORPO.includes(cat);
+                // Tenta achar categoria pelo nome do arquivo ou STARTER KIT
+                for(let c in STARTER_KIT) if(STARTER_KIT[c]===f || f.includes(c)) cat = c;
+                if(f.includes('Espada')) cat = 'arma_frente'; 
+                if(f.includes('bainha')) cat = 'cintura';
+                
+                if(!cat) return false;
+                if(currentTab === 'corpo') return CATEGORIA_CORPO.includes(cat);
                 return CATEGORIA_ACESSORIOS.includes(cat);
             });
+            
+            if(itens.length === 0) list.innerHTML = '<p style="width:100%;text-align:center;color:#999">Vazio</p>';
 
-            if (itensFiltrados.length === 0) { list.innerHTML = '<p style="width:100%;text-align:center;color:#999;">Vazio.</p>'; return; }
-
-            itensFiltrados.forEach(file => {
+            itens.forEach(f => {
                 let cat = null;
-                for (const layer of LAYER_ORDER) if (file.includes(layer) || STARTER_KIT[layer] === file) { cat = layer; break; }
-                if(file.includes('Espada')) cat = 'arma_frente'; if(file.includes('bainha')) cat = 'cintura';
+                for(let c in STARTER_KIT) if(STARTER_KIT[c]===f || f.includes(c)) cat = c;
+                if(f.includes('Espada')) cat = 'arma_frente'; 
+                if(f.includes('bainha')) cat = 'cintura';
 
                 const div = document.createElement('div');
-                div.className = `item-card ${myOutfit[cat] === file ? 'equipped' : 'owned'}`;
-                div.onclick = () => equiparItem(cat, file);
-                let nomeAmigavel = file.replace('.png', '').replace('_padrao', '').replace('_simples', '');
-                div.innerHTML = `<img src="${BASE_ASSETS_URL}${cat}/${file}"><div class="item-name">${nomeAmigavel}</div>${myOutfit[cat] === file ? '<div class="check-icon">✔</div>' : ''}`;
+                div.className = `item-card ${myOutfit[cat]===f ? 'equipped' : ''}`;
+                div.onclick = () => equipar(cat, f);
+                // Nome limpo
+                let name = f.replace('.png','').replace('_padrao','').replace('_simples','');
+                div.innerHTML = `<img src="${BASE_ASSETS_URL}${cat}/${f}"><div class="item-name">${name}</div>${myOutfit[cat]===f?'<div class="check-icon">✔</div>':''}`;
                 list.appendChild(div);
             });
         }
 
-        window.comprarItem = async function(item) {
-            if (!currentUser) return alert("Faça login!");
-            if (myData.fichas < item.preco) return alert(`Saldo insuficiente!`);
-            if (!confirm(`Comprar "${item.nome}" por ${item.preco} Fichas?`)) return;
-
-            try {
-                const userRef = doc(db, "users", currentUser.uid);
-                await updateDoc(userRef, { fichas: increment(-item.preco), inventario: arrayUnion(item.id) });
-                myData.fichas -= item.preco; myData.inventario.push(item.id);
-                document.getElementById('coinDisplay').innerText = `🪙 ${myData.fichas}`;
-                alert(`Compra realizada!`);
-                renderizarLoja(); 
-            } catch(e) { alert("Erro na compra."); }
-        }
-
-        window.equiparItem = async function(categoria, itemFile) {
-            if (!currentUser) return;
-            const isAcessorio = CATEGORIA_ACESSORIOS.includes(categoria);
-            if (myOutfit[categoria] === itemFile && isAcessorio) myOutfit[categoria] = null;
-            else myOutfit[categoria] = itemFile;
-
-            atualizarMeuAvatar(); // Recarrega imagem
-            if(document.getElementById('view-store').classList.contains('active')) renderizarLoja();
-            if(document.getElementById('view-inventory').classList.contains('active')) renderizarInventario();
-
+        window.equipar = async function(cat, file) {
+            if(!currentUser) return;
+            const isAcc = CATEGORIA_ACESSORIOS.includes(cat);
+            if(myOutfit[cat] === file && isAcc) myOutfit[cat] = null;
+            else myOutfit[cat] = file;
+            
+            carregarImagensDoOutfit();
+            if(avatares.length > 0) avatares[0].outfit = myOutfit;
+            
+            if(document.getElementById('view-store').classList.contains('active')) renderLoja();
+            else renderInventario();
+            
             await updateDoc(doc(db, "users", currentUser.uid), { avatar_equipado: myOutfit });
         }
 
-        // --- ENGINE ---
-        function carregarAssetsEIniciar() {
-            let assetsLoaded = 0;
-            // Carrega TODAS as camadas para a memória, independente de estar usando
-            // Assim não temos lag ao trocar roupa
-            LAYER_ORDER.forEach(layer => {
-               // Placeholder: aqui o load real acontece no "drawPartRaw" dinamicamente 
-               // ou carregamos sob demanda. Para simplicidade, vamos iniciar o loop.
-            });
-            initArcade();
+        window.comprar = async function(item) {
+            if(!currentUser) return alert("Logue-se!");
+            if(myData.fichas < item.preco) return alert("Sem fichas!");
+            if(!confirm(`Comprar ${item.nome}?`)) return;
+            try {
+                await updateDoc(doc(db, "users", currentUser.uid), { fichas: increment(-item.preco), inventario: arrayUnion(item.id) });
+                myData.fichas -= item.preco; myData.inventario.push(item.id);
+                document.getElementById('coinDisplay').innerText = `🪙 ${myData.fichas}`;
+                renderLoja();
+            } catch(e) { alert("Erro compra"); }
         }
 
-        function atualizarMeuAvatar() {
-            // Apenas um trigger para garantir que as imagens novas sejam baixadas
-            if(avatares.length > 0) avatares[0].outfit = myOutfit;
-        }
-
+        // --- AVATAR ENGINE ---
         const canvas = document.getElementById('arcadeCanvas');
-        const container = document.getElementById('canvasContainer');
         const ctx = canvas.getContext('2d');
-        let lastTime = 0;
-        let initCalled = false;
-
-        function initArcade() {
-            if(initCalled) return; initCalled = true;
-            // Cria EU
-            const me = new Avatar("Eu", true);
-            me.outfit = myOutfit; // Vincula outfit
-            avatares.push(me);
-            
-            window.addEventListener('resize', resize); resize(); requestAnimationFrame(loop);
-        }
-
-        function resize() {
-            const dpr = window.devicePixelRatio || 1; const rect = container.getBoundingClientRect();
-            if(rect.width === 0 || rect.height === 0) return;
-            canvas.width = rect.width * dpr; canvas.height = rect.height * dpr;
-            ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.scale(dpr, dpr);
-            const chaoY = rect.height - 90; 
-            avatares.forEach(a => { a.y = chaoY; if(a.x === 0) a.x = rect.width / 2; });
-        }
-
-        function loop(timestamp) {
-            if (!lastTime) lastTime = timestamp; const dt = (timestamp - lastTime) / 1000; lastTime = timestamp;
-            const w = canvas.clientWidth; const h = canvas.clientHeight;
-            ctx.clearRect(0, 0, w, h);
-            ctx.fillStyle = '#81C784'; ctx.beginPath(); ctx.ellipse(w/2, h + 80, w * 0.9, 150, 0, 0, Math.PI * 2); ctx.fill();
-            ctx.strokeStyle = '#4CAF50'; ctx.lineWidth = 10; ctx.stroke();
-            avatares.sort((a, b) => a.y - b.y); avatares.forEach(av => { av.update(dt); av.draw(ctx); });
-            requestAnimationFrame(loop);
-        }
+        let avatares = []; let initCalled = false;
 
         class Avatar {
-            constructor(nome, isMe = false) {
-                this.nome = nome; this.isMe = isMe; this.outfit = {}; 
-                this.msg = ""; this.msgTimer = 0; this.x = 0; this.y = 0; this.dir = Math.random() > 0.5 ? 1 : -1; 
-                this.speed = Math.random() * 0.8 + 0.5; this.state = 'walk'; this.timer = Math.random() * 100; 
-                this.targetX = this.x; setTimeout(() => this.escolherNovoAlvo(), 500);
+            constructor(nome, isMe=false) {
+                this.nome = nome; this.isMe = isMe; this.outfit = isMe ? myOutfit : STARTER_KIT;
+                this.x = 100; this.y = 0; this.dir = 1; this.state='idle'; this.timer = Math.random()*100;
+                this.msg = ""; this.msgTimer = 0;
+                setTimeout(()=>this.iaLoop(), 1000);
             }
-            falar(texto) { this.msg = texto; this.msgTimer = 300; this.timer = 0; }
-            escolherNovoAlvo() { const canvasEl = document.getElementById('arcadeCanvas'); if(!canvasEl) return; const width = canvasEl.clientWidth; const margem = 50; this.targetX = Math.random() * (width - margem*2) + margem; this.dir = this.targetX > this.x ? 1 : -1; this.state = 'walk'; setTimeout(() => { this.state = 'idle'; setTimeout(() => this.escolherNovoAlvo(), Math.random() * 2000 + 1000); }, Math.random() * 4000 + 2000); }
-            update(dt) { this.timer += dt * 5; if(this.msgTimer > 0) this.msgTimer--; else this.msg = ""; if (this.state === 'walk') { this.x += this.dir * this.speed; if (Math.abs(this.x - this.targetX) < 10) this.state = 'idle'; } }
-            draw(ctx) {
-                const s = AVATAR_CONFIG.scale || 0.22;
-                let walk = 0, bob = 0, breathe = Math.sin(this.timer * 0.5) * 0.05;
-                if (this.state === 'walk') { walk = Math.sin(this.timer); bob = Math.abs(Math.sin(this.timer)) * 10; }
+            falar(txt) { this.msg = txt; this.msgTimer = 300; }
+            iaLoop() {
+                const w = canvas.width / (window.devicePixelRatio||1);
+                const tx = Math.random() * (w - 60) + 30;
+                this.dir = tx > this.x ? 1 : -1; this.state='walk'; this.targetX = tx;
+                setTimeout(()=>{ 
+                    this.state='idle'; 
+                    setTimeout(()=>this.iaLoop(), 2000 + Math.random()*2000); 
+                }, 3000 + Math.random()*2000);
+            }
+            update(dt) {
+                this.timer += dt*5; if(this.msgTimer>0) this.msgTimer--; else this.msg="";
+                if(this.state==='walk') {
+                    this.x += this.dir * (60 * dt); // Speed pixel/sec
+                    if(Math.abs(this.x - this.targetX) < 5) this.state='idle';
+                }
+            }
+            draw(ctx, s) {
+                let walk=0, bob=0, br=Math.sin(this.timer*0.5)*0.05;
+                if(this.state==='walk') { walk=Math.sin(this.timer); bob=Math.abs(walk)*10; }
                 
                 ctx.save(); ctx.translate(this.x, this.y);
-                ctx.fillStyle = this.isMe ? '#FFC107' : 'white'; ctx.font = 'bold 12px Nunito'; ctx.textAlign = 'center'; ctx.shadowColor = 'rgba(0,0,0,0.8)'; ctx.shadowBlur = 3; ctx.fillText(this.nome, 0, -160 * s); ctx.shadowBlur = 0;
-                if (this.msg) this.drawBalloon(ctx, s);
-                ctx.scale(-this.dir, 1); 
-
-                LAYER_ORDER.forEach(partName => {
-                    // Decide qual roupa usar (Minha ou do Bot/Default)
-                    let itemFile = (this.isMe) ? (this.outfit[partName] || myOutfit[partName]) : STARTER_KIT[partName];
-                    if(!itemFile) return;
-
-                    // Busca configuração DO BANCO
-                    const cfg = AVATAR_CONFIG.parts[partName] || { x:0, y:0, pivX:0.5, pivY:0.5 };
+                ctx.fillStyle = this.isMe?'#FFC107':'white'; ctx.font="bold 12px Nunito"; ctx.textAlign="center"; 
+                ctx.fillText(this.nome, 0, -160*s);
+                if(this.msg) this.drawBubble(ctx, s);
+                
+                ctx.scale(-this.dir, 1);
+                
+                LAYER_ORDER.forEach(cat => {
+                    const file = this.outfit[cat];
+                    if(!file) return;
+                    const key = `${cat}/${file}`;
+                    const img = avatarImages[key];
+                    if(!img || !img.complete || img.isBroken) return;
                     
-                    let animX = 0, animY = 0, animRot = 0;
+                    // CONFIGURAÇÃO DO BANCO (ou Padrão)
+                    const p = AVATAR_CONFIG.parts[cat] || {x:0,y:0,pivX:0.5,pivY:0.5};
                     
-                    // Lógica de Parenting (Arma segue braço)
-                    if (partName === 'arma_frente' || partName === 'escudo_frente') {
-                        const parent = AVATAR_CONFIG.parts['braco_frente'] || {x:0, y:0};
-                        const pRot = (this.state === 'walk') ? -walk * 0.6 : 0;
-                        const relX = (cfg.x - parent.x) * s; const relY = (cfg.y - parent.y) * s;
-                        const rotX = relX * Math.cos(pRot) - relY * Math.sin(pRot); const rotY = relX * Math.sin(pRot) + relY * Math.cos(pRot);
-                        this.drawPartRaw(ctx, partName, itemFile, ((parent.x * s) + rotX), ((parent.y * s) - (bob*s) + rotY), pRot, cfg); return;
+                    let ax=0, ay=-bob, ar=0; // Animação X, Y, Rot
+                    
+                    // PARENTING LÓGICA SIMPLIFICADA
+                    if(cat.includes('arma') || cat.includes('escudo')) {
+                        // Segue Braço
+                        const pName = cat.includes('frente') ? 'braco_frente' : 'braco_tras';
+                        const parentConf = AVATAR_CONFIG.parts[pName] || {x:0,y:0};
+                        const armRot = (cat.includes('frente') ? -walk : walk) * 0.6;
+                        // Rotação orbital
+                        const dx = (p.x - parentConf.x)*s; const dy = (p.y - parentConf.y)*s;
+                        const rx = dx * Math.cos(armRot) - dy * Math.sin(armRot);
+                        const ry = dx * Math.sin(armRot) + dy * Math.cos(armRot);
+                        
+                        this.drawImg(ctx, img, (parentConf.x*s)+rx, (parentConf.y*s)-bob*s+ry, armRot, p, s);
+                        return;
                     }
-                    if (partName === 'escudo_tras') {
-                        const parent = AVATAR_CONFIG.parts['braco_tras'] || {x:0, y:0};
-                        const pRot = (this.state === 'walk') ? walk * 0.6 : 0;
-                        const relX = (cfg.x - parent.x) * s; const relY = (cfg.y - parent.y) * s;
-                        const rotX = relX * Math.cos(pRot) - relY * Math.sin(pRot); const rotY = relX * Math.sin(pRot) + relY * Math.cos(pRot);
-                        this.drawPartRaw(ctx, partName, itemFile, ((parent.x * s) + rotX), ((parent.y * s) - (bob*s) + rotY), pRot, cfg); return;
-                    }
 
-                    if (partName.includes('perna')) { const isFrente = partName.includes('frente'); animY = -bob; animRot = (isFrente ? walk : -walk) * 0.5; } 
-                    else if (partName.includes('braco')) { const isFrente = partName.includes('frente'); animY = -bob; animRot = (isFrente ? -walk : walk) * 0.6; } 
-                    else if (['cabeca', 'rosto', 'mascara', 'cabelo'].includes(partName)) { animY = -bob + (breathe * 5); animRot = breathe * 0.2; } 
-                    else { animY = -bob; }
+                    if(cat.includes('perna')) {
+                        const isF = cat.includes('frente'); ay=-bob; ar=(isF?walk:-walk)*0.5;
+                        ax = isF ? -AVATAR_CONFIG.offsets.legSpread : AVATAR_CONFIG.offsets.legSpread;
+                    }
+                    else if(cat.includes('braco')) {
+                        const isF = cat.includes('frente'); ay=-bob; ar=(isF?-walk:walk)*0.6;
+                        ax = isF ? -AVATAR_CONFIG.offsets.spreadX : AVATAR_CONFIG.offsets.spreadX;
+                    }
+                    else if(['cabeca','rosto','mascara','cabelo'].includes(cat)) { ay = -bob + (br*5); ar=br*0.2; }
                     
-                    this.drawPartRaw(ctx, partName, itemFile, (cfg.x * s) + (animX * s), (cfg.y * s) + (animY * s), animRot, cfg);
+                    // Soma a posição base (p.x) com animação (ax) e aplica escala (s)
+                    // Importante: No caso de ax, já é valor raw, então multiplicamos por s.
+                    // Para p.x/p.y que vem do banco, também multiplicamos.
+                    this.drawImg(ctx, img, (p.x*s)+(ax*s), (p.y*s)+(ay*s), ar, p, s);
                 });
                 ctx.restore();
             }
-
-            drawPartRaw(ctx, name, filename, finalX, finalY, rot, cfg) {
-                // Cache ou Load dinâmico
-                let img = avatarImages[`${name}_${filename}`];
-                if (!img) {
-                    img = new Image();
-                    img.src = `${BASE_ASSETS_URL}${name}/${filename}`;
-                    avatarImages[`${name}_${filename}`] = img;
-                }
-                
-                if (!img.complete || img.naturalWidth === 0) return;
-
-                const s = AVATAR_CONFIG.scale || 0.22;
-                ctx.save(); ctx.translate(finalX, finalY); ctx.rotate(rot);
-                if (name.includes('tras') || name === 'capa') ctx.filter = "brightness(0.85)";
-                ctx.drawImage(img, -img.width * s * cfg.pivX, -img.height * s * cfg.pivY, img.width * s, img.height * s);
-                ctx.filter = "none"; ctx.restore();
+            drawImg(ctx, img, x, y, r, p, s) {
+                ctx.save(); ctx.translate(x, y); ctx.rotate(r);
+                ctx.drawImage(img, -img.width*s*p.pivX, -img.height*s*p.pivY, img.width*s, img.height*s);
+                ctx.restore();
             }
-
-            drawBalloon(ctx, s) {
-                ctx.save(); ctx.translate(0, -190 * s); ctx.fillStyle = 'white'; ctx.shadowColor = 'rgba(0,0,0,0.2)'; ctx.shadowBlur = 5; ctx.shadowOffsetY = 3;
-                const w = ctx.measureText(this.msg).width + 30;
-                ctx.beginPath(); ctx.roundRect(-w/2, -30, w, 30, 10); ctx.fill();
-                ctx.beginPath(); ctx.moveTo(-5, 0); ctx.lineTo(5, 0); ctx.lineTo(0, 10); ctx.fill();
-                ctx.fillStyle = '#333'; ctx.shadowColor = 'transparent'; ctx.fillText(this.msg, 0, -10); ctx.restore();
+            drawBubble(ctx, s) {
+                ctx.save(); ctx.translate(0, -190*s); 
+                const w = ctx.measureText(this.msg).width + 20;
+                ctx.fillStyle="white"; ctx.fillRect(-w/2, -25, w, 25);
+                ctx.fillStyle="black"; ctx.fillText(this.msg, 0, -8);
+                ctx.restore();
             }
         }
 
-        // CHAT
-        const input = document.getElementById('msgInput'); const history = document.getElementById('chatHistory');
-        function enviarMensagem() {
-            const txt = input.value.trim(); if(!txt) return;
-            const div = document.createElement('div'); div.className = 'msg me'; div.innerHTML = `<strong>Eu</strong>${txt}`;
-            history.appendChild(div); history.scrollTop = history.scrollHeight;
-            if(myAvatar) myAvatar.falar(txt); input.value = "";
+        function initEngine() {
+            if(initCalled) return; initCalled = true;
+            resizeCanvas(); window.addEventListener('resize', resizeCanvas);
+            
+            // Eu
+            const me = new Avatar("Eu", true); avatares.push(me);
+            requestAnimationFrame(gameLoop);
         }
-        document.getElementById('btnSend').addEventListener('click', enviarMensagem);
-        if(input) input.addEventListener('keypress', (e) => { if(e.key === 'Enter') enviarMensagem(); });
-        document.getElementById('btnAddBot').addEventListener('click', () => {
-            const nomes = ["Visitante", "Gamer", "Noob", "Pro"]; const nome = nomes[Math.floor(Math.random() * nomes.length)] + Math.floor(Math.random()*100);
-            const bot = new Avatar(nome); const rect = container.getBoundingClientRect(); bot.y = rect.height - 90; bot.x = Math.random() * rect.width;
-            avatares.push(bot); document.getElementById('online-count').innerText = avatares.length;
-        });
 
-        // DISPARA TUDO
+        function resizeCanvas() {
+            const el = document.getElementById('canvasContainer');
+            const dpr = window.devicePixelRatio || 1;
+            canvas.width = el.clientWidth * dpr;
+            canvas.height = el.clientHeight * dpr;
+            ctx.scale(dpr, dpr);
+            const groundY = el.clientHeight - 80;
+            avatares.forEach(a => a.y = groundY);
+        }
+
+        let lastT=0;
+        function gameLoop(t) {
+            const dt = (t - lastT)/1000; lastT=t;
+            const w = canvas.width/(window.devicePixelRatio||1); 
+            const h = canvas.height/(window.devicePixelRatio||1);
+            
+            ctx.clearRect(0,0,w,h);
+            
+            // Fundo
+            ctx.fillStyle = '#81C784'; ctx.beginPath(); ctx.ellipse(w/2, h+60, w*0.9, 100, 0, 0, Math.PI*2); ctx.fill();
+
+            avatares.sort((a,b)=>a.y - b.y);
+            avatares.forEach(a => { a.update(dt); a.draw(ctx, AVATAR_CONFIG.scale||0.22); });
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        // --- BOTOES E CHAT ---
+        const btnSend = document.getElementById('btnSend');
+        const ipt = document.getElementById('msgInput');
+        
+        function sendMsg() {
+            if(!ipt.value.trim()) return;
+            const h = document.getElementById('chatHistory');
+            h.innerHTML += `<div class="msg me"><strong>Eu</strong>${ipt.value}</div>`;
+            h.scrollTop = h.scrollHeight;
+            if(avatares.length>0) avatares[0].falar(ipt.value);
+            ipt.value = "";
+        }
+        btnSend.onclick = sendMsg; ipt.onkeypress = e => e.key==='Enter' && sendMsg();
+        
+        window.spawnarAvatarTeste = () => {
+            const bot = new Avatar("Bot " + Math.floor(Math.random()*100));
+            bot.y = avatares[0].y; 
+            avatares.push(bot);
+            document.getElementById('online-count').innerText = avatares.length;
+        };
+
         bootSystem();
     </script>
 </body>
