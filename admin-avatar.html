@@ -146,7 +146,7 @@
         </div>
     </div>
 
-    <script type="module">
+   <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
@@ -164,48 +164,30 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
         const provider = new GoogleAuthProvider();
-        const ADMIN_ID = "0wCjH6RgGmgpYfRcRQunjmymy4O2";
 
-        // --- DADOS ---
+        // --- VARIÁVEIS ---
         let viewportZoom = 1.0;
         let activePart = 'tronco';
         const images = {};
         const BASE_URL = 'assets/avatar/base/';
+        
+        // --- SEU UID SERÁ PREENCHIDO AUTOMATICAMENTE AQUI ---
+        let MEU_UID_ATUAL = ""; 
 
-        // ORDEM EXATA SOLICITADA
         const LAYER_ORDER = [
-            'capa',             // 0
-            'escudo_tras',      // 1
-            'braco_tras',       // 2
-            'perna_tras',       // 3
-            'perna_frente',     // 4
-            'tronco',           // 5
-            'cintura',          // 6 (enfeite)
-            'cabeca',           // 7
-            'rosto',            // 8
-            'mascara',          // 9
-            'cabelo',           // 10
-            'arma_frente',      // 11
-            'braco_frente',     // 12
-            'escudo_frente'     // 13
+            'capa', 'escudo_tras', 'braco_tras', 'perna_tras', 'perna_frente',
+            'tronco', 'cintura', 'cabeca', 'rosto', 'mascara', 'cabelo',
+            'arma_frente', 'braco_frente', 'escudo_frente'
         ];
 
-        // Configuração Padrão (Será sobrescrita se tiver no banco)
-        let avatarConfig = {
-            scale: 0.22,
-            parts: {}
-        };
+        let avatarConfig = { scale: 0.22, parts: {} };
+        LAYER_ORDER.forEach(k => { avatarConfig.parts[k] = { x: 0, y: 0, pivX: 0.5, pivY: 0.5 }; });
 
-        // Inicializa config vazia baseada na ordem
-        LAYER_ORDER.forEach(k => {
-            avatarConfig.parts[k] = { x: 0, y: 0, pivX: 0.5, pivY: 0.5 };
-        });
-
-        // --- INICIALIZAÇÃO ---
+        // --- FUNÇÕES ---
         function init() {
             createSidebar();
             loadImages();
-            loadConfigFromDb(); // Tenta carregar config existente
+            loadConfigFromDb();
             loop();
             drawPivotEditor();
         }
@@ -215,14 +197,11 @@
                 const snap = await getDoc(doc(db, "config", "avatar_base"));
                 if (snap.exists()) {
                     const data = snap.data();
-                    // Mescla com o padrão para garantir que novas peças existam
                     avatarConfig.scale = data.scale || 0.22;
-                    LAYER_ORDER.forEach(k => {
-                        if(data.parts[k]) avatarConfig.parts[k] = data.parts[k];
-                    });
-                    selectPart('tronco'); // Atualiza UI
+                    LAYER_ORDER.forEach(k => { if(data.parts[k]) avatarConfig.parts[k] = data.parts[k]; });
+                    selectPart('tronco');
                 }
-            } catch(e) { console.log("Sem config salva, usando padrão."); }
+            } catch(e) { console.log("Usando padrão."); }
         }
 
         function createSidebar() {
@@ -242,27 +221,19 @@
             LAYER_ORDER.forEach(name => {
                 const img = new Image();
                 img.src = `${BASE_URL}${name}.png`;
-                img.onload = () => {
-                    if(name === activePart) drawPivotEditor();
-                };
+                img.onload = () => { if(name === activePart) drawPivotEditor(); };
                 img.onerror = () => img.isMissing = true;
                 images[name] = img;
             });
         }
 
-        // --- LÓGICA DE SELEÇÃO E PIVÔ ---
         function selectPart(key) {
             activePart = key;
             document.querySelectorAll('.part-btn').forEach(b => b.classList.remove('active'));
             document.getElementById(`btn-${key}`).classList.add('active');
             document.getElementById('selectedPartName').innerText = key.toUpperCase().replace('_', ' ');
-            
             const data = avatarConfig.parts[key];
-            setInput('X', data.x);
-            setInput('Y', data.y);
-            setInput('PivX', data.pivX);
-            setInput('PivY', data.pivY);
-            
+            setInput('X', data.x); setInput('Y', data.y); setInput('PivX', data.pivX); setInput('PivY', data.pivY);
             drawPivotEditor();
         }
 
@@ -274,106 +245,62 @@
         window.updateConfig = function(field, val) {
             const num = parseFloat(val);
             avatarConfig.parts[activePart][field] = num;
-            
-            // Atualiza inputs cruzados
             const suffix = field.charAt(0).toUpperCase() + field.slice(1);
             const idBase = field.startsWith('piv') ? 'Piv' + field.charAt(3) : suffix;
-            
             if(document.activeElement.type === 'range') document.getElementById('num' + idBase).value = num;
             else document.getElementById('inp' + idBase).value = num;
-
             if(field.startsWith('piv')) drawPivotEditor();
         }
 
         window.updateZoom = function(val) { viewportZoom = parseFloat(val); }
 
-        // --- EDITOR DE PIVÔ (CANVAS PEQUENO) ---
         const pCanvas = document.getElementById('pivotCanvas');
         const pCtx = pCanvas.getContext('2d');
 
         function drawPivotEditor() {
             pCtx.clearRect(0, 0, 250, 250);
-            
-            // Linhas guia
             pCtx.strokeStyle = '#444'; pCtx.beginPath();
-            pCtx.moveTo(125,0); pCtx.lineTo(125,250);
-            pCtx.moveTo(0,125); pCtx.lineTo(250,125); pCtx.stroke();
+            pCtx.moveTo(125,0); pCtx.lineTo(125,250); pCtx.moveTo(0,125); pCtx.lineTo(250,125); pCtx.stroke();
 
             const img = images[activePart];
             const cfg = avatarConfig.parts[activePart];
 
             if (!img || img.isMissing) {
                 pCtx.fillStyle = '#333'; pCtx.fillText("Sem Imagem", 90, 125);
-                // Desenha quadrado placeholder
-                pCtx.fillStyle = 'rgba(255,255,255,0.2)';
-                pCtx.fillRect(100, 100, 50, 50);
                 return;
             }
-
-            // Centraliza imagem no canvas pequeno
-            // Escala para caber se for muito grande
             const scale = Math.min(200/img.width, 200/img.height, 1); 
-            const dw = img.width * scale;
-            const dh = img.height * scale;
-            const dx = (250 - dw) / 2;
-            const dy = (250 - dh) / 2;
-
+            const dw = img.width * scale; const dh = img.height * scale;
+            const dx = (250 - dw) / 2; const dy = (250 - dh) / 2;
             pCtx.drawImage(img, dx, dy, dw, dh);
-
-            // Desenha o Ponto do Pivô
-            const px = dx + (cfg.pivX * dw);
-            const py = dy + (cfg.pivY * dh);
-
-            pCtx.fillStyle = '#FF0000';
-            pCtx.beginPath(); pCtx.arc(px, py, 5, 0, Math.PI*2); pCtx.fill();
+            const px = dx + (cfg.pivX * dw); const py = dy + (cfg.pivY * dh);
+            pCtx.fillStyle = '#FF0000'; pCtx.beginPath(); pCtx.arc(px, py, 5, 0, Math.PI*2); pCtx.fill();
             pCtx.strokeStyle = 'white'; pCtx.lineWidth = 2; pCtx.stroke();
         }
 
-        // CLIQUE E ARRASTE NO PIVÔ
         let draggingPivot = false;
         pCanvas.addEventListener('mousedown', () => draggingPivot = true);
         window.addEventListener('mouseup', () => draggingPivot = false);
-        
         pCanvas.addEventListener('mousemove', (e) => {
             if(!draggingPivot) return;
             const rect = pCanvas.getBoundingClientRect();
             const img = images[activePart];
             if(!img || img.isMissing) return;
-
             const scale = Math.min(200/img.width, 200/img.height, 1);
-            const dw = img.width * scale;
-            const dh = img.height * scale;
-            const dx = (250 - dw) / 2;
-            const dy = (250 - dh) / 2;
-
-            const mouseX = e.clientX - rect.left;
-            const mouseY = e.clientY - rect.top;
-
-            // Calcula 0.0 a 1.0 relativo à imagem desenhada
-            let relX = (mouseX - dx) / dw;
-            let relY = (mouseY - dy) / dh;
-
-            // Trava limites (opcional, mas bom)
-            // relX = Math.max(0, Math.min(1, relX));
-            // relY = Math.max(0, Math.min(1, relY));
-
-            updateConfig('pivX', relX.toFixed(3));
-            updateConfig('pivY', relY.toFixed(3));
+            const dw = img.width * scale; const dh = img.height * scale;
+            const dx = (250 - dw) / 2; const dy = (250 - dh) / 2;
+            const mouseX = e.clientX - rect.left; const mouseY = e.clientY - rect.top;
+            let relX = (mouseX - dx) / dw; let relY = (mouseY - dy) / dh;
+            updateConfig('pivX', relX.toFixed(3)); updateConfig('pivY', relY.toFixed(3));
         });
 
-        // --- RENDERIZAÇÃO PRINCIPAL ---
         const canvas = document.getElementById('editorCanvas');
         const ctx = canvas.getContext('2d');
 
         function loop() {
             ctx.clearRect(0, 0, 500, 600);
-            
             ctx.save();
-            ctx.translate(250, 300); // Centro da tela
-            ctx.scale(viewportZoom, viewportZoom);
-            ctx.translate(-250, -300);
-
-            // Guia Central
+            ctx.translate(250, 300); ctx.scale(viewportZoom, viewportZoom); ctx.translate(-250, -300);
             ctx.strokeStyle = '#333'; ctx.lineWidth = 1/viewportZoom;
             ctx.beginPath(); ctx.moveTo(250,0); ctx.lineTo(250,600); ctx.stroke();
             ctx.beginPath(); ctx.moveTo(0,300); ctx.lineTo(500,300); ctx.stroke();
@@ -381,65 +308,56 @@
             LAYER_ORDER.forEach(key => {
                 const img = images[key];
                 const cfg = avatarConfig.parts[key];
-                
-                // Placeholder se faltar
                 if (!img || img.isMissing) {
-                    // Só desenha placeholder para peças chave para não poluir
                     if(['tronco','cabeca'].includes(key)) {
-                        ctx.save();
-                        ctx.translate(250 + cfg.x, 300 + cfg.y);
-                        ctx.fillStyle = 'rgba(255,255,255,0.1)';
-                        ctx.fillRect(-20, -20, 40, 40);
-                        ctx.restore();
+                        ctx.save(); ctx.translate(250 + cfg.x, 300 + cfg.y);
+                        ctx.fillStyle = 'rgba(255,255,255,0.1)'; ctx.fillRect(-20, -20, 40, 40); ctx.restore();
                     }
                     return;
                 }
-
-                ctx.save();
-                ctx.translate(250 + cfg.x, 300 + cfg.y);
-                
-                // Desenha com Pivô
+                ctx.save(); ctx.translate(250 + cfg.x, 300 + cfg.y);
                 ctx.drawImage(img, -img.width * cfg.pivX, -img.height * cfg.pivY);
-
-                // Gizmo de Seleção
                 if (key === activePart) {
-                    ctx.fillStyle = 'red';
-                    ctx.beginPath(); ctx.arc(0,0, 4/viewportZoom, 0, Math.PI*2); ctx.fill();
+                    ctx.fillStyle = 'red'; ctx.beginPath(); ctx.arc(0,0, 4/viewportZoom, 0, Math.PI*2); ctx.fill();
                     ctx.strokeStyle = 'yellow'; ctx.lineWidth = 2/viewportZoom;
                     ctx.strokeRect(-img.width * cfg.pivX, -img.height * cfg.pivY, img.width, img.height);
                 }
                 ctx.restore();
             });
-
             ctx.restore();
             requestAnimationFrame(loop);
         }
 
-        // --- SALVAR ---
+        // --- SALVAR NO BANCO ---
         window.salvarNoFirebase = async function() {
-            if(!confirm("Publicar essa configuração para o jogo?")) return;
+            if(!MEU_UID_ATUAL) return alert("Você não está logado!");
+            
             try {
-                // Salva a config + a ordem das camadas para garantir sincronia
+                // Tenta salvar
                 await setDoc(doc(db, "config", "avatar_base"), {
                     ...avatarConfig,
-                    layerOrder: LAYER_ORDER
+                    layerOrder: LAYER_ORDER,
+                    updatedBy: MEU_UID_ATUAL,
+                    updatedAt: new Date().toISOString()
                 });
-                alert("✅ Sucesso! O jogo 'comunidade.html' vai usar esses dados.");
-            } catch(e) { alert("Erro: " + e.message); }
+                alert("✅ PUBLICADO COM SUCESSO! \nO banco de dados aceitou.");
+            } catch(e) {
+                console.error(e);
+                // MENSAGEM DE ERRO DETALHADA
+                alert(`❌ ERRO DE PERMISSÃO!\n\nO Firebase bloqueou.\nSeu UID atual é:\n${MEU_UID_ATUAL}\n\nCopie esse código e coloque nas Regras do Firestore.`);
+            }
         }
 
-        // Auth
+        // --- LOGIN ---
         document.getElementById('btnLogin').addEventListener('click', () => {
-            signInWithPopup(auth, provider).then((r) => {
-                if(r.user.uid === ADMIN_ID) {
-                    document.getElementById('login-overlay').style.display = 'none';
-                    init();
-                } else alert("Acesso Negado");
-            });
+            signInWithPopup(auth, provider).catch(alert);
         });
-        onAuthStateChanged(auth, (u) => {
-            if(u && u.uid === ADMIN_ID) {
+
+        onAuthStateChanged(auth, (user) => {
+            if(user) {
+                MEU_UID_ATUAL = user.uid; // Captura o UID real
                 document.getElementById('login-overlay').style.display = 'none';
+                console.log("Logado como:", MEU_UID_ATUAL);
                 init();
             }
         });
