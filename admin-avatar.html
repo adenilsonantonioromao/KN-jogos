@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin - Editor de Avatar (Final)</title>
+    <title>Admin - Editor de Avatar (Load Fix)</title>
     <style>
         body { 
             background: #1e1e1e; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; 
@@ -18,7 +18,7 @@
         
         .btn-save {
             background: #4CAF50; color: white; border: none; padding: 8px 20px;
-            border-radius: 4px; cursor: pointer; font-weight: bold;
+            border-radius: 4px; cursor: pointer; font-weight: bold; transition: 0.3s;
         }
         .btn-save:hover { background: #43A047; }
 
@@ -101,7 +101,7 @@
         <div style="display:flex; gap:10px; align-items:center;">
             <span style="font-size:0.8rem; color:#aaa;">Zoom:</span>
             <input type="range" min="0.5" max="3" step="0.1" value="1" oninput="updateZoom(this.value)">
-            <button class="btn-save" onclick="salvarNoFirebase()">💾 PUBLICAR</button>
+            <button id="btnPublish" class="btn-save" onclick="salvarNoFirebase()">💾 PUBLICAR</button>
         </div>
     </header>
 
@@ -157,7 +157,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-        // --- NOVO: IMPORTAÇÃO DO APP CHECK ---
+        // --- APP CHECK ---
         import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app-check.js";
 
         const firebaseConfig = {
@@ -171,14 +171,13 @@
 
         const app = initializeApp(firebaseConfig);
         
-        // --- NOVO: INICIALIZAÇÃO DO APP CHECK (CRÍTICO) ---
+        // Inicializa App Check para permitir acesso ao banco
         try {
             const appCheck = initializeAppCheck(app, { 
                 provider: new ReCaptchaV3Provider('6Lc5vjgsAAAAANx2ia8s_Fh0_KS0_YNaAlSIYpJC'), 
                 isTokenAutoRefreshEnabled: true 
             });
-            console.log("App Check Inicializado!");
-        } catch(e) { console.warn("Erro App Check:", e); }
+        } catch(e) { console.warn("App Check:", e); }
 
         const auth = getAuth(app);
         const db = getFirestore(app);
@@ -198,6 +197,7 @@
             'arma_frente', 'braco_frente', 'escudo_frente'
         ];
 
+        // Configuração Padrão (Zeros)
         let avatarConfig = { scale: 0.22, parts: {} };
         LAYER_ORDER.forEach(k => { avatarConfig.parts[k] = { x: 0, y: 0, pivX: 0.5, pivY: 0.5 }; });
 
@@ -205,21 +205,51 @@
         function init() {
             createSidebar();
             loadImages();
+            // Carrega do banco assim que iniciar
             loadConfigFromDb();
             loop();
             drawPivotEditor();
         }
 
+        // --- CARREGAMENTO DO BANCO (CORRIGIDO) ---
         async function loadConfigFromDb() {
+            console.log("Tentando carregar dados do Firebase...");
             try {
-                const snap = await getDoc(doc(db, "config", "avatar_base"));
+                const docRef = doc(db, "config", "avatar_base");
+                const snap = await getDoc(docRef);
+                
                 if (snap.exists()) {
                     const data = snap.data();
-                    avatarConfig.scale = data.scale || 0.22;
-                    LAYER_ORDER.forEach(k => { if(data.parts[k]) avatarConfig.parts[k] = data.parts[k]; });
-                    selectPart('tronco');
+                    console.log("Dados recebidos:", data);
+                    
+                    // Atualiza a escala
+                    if(data.scale) avatarConfig.scale = data.scale;
+                    
+                    // Atualiza as partes salvas
+                    LAYER_ORDER.forEach(k => { 
+                        if(data.parts && data.parts[k]) {
+                            avatarConfig.parts[k] = data.parts[k]; 
+                        }
+                    });
+                    
+                    // Atualiza a UI para refletir os dados carregados
+                    selectPart(activePart);
+                    
+                    // Feedback Visual
+                    const btn = document.getElementById('btnPublish');
+                    btn.innerText = "DADOS CARREGADOS!";
+                    btn.style.background = "#2196F3";
+                    setTimeout(() => {
+                        btn.innerText = "💾 PUBLICAR";
+                        btn.style.background = "#4CAF50";
+                    }, 2000);
+                } else {
+                    console.log("Nenhum dado salvo. Usando padrão (zeros).");
                 }
-            } catch(e) { console.log("Usando padrão."); }
+            } catch(e) { 
+                console.error("Erro ao carregar:", e);
+                alert("Erro ao ler do banco: " + e.message);
+            }
         }
 
         function createSidebar() {
@@ -250,8 +280,10 @@
             document.querySelectorAll('.part-btn').forEach(b => b.classList.remove('active'));
             document.getElementById(`btn-${key}`).classList.add('active');
             document.getElementById('selectedPartName').innerText = key.toUpperCase().replace('_', ' ');
+            
             const data = avatarConfig.parts[key];
             setInput('X', data.x); setInput('Y', data.y); setInput('PivX', data.pivX); setInput('PivY', data.pivY);
+            
             drawPivotEditor();
         }
 
@@ -263,10 +295,13 @@
         window.updateConfig = function(field, val) {
             const num = parseFloat(val);
             avatarConfig.parts[activePart][field] = num;
+            
             const suffix = field.charAt(0).toUpperCase() + field.slice(1);
             const idBase = field.startsWith('piv') ? 'Piv' + field.charAt(3) : suffix;
+            
             if(document.activeElement.type === 'range') document.getElementById('num' + idBase).value = num;
             else document.getElementById('inp' + idBase).value = num;
+
             if(field.startsWith('piv')) drawPivotEditor();
         }
 
