@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin - Editor de Avatar (Master)</title>
+    <title>Admin - Editor de Avatar (Diagnóstico)</title>
     <style>
         body { 
             background: #1e1e1e; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; 
@@ -78,6 +78,12 @@
             background: rgba(0,0,0,0.95); z-index: 999;
             display: flex; justify-content: center; align-items: center;
         }
+        
+        /* DEBUG UID */
+        #debug-uid {
+            background: #000; color: #FFEB3B; padding: 5px 10px; 
+            font-family: monospace; font-size: 0.8rem; border: 1px solid #555;
+        }
     </style>
 </head>
 <body>
@@ -90,7 +96,10 @@
     </div>
 
     <header>
-        <h2>Editor de Avatar Base</h2>
+        <h2>Editor de Avatar</h2>
+        <!-- MOSTRADOR DE UID -->
+        <div id="debug-uid">Não logado</div>
+        
         <div style="display:flex; gap:10px; align-items:center;">
             <span style="font-size:0.8rem; color:#aaa;">Zoom:</span>
             <input type="range" min="0.5" max="3" step="0.1" value="1" oninput="updateZoom(this.value)">
@@ -146,7 +155,7 @@
         </div>
     </div>
 
-   <script type="module">
+    <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
@@ -170,8 +179,6 @@
         let activePart = 'tronco';
         const images = {};
         const BASE_URL = 'assets/avatar/base/';
-        
-        // --- SEU UID SERÁ PREENCHIDO AUTOMATICAMENTE AQUI ---
         let MEU_UID_ATUAL = ""; 
 
         const LAYER_ORDER = [
@@ -356,8 +363,8 @@
         onAuthStateChanged(auth, (user) => {
             if(user) {
                 MEU_UID_ATUAL = user.uid; // Captura o UID real
+                document.getElementById('debug-uid').innerText = "UID: " + user.uid;
                 document.getElementById('login-overlay').style.display = 'none';
-                console.log("Logado como:", MEU_UID_ATUAL);
                 init();
             }
         });
