@@ -15,16 +15,15 @@
         body { margin: 0; height: 100vh; background-color: var(--bg); font-family: 'Nunito', sans-serif; overflow: hidden; display: flex; flex-direction: column; color: var(--dark); }
         .main-layout { display: flex; flex: 1; height: 100%; padding: 15px; gap: 15px; overflow: hidden; }
         
-        /* --- COLUNA ESQUERDA (JOGO + MOCHILA) --- */
+        /* --- COLUNA ESQUERDA (JOGO) --- */
         .game-column { 
             flex: 2; display: flex; flex-direction: column; gap: 15px; position: relative; min-width: 0; 
-            transition: all 0.3s ease;
         }
         
         .canvas-card { 
             flex: 1; background: #81D4FA; border-radius: 30px; overflow: hidden; 
             box-shadow: var(--shadow); position: relative; border: 5px solid white; 
-            min-height: 150px; display: flex; transition: flex 0.3s ease; 
+            display: flex; /* Garante tamanho */
         }
         canvas { display: block; width: 100%; height: 100%; background: linear-gradient(to bottom, #81D4FA, #B2EBF2); }
         
@@ -33,34 +32,63 @@
         .online-badge { background: rgba(255,255,255,0.9); color: var(--green); padding: 8px 20px; border-radius: 50px; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
         .my-coins { background: #FFC107; color: #3E2723; padding: 5px 15px; border-radius: 20px; font-weight: bold; font-size: 0.9rem; margin-top: 5px; display:inline-block; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
 
+        /* CONTROLES */
         .controls-dock { background: white; height: 90px; border-radius: 25px; padding: 10px 20px; display: flex; align-items: center; justify-content: center; gap: 15px; box-shadow: var(--shadow); flex-shrink: 0; z-index: 10; }
         .action-btn { background: var(--bg); color: var(--dark); border: none; border-radius: 20px; width: 70px; height: 70px; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: all 0.2s; }
         .action-btn:active { transform: scale(0.9); }
         .action-btn span { font-size: 1.8rem; }
         .action-btn label { font-size: 0.7rem; font-weight: bold; color: #777; }
+        .action-btn.active { background: var(--primary); color: white; transform: translateY(-5px); box-shadow: 0 5px 15px rgba(255, 87, 34, 0.4); }
+        .action-btn.active label { color: white; }
 
-        /* --- PAINÉIS (GAVETA) --- */
-        .drawer-panel {
-            height: 0; overflow: hidden; background: white; border-radius: 25px;
-            box-shadow: var(--shadow); transition: height 0.3s ease, padding 0.3s ease;
-            display: flex; flex-direction: column;
+        /* --- COLUNA DIREITA (MULTI-PAINEL) --- */
+        .right-column {
+            flex: 1; min-width: 320px; background: white; border-radius: 30px;
+            box-shadow: var(--shadow); display: flex; flex-direction: column;
+            overflow: hidden; border: 5px solid white; position: relative;
         }
-        .drawer-panel.open { height: 320px; padding: 15px; margin-top: -5px; }
 
-        .inv-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-        .close-btn { background: #eee; border: none; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; font-weight: bold; }
-        
-        .inv-tabs { display: flex; gap: 10px; margin-bottom: 10px; background: #f0f0f0; padding: 5px; border-radius: 15px; flex-shrink: 0; }
+        /* Classes para alternar abas */
+        .panel-view { 
+            display: none; flex-direction: column; height: 100%; width: 100%; 
+            animation: fadeIn 0.3s;
+        }
+        .panel-view.active { display: flex; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* HEADER DOS PAINÉIS */
+        .panel-header {
+            background: var(--primary); color: white; padding: 20px;
+            font-family: 'Fredoka One'; text-align: center; font-size: 1.2rem; flex-shrink: 0;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        /* Botão X para voltar ao chat */
+        .close-panel-btn {
+            background: rgba(255,255,255,0.2); border: none; color: white; 
+            width: 30px; height: 30px; border-radius: 50%; cursor: pointer; font-weight: bold;
+        }
+
+        /* --- CHAT CSS --- */
+        .chat-history { flex: 1; padding: 20px; overflow-y: auto; background: #f8f9fa; display: flex; flex-direction: column; gap: 12px; }
+        .msg { background: white; padding: 10px 15px; border-radius: 18px; border-bottom-left-radius: 4px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); font-size: 0.95rem; max-width: 85%; align-self: flex-start; }
+        .msg strong { color: var(--primary); display: block; font-size: 0.75rem; margin-bottom: 3px; }
+        .msg.me { align-self: flex-end; background: #FFF3E0; border-bottom-left-radius: 18px; border-bottom-right-radius: 4px; }
+        .chat-input-area { padding: 15px; background: white; border-top: 1px solid #eee; display: flex; gap: 10px; align-items: center; flex-shrink: 0; }
+        .chat-input { flex: 1; padding: 12px 20px; border: 2px solid #eee; border-radius: 50px; outline: none; font-size: 1rem; background: #f9f9f9; }
+        .btn-send { background: var(--green); color: white; border: none; width: 45px; height: 45px; border-radius: 50%; cursor: pointer; font-size: 1.2rem; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(76, 175, 80, 0.3); }
+
+        /* --- LOJA E MOCHILA CSS --- */
+        .inv-tabs { display: flex; gap: 10px; margin: 10px; background: #f0f0f0; padding: 5px; border-radius: 15px; flex-shrink: 0; }
         .inv-tab-btn { flex: 1; padding: 8px; border: none; background: transparent; border-radius: 10px; cursor: pointer; font-weight: bold; color: #666; transition: 0.2s; }
         .inv-tab-btn.active { background: white; color: var(--primary); box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
 
-        .inventory-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); gap: 10px; overflow-y: auto; padding-bottom: 10px; flex: 1; }
-        
-        .store-rows-container { overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 15px; padding-bottom: 10px; }
-        .store-row { display: flex; flex-direction: column; gap: 5px; }
-        .store-row-title { font-size: 0.8rem; font-weight: bold; color: #555; text-transform: uppercase; margin-left: 5px; }
-        .store-row-scroll { display: flex; gap: 10px; overflow-x: auto; padding: 5px; }
-        
+        .items-scroll-area { flex: 1; overflow-y: auto; padding: 10px; display: flex; flex-direction: column; gap: 15px; }
+
+        /* ESTILO DOS CARDS DE ITEM */
+        .store-row-title { font-size: 0.8rem; font-weight: bold; color: #555; text-transform: uppercase; margin-left: 5px; margin-bottom: 5px; }
+        .store-row-scroll { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 5px; }
+        .inventory-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); gap: 10px; }
+
         .item-card { 
             min-width: 80px; width: 80px; background: #f9f9f9; border-radius: 12px; padding: 5px; cursor: pointer; 
             border: 2px solid transparent; display: flex; flex-direction: column; align-items: center;
@@ -76,23 +104,13 @@
         .check-icon { position: absolute; top: 2px; right: 2px; color: var(--green); font-size: 0.8rem; display: none; }
         .item-card.equipped .check-icon { display: block; }
 
-        /* CHAT */
-        .chat-column { flex: 1; min-width: 320px; background: white; border-radius: 30px; box-shadow: var(--shadow); display: flex; flex-direction: column; overflow: hidden; border: 5px solid white; }
-        .chat-header { background: var(--primary); color: white; padding: 20px; font-family: 'Fredoka One'; text-align: center; font-size: 1.2rem; flex-shrink: 0; }
-        .chat-history { flex: 1; padding: 20px; overflow-y: auto; background: #f8f9fa; display: flex; flex-direction: column; gap: 12px; }
-        .msg { background: white; padding: 10px 15px; border-radius: 18px; border-bottom-left-radius: 4px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); font-size: 0.95rem; max-width: 85%; align-self: flex-start; }
-        .msg strong { color: var(--primary); display: block; font-size: 0.75rem; margin-bottom: 3px; }
-        .msg.me { align-self: flex-end; background: #FFF3E0; border-bottom-left-radius: 18px; border-bottom-right-radius: 4px; }
-        .chat-input-area { padding: 15px; background: white; border-top: 1px solid #eee; display: flex; gap: 10px; align-items: center; flex-shrink: 0; }
-        .chat-input { flex: 1; padding: 12px 20px; border: 2px solid #eee; border-radius: 50px; outline: none; font-size: 1rem; background: #f9f9f9; }
-        .btn-send { background: var(--green); color: white; border: none; width: 45px; height: 45px; border-radius: 50%; cursor: pointer; font-size: 1.2rem; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(76, 175, 80, 0.3); }
-
         @media (max-width: 850px) {
             .main-layout { flex-direction: column; padding: 10px; gap: 10px; }
-            .game-column { flex: 1.5; min-height: 50vh; }
-            .chat-column { flex: 1; min-width: auto; border-radius: 25px; }
-            .controls-dock { height: 80px; padding: 5px; }
-            .action-btn { width: 60px; height: 60px; }
+            .game-column { flex: 1; height: 50%; } /* Jogo ocupa metade */
+            .right-column { flex: 1; min-width: auto; border-radius: 25px; height: 50%; } /* Painel ocupa metade */
+            .controls-dock { height: 70px; padding: 5px; }
+            .action-btn { width: 55px; height: 55px; }
+            .action-btn span { font-size: 1.5rem; }
             .action-btn label { display: none; }
         }
     </style>
@@ -100,6 +118,7 @@
 <body>
 
     <div class="main-layout">
+        <!-- COLUNA ESQUERDA: JOGO E DOCK -->
         <div class="game-column">
             <div class="canvas-card" id="canvasContainer">
                 <canvas id="arcadeCanvas"></canvas>
@@ -112,52 +131,63 @@
                 </div>
             </div>
 
+            <!-- CONTROLES -->
             <div class="controls-dock">
-                <button class="action-btn" onclick="toggleDrawer('store')"><span>🏪</span><label>Loja</label></button>
-                <button class="action-btn" onclick="toggleDrawer('inventory')"><span>🎒</span><label>Mochila</label></button>
-                <button class="action-btn" id="btnAddBot" style="background: #E3F2FD;"><span>➕</span><label>Bot</label></button>
+                <button class="action-btn active" id="btnChat" onclick="switchPanel('chat')"><span>💬</span><label>Chat</label></button>
+                <button class="action-btn" id="btnLoja" onclick="switchPanel('store')"><span>🏪</span><label>Loja</label></button>
+                <button class="action-btn" id="btnInv" onclick="switchPanel('inventory')"><span>🎒</span><label>Mochila</label></button>
+                <button class="action-btn" onclick="spawnarAvatarTeste()"><span>➕</span><label>Bot</label></button>
                 <button class="action-btn" onclick="alert('Cores em breve!')"><span>🎨</span><label>Cor</label></button>
             </div>
+        </div>
 
-            <!-- GAVETA: MOCHILA -->
-            <div id="panel-inventory" class="drawer-panel">
-                <div class="inv-header">
-                    <h3 style="margin:0; color:var(--dark);">🎒 Sua Mochila</h3>
-                    <button class="close-btn" onclick="closeDrawers()">×</button>
+        <!-- COLUNA DIREITA: PAINEL MULTI-USO -->
+        <div class="right-column">
+            
+            <!-- 1. VISÃO CHAT -->
+            <div id="view-chat" class="panel-view active">
+                <div class="chat-header">💬 Chat Global</div>
+                <div class="chat-history" id="chatHistory">
+                    <div class="msg" style="text-align:center; background:none; box-shadow:none; color:#999; font-size:0.8rem;">
+                        Bem-vindo à Praça KN!
+                    </div>
                 </div>
-                <div class="inv-tabs">
-                    <button class="inv-tab-btn active" onclick="mudarAba('inventory', 'corpo')">👕 Corpo</button>
-                    <button class="inv-tab-btn" onclick="mudarAba('inventory', 'acessorios')">👓 Acessórios</button>
+                <div class="chat-input-area">
+                    <input type="text" id="msgInput" class="chat-input" placeholder="Digite algo..." maxlength="50">
+                    <button class="btn-send" id="btnSend">➤</button>
                 </div>
-                <div id="inventoryList" class="inventory-grid"></div>
             </div>
 
-            <!-- GAVETA: LOJA -->
-            <div id="panel-store" class="drawer-panel">
-                <div class="inv-header">
-                    <h3 style="margin:0; color:var(--primary);">🏪 Loja de Itens</h3>
-                    <button class="close-btn" onclick="closeDrawers()">×</button>
+            <!-- 2. VISÃO LOJA -->
+            <div id="view-store" class="panel-view">
+                <div class="panel-header" style="background:#FFF3E0; color:#E65100;">
+                    <span>🏪 Loja de Itens</span>
+                    <button class="close-panel-btn" onclick="switchPanel('chat')" style="color:#E65100; background:rgba(0,0,0,0.1);">✕</button>
                 </div>
                 <div class="inv-tabs">
                     <button class="inv-tab-btn active" onclick="mudarAba('store', 'corpo')">👕 Corpo</button>
                     <button class="inv-tab-btn" onclick="mudarAba('store', 'acessorios')">👓 Acessórios</button>
                 </div>
-                <div id="storeList" class="store-rows-container"></div>
-            </div>
-
-        </div>
-
-        <div class="chat-column">
-            <div class="chat-header">💬 Chat da Galera</div>
-            <div class="chat-history" id="chatHistory">
-                <div class="msg" style="text-align:center; background:none; box-shadow:none; color:#999; font-size:0.8rem;">
-                    Bem-vindo à Praça KN!
+                <div id="storeList" class="items-scroll-area">
+                    <p style="color:#999; text-align:center; margin-top:20px;">Carregando loja...</p>
                 </div>
             </div>
-            <div class="chat-input-area">
-                <input type="text" id="msgInput" class="chat-input" placeholder="Digite algo..." maxlength="50">
-                <button class="btn-send" id="btnSend">➤</button>
+
+            <!-- 3. VISÃO MOCHILA -->
+            <div id="view-inventory" class="panel-view">
+                <div class="panel-header">
+                    <span>🎒 Sua Mochila</span>
+                    <button class="close-panel-btn" onclick="switchPanel('chat')">✕</button>
+                </div>
+                <div class="inv-tabs">
+                    <button class="inv-tab-btn active" onclick="mudarAba('inventory', 'corpo')">👕 Corpo</button>
+                    <button class="inv-tab-btn" onclick="mudarAba('inventory', 'acessorios')">👓 Acessórios</button>
+                </div>
+                <div id="inventoryList" class="inventory-grid" style="padding:15px;">
+                    <p style="color:#999; text-align:center;">Carregando...</p>
+                </div>
             </div>
+
         </div>
     </div>
 
@@ -187,10 +217,17 @@
         let currentTab = 'corpo'; 
         let storeItemsCache = []; 
 
-        // CONFIGURAÇÃO DO AVATAR (Inicialmente vazia, será preenchida pelo banco)
         let AVATAR_CONFIG = {
             scale: 0.22,
-            parts: {} // VAZIO: Força o uso do banco
+            offsets: { headY: -230, armY: -150, legY: 50, spreadX: -47, legSpread: -24 },
+            parts: {
+                'tronco': { x: 0, y: 0, pivX: 0.5, pivY: 0.75 },
+                'cabeca': { x: 0, y: -230, pivX: 0.5, pivY: 0.89 },
+                'braco_frente': { x: 47, y: -150, pivX: 0.26, pivY: 0.12 },
+                'braco_tras': { x: -37, y: -150, pivX: 0.76, pivY: 0.11 },
+                'perna_frente': { x: 24, y: 50, pivX: 0.29, pivY: 0.13 },
+                'perna_tras': { x: -24, y: 50, pivX: 0.67, pivY: 0.11 }
+            }
         };
 
         const LAYER_ORDER = [
@@ -228,10 +265,40 @@
                 if(snap.exists()) {
                     const data = snap.data();
                     if(data.scale) AVATAR_CONFIG.scale = data.scale;
-                    if(data.parts) AVATAR_CONFIG.parts = data.parts; // USA O BANCO
-                    console.log("Config baixada do banco.");
+                    if(data.parts) AVATAR_CONFIG.parts = { ...AVATAR_CONFIG.parts, ...data.parts };
                 }
-            } catch(e) { console.error("Erro config:", e); }
+            } catch(e) {}
+        }
+
+        // --- SISTEMA DE PAINÉIS (SWITCHER) ---
+        window.switchPanel = function(panelId) {
+            // Atualiza botões
+            document.querySelectorAll('.action-btn').forEach(b => b.classList.remove('active'));
+            if(panelId === 'chat') document.getElementById('btnChat').classList.add('active');
+            if(panelId === 'store') document.getElementById('btnLoja').classList.add('active');
+            if(panelId === 'inventory') document.getElementById('btnInv').classList.add('active');
+
+            // Troca visualização
+            document.querySelectorAll('.panel-view').forEach(p => p.classList.remove('active'));
+            document.getElementById('view-' + panelId).classList.add('active');
+
+            // Carrega dados se necessário
+            if(panelId === 'store' && currentUser) renderizarLoja();
+            if(panelId === 'inventory' && currentUser) renderizarInventario();
+
+            // Resize canvas (só pra garantir)
+            setTimeout(resize, 100);
+        }
+
+        window.mudarAba = function(panelType, aba) {
+            currentTab = aba;
+            const container = document.getElementById(panelType === 'store' ? 'view-store' : 'view-inventory');
+            container.querySelectorAll('.inv-tab-btn').forEach(b => b.classList.remove('active'));
+            const idx = aba === 'corpo' ? 0 : 1;
+            container.querySelectorAll('.inv-tab-btn')[idx].classList.add('active');
+
+            if(panelType === 'store') renderizarLoja();
+            else renderizarInventario();
         }
 
         // --- AUTH ---
@@ -269,36 +336,6 @@
             } catch(e) { console.error(e); }
         }
 
-        // --- GAVETAS ---
-        window.toggleDrawer = function(type) {
-            const store = document.getElementById('panel-store');
-            const inv = document.getElementById('panel-inventory');
-            store.classList.remove('open');
-            inv.classList.remove('open');
-
-            if(type === 'store') { store.classList.add('open'); renderizarLoja(); }
-            if(type === 'inventory') { inv.classList.add('open'); renderizarInventario(); }
-
-            setTimeout(resize, 50); setTimeout(resize, 300);
-        }
-
-        window.closeDrawers = function() {
-            document.getElementById('panel-store').classList.remove('open');
-            document.getElementById('panel-inventory').classList.remove('open');
-            setTimeout(resize, 300);
-        }
-
-        window.mudarAba = function(panelType, aba) {
-            currentTab = aba;
-            const container = document.getElementById(panelType === 'store' ? 'panel-store' : 'panel-inventory');
-            container.querySelectorAll('.inv-tab-btn').forEach(b => b.classList.remove('active'));
-            const idx = aba === 'corpo' ? 0 : 1;
-            container.querySelectorAll('.inv-tab-btn')[idx].classList.add('active');
-
-            if(panelType === 'store') renderizarLoja();
-            else renderizarInventario();
-        }
-
         // --- RENDER LOJA ---
         function renderizarLoja() {
             const container = document.getElementById('storeList');
@@ -313,6 +350,7 @@
                 row.innerHTML = `<div class="store-row-title">${CATEGORY_NAMES[cat] || cat}</div>`;
                 const scrollBox = document.createElement('div'); scrollBox.className = 'store-row-scroll';
 
+                // Slot 0 (Padrão)
                 if (STARTER_KIT[cat]) {
                     const padraoId = STARTER_KIT[cat];
                     const isEquipped = myOutfit[cat] === padraoId;
@@ -323,6 +361,7 @@
                     scrollBox.appendChild(slot0);
                 }
 
+                // Itens Pagos
                 itensDb.forEach(item => {
                     const jaTem = (myData.inventario || []).includes(item.id);
                     const isEquipped = myOutfit[cat] === item.id;
@@ -373,6 +412,7 @@
             });
         }
 
+        // --- TRANSAÇÕES ---
         window.comprarItem = async function(item) {
             if (!currentUser) return alert("Faça login!");
             if (myData.fichas < item.preco) return alert(`Saldo insuficiente!`);
@@ -381,6 +421,7 @@
             try {
                 const userRef = doc(db, "users", currentUser.uid);
                 await updateDoc(userRef, { fichas: increment(-item.preco), inventario: arrayUnion(item.id) });
+                
                 myData.fichas -= item.preco; myData.inventario.push(item.id);
                 document.getElementById('coinDisplay').innerText = `🪙 ${myData.fichas}`;
                 alert(`Compra realizada!`);
@@ -391,157 +432,17 @@
         window.equiparItem = async function(categoria, itemFile) {
             if (!currentUser) return;
             const isAcessorio = CATEGORIA_ACESSORIOS.includes(categoria);
+            
             if (myOutfit[categoria] === itemFile && isAcessorio) myOutfit[categoria] = null;
             else myOutfit[categoria] = itemFile;
 
             carregarAssetsDoUsuario();
-            if(document.getElementById('panel-store').classList.contains('open')) renderizarLoja();
-            if(document.getElementById('panel-inventory').classList.contains('open')) renderizarInventario();
+            if(document.getElementById('view-store').classList.contains('active')) renderizarLoja();
+            if(document.getElementById('view-inventory').classList.contains('active')) renderizarInventario();
 
             await updateDoc(doc(db, "users", currentUser.uid), { avatar_equipado: myOutfit });
         }
 
+        // --- ENGINE GRÁFICA ---
         function carregarAssetsDoUsuario() {
-            let toLoad = 0;
-            LAYER_ORDER.forEach(layer => {
-                const itemFile = myOutfit[layer];
-                if (itemFile) {
-                    const img = new Image();
-                    img.src = `${BASE_ASSETS_URL}${layer}/${itemFile}`;
-                    img.onload = () => { toLoad++; if(toLoad >= 5) initArcade(); };
-                    img.onerror = () => { img.isBroken = true; toLoad++; if(toLoad >= 5) initArcade(); };
-                    avatarImages[layer] = img;
-                } else { delete avatarImages[layer]; }
-            });
-            setTimeout(() => { if(!initCalled) initArcade(); }, 2000);
-        }
-        
-        const canvas = document.getElementById('arcadeCanvas');
-        const container = document.getElementById('canvasContainer');
-        const ctx = canvas.getContext('2d');
-        let avatares = []; let lastTime = 0; let myAvatar = null; let initCalled = false;
-
-        function initArcade() {
-            if(initCalled) return; initCalled = true;
-            myAvatar = new Avatar("Eu", true); avatares.push(myAvatar);
-            window.addEventListener('resize', resize); resize(); requestAnimationFrame(loop);
-        }
-        function resize() {
-            const dpr = window.devicePixelRatio || 1; const rect = container.getBoundingClientRect();
-            if(rect.width === 0 || rect.height === 0) return;
-            canvas.width = rect.width * dpr; canvas.height = rect.height * dpr;
-            ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.scale(dpr, dpr);
-            const chaoY = rect.height - 90; 
-            avatares.forEach(a => { a.y = chaoY; if(a.x === 0) a.x = rect.width / 2; });
-        }
-        function loop(timestamp) {
-            if (!lastTime) lastTime = timestamp; const dt = (timestamp - lastTime) / 1000; lastTime = timestamp;
-            const w = canvas.clientWidth; const h = canvas.clientHeight;
-            ctx.clearRect(0, 0, w, h);
-            ctx.fillStyle = '#81C784'; ctx.beginPath(); ctx.ellipse(w/2, h + 80, w * 0.9, 150, 0, 0, Math.PI * 2); ctx.fill();
-            ctx.strokeStyle = '#4CAF50'; ctx.lineWidth = 10; ctx.stroke();
-            avatares.sort((a, b) => a.y - b.y); avatares.forEach(av => { av.update(dt); av.draw(ctx); });
-            requestAnimationFrame(loop);
-        }
-        
-        class Avatar {
-            constructor(nome, isMe = false) {
-                this.nome = nome; this.isMe = isMe; this.msg = ""; this.msgTimer = 0; this.x = 0; this.y = 0; this.dir = Math.random() > 0.5 ? 1 : -1; this.speed = Math.random() * 0.8 + 0.5; this.state = 'walk'; this.timer = Math.random() * 100; this.targetX = this.x; setTimeout(() => this.escolherNovoAlvo(), 500);
-            }
-            falar(texto) { this.msg = texto; this.msgTimer = 300; this.timer = 0; }
-            escolherNovoAlvo() { const canvasEl = document.getElementById('arcadeCanvas'); if(!canvasEl) return; const width = canvasEl.clientWidth; const margem = 50; this.targetX = Math.random() * (width - margem*2) + margem; this.dir = this.targetX > this.x ? 1 : -1; this.state = 'walk'; setTimeout(() => { this.state = 'idle'; setTimeout(() => this.escolherNovoAlvo(), Math.random() * 2000 + 1000); }, Math.random() * 4000 + 2000); }
-            update(dt) { this.timer += dt * 5; if(this.msgTimer > 0) this.msgTimer--; else this.msg = ""; if (this.state === 'walk') { this.x += this.dir * this.speed; if (Math.abs(this.x - this.targetX) < 10) this.state = 'idle'; } }
-            draw(ctx) {
-                const s = AVATAR_CONFIG.scale;
-                let walk = 0, bob = 0, breathe = Math.sin(this.timer * 0.5) * 0.05;
-                if (this.state === 'walk') { walk = Math.sin(this.timer); bob = Math.abs(Math.sin(this.timer)) * 10; }
-                ctx.save(); ctx.translate(this.x, this.y);
-                ctx.fillStyle = this.isMe ? '#FFC107' : 'white'; ctx.font = 'bold 12px Nunito'; ctx.textAlign = 'center'; ctx.shadowColor = 'rgba(0,0,0,0.8)'; ctx.shadowBlur = 3; ctx.fillText(this.nome, 0, -160 * s); ctx.shadowBlur = 0;
-                if (this.msg) this.drawBalloon(ctx, s);
-                ctx.scale(-this.dir, 1); 
-                LAYER_ORDER.forEach(partName => {
-                    const itemFile = this.isMe ? myOutfit[partName] : STARTER_KIT[partName];
-                    if(!itemFile) return; 
-                    
-                    // USA A CONFIG DO BANCO (parts)
-                    // Se não tiver no banco, usa 0,0 (mas o start() deve ter carregado)
-                    const cfg = AVATAR_CONFIG.parts[partName] || { x:0, y:0, pivX:0.5, pivY:0.5 };
-                    let animX = 0, animY = 0, animRot = 0;
-                    
-                    // LÓGICA DE PARENTING (ANEXAR)
-                    if (partName === 'arma_frente' || partName === 'escudo_frente') {
-                        const parent = AVATAR_CONFIG.parts['braco_frente'] || {x:0, y:0};
-                        const pRot = (this.state === 'walk') ? -walk * 0.6 : 0;
-                        const relX = (cfg.x - parent.x) * s; const relY = (cfg.y - parent.y) * s;
-                        const rotX = relX * Math.cos(pRot) - relY * Math.sin(pRot); const rotY = relX * Math.sin(pRot) + relY * Math.cos(pRot);
-                        this.drawPartRaw(ctx, partName, ((parent.x * s) + rotX), ((parent.y * s) - (bob*s) + rotY), pRot); return;
-                    }
-                    if (partName === 'escudo_tras') {
-                        const parent = AVATAR_CONFIG.parts['braco_tras'] || {x:0, y:0};
-                        const pRot = (this.state === 'walk') ? walk * 0.6 : 0;
-                        const relX = (cfg.x - parent.x) * s; const relY = (cfg.y - parent.y) * s;
-                        const rotX = relX * Math.cos(pRot) - relY * Math.sin(pRot); const rotY = relX * Math.sin(pRot) + relY * Math.cos(pRot);
-                        this.drawPartRaw(ctx, partName, ((parent.x * s) + rotX), ((parent.y * s) - (bob*s) + rotY), pRot); return;
-                    }
-
-                    // ANIMAÇÃO PADRÃO (Sem offsets fixos, usando apenas o banco)
-                    if (partName.includes('perna')) { 
-                        const isFrente = partName.includes('frente'); 
-                        animY = -bob; 
-                        animRot = (isFrente ? walk : -walk) * 0.5; 
-                    } 
-                    else if (partName.includes('braco')) { 
-                        const isFrente = partName.includes('frente'); 
-                        animY = -bob; 
-                        animRot = (isFrente ? -walk : walk) * 0.6; 
-                    } 
-                    else if (['cabeca', 'rosto', 'mascara', 'cabelo'].includes(partName)) { 
-                        animY = -bob + (breathe * 5); 
-                        animRot = breathe * 0.2; 
-                    } 
-                    else { animY = -bob; }
-
-                    // Desenha usando a posição do banco (cfg.x) + animação
-                    this.drawPartRaw(ctx, partName, (cfg.x * s) + (animX * s), (cfg.y * s) + (animY * s), animRot);
-                });
-                ctx.restore();
-            }
-            drawPartRaw(ctx, name, finalX, finalY, rot) {
-                const img = avatarImages[name];
-                if (!img || !img.complete || img.isBroken || img.naturalWidth === 0) return;
-                const cfg = AVATAR_CONFIG.parts[name] || { x:0, y:0, pivX:0.5, pivY:0.5 };
-                const s = AVATAR_CONFIG.scale;
-                ctx.save(); ctx.translate(finalX, finalY); ctx.rotate(rot);
-                if (name.includes('tras') || name === 'capa') ctx.filter = "brightness(0.85)";
-                ctx.drawImage(img, -img.width * s * cfg.pivX, -img.height * s * cfg.pivY, img.width * s, img.height * s);
-                ctx.filter = "none"; ctx.restore();
-            }
-            drawBalloon(ctx, s) {
-                ctx.save(); ctx.translate(0, -190 * s); ctx.fillStyle = 'white'; ctx.shadowColor = 'rgba(0,0,0,0.2)'; ctx.shadowBlur = 5; ctx.shadowOffsetY = 3;
-                const w = ctx.measureText(this.msg).width + 30;
-                ctx.beginPath(); ctx.roundRect(-w/2, -30, w, 30, 10); ctx.fill();
-                ctx.beginPath(); ctx.moveTo(-5, 0); ctx.lineTo(5, 0); ctx.lineTo(0, 10); ctx.fill();
-                ctx.fillStyle = '#333'; ctx.shadowColor = 'transparent'; ctx.fillText(this.msg, 0, -10); ctx.restore();
-            }
-        }
-
-        // --- CHAT ---
-        const input = document.getElementById('msgInput'); const history = document.getElementById('chatHistory');
-        function enviarMensagem() {
-            const txt = input.value.trim(); if(!txt) return;
-            const div = document.createElement('div'); div.className = 'msg me'; div.innerHTML = `<strong>Eu</strong>${txt}`;
-            history.appendChild(div); history.scrollTop = history.scrollHeight;
-            if(myAvatar) myAvatar.falar(txt); input.value = "";
-        }
-        document.getElementById('btnSend').addEventListener('click', enviarMensagem);
-        if(input) input.addEventListener('keypress', (e) => { if(e.key === 'Enter') enviarMensagem(); });
-        document.getElementById('btnAddBot').addEventListener('click', () => {
-            const nomes = ["Visitante", "Gamer", "Noob", "Pro"]; const nome = nomes[Math.floor(Math.random() * nomes.length)] + Math.floor(Math.random()*100);
-            const bot = new Avatar(nome); const rect = container.getBoundingClientRect(); bot.y = rect.height - 90; bot.x = Math.random() * rect.width;
-            avatares.push(bot); document.getElementById('online-count').innerText = avatares.length;
-        });
-
-        start();
-    </script>
-</body>
-</html>
+            let t
