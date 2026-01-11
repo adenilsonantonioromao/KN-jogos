@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin - Avatar Studio Ultimate</title>
+    <title>Admin - Avatar Studio (Nomes Corrigidos)</title>
     <style>
         body { 
             background: #1e1e1e; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; 
@@ -111,13 +111,18 @@
             background: rgba(0,0,0,0.95); z-index: 999;
             display: flex; justify-content: center; align-items: center;
         }
+        
+        #debug-uid {
+            background: #000; color: #FFEB3B; padding: 5px 10px; 
+            font-family: monospace; font-size: 0.8rem; border: 1px solid #555;
+        }
     </style>
 </head>
 <body>
 
     <div id="login-overlay">
         <div style="text-align:center;">
-            <h1 style="color:white;">🔐 Avatar Studio</h1>
+            <h1 style="color:white;">🔐 Admin Avatar</h1>
             <button id="btnLogin" class="btn btn-save" style="background:#2196F3; padding:15px 30px;">Entrar com Google</button>
         </div>
     </div>
@@ -202,7 +207,7 @@
                 provider: new ReCaptchaV3Provider('6Lc5vjgsAAAAANx2ia8s_Fh0_KS0_YNaAlSIYpJC'), 
                 isTokenAutoRefreshEnabled: true 
             });
-        } catch(e) { console.warn("AppCheck:", e); }
+        } catch(e) {}
 
         const auth = getAuth(app);
         const db = getFirestore(app);
@@ -224,6 +229,24 @@
             'tronco', 'cintura', 'cabeca', 'rosto', 'mascara', 'cabelo',
             'arma_frente', 'braco_frente', 'escudo_frente'
         ];
+
+        // --- DICIONÁRIO DE ARQUIVOS (Mapeia Camada -> Nome do Arquivo) ---
+        const FILE_NAMES = {
+            'capa': 'capa_simples.png',
+            'escudo_tras': 'escudo_simples_tras.png',
+            'braco_tras': 'braco_tras_padrao.png',
+            'perna_tras': 'perna_tras_padrao.png',
+            'perna_frente': 'perna_frente_padrao.png',
+            'tronco': 'tronco_padrao.png',
+            'cintura': 'espada_bainha_simples.png', // Assumindo que a bainha é a cintura
+            'cabeca': 'cabeca_padrao.png',
+            'rosto': 'rosto_padrao.png',
+            'mascara': 'mascara_simples.png',
+            'cabelo': 'cabelo_simples.png',
+            'arma_frente': 'Espada_simples.png', // Note o E maiúsculo
+            'braco_frente': 'braco_frente_padrao.png',
+            'escudo_frente': 'escudo_simples.png'
+        };
 
         let avatarConfig = { scale: 0.22, parts: {} };
         LAYER_ORDER.forEach(k => { avatarConfig.parts[k] = { x: 0, y: 0, pivX: 0.5, pivY: 0.5 }; });
@@ -286,11 +309,17 @@
         }
 
         function loadImages() {
-            LAYER_ORDER.forEach(name => {
+            LAYER_ORDER.forEach(layerName => {
                 const img = new Image();
-                img.src = `${BASE_URL}${name}.png`;
-                img.onerror = () => img.isMissing = true;
-                images[name] = img;
+                // USA O DICIONÁRIO DE NOMES AQUI
+                const fileName = FILE_NAMES[layerName] || (layerName + ".png");
+                img.src = `${BASE_URL}${fileName}`;
+                
+                img.onerror = () => {
+                    console.warn(`Imagem não encontrada: ${fileName}`);
+                    img.isMissing = true;
+                };
+                images[layerName] = img; // Salva com a chave da camada (ex: 'tronco')
             });
         }
 
