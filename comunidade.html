@@ -462,4 +462,28 @@
             const w = canvas.clientWidth; const h = canvas.clientHeight;
             ctx.clearRect(0, 0, w, h);
             ctx.fillStyle = '#81C784'; ctx.beginPath(); ctx.ellipse(w/2, h + 80, w * 0.9, 150, 0, 0, Math.PI * 2); ctx.fill();
-            ctx.strokeStyle =
+            ctx.strokeStyle = '#4CAF50'; ctx.lineWidth = 10; ctx.stroke();
+            avatares.sort((a, b) => a.y - b.y); avatares.forEach(av => { av.update(dt); av.draw(ctx); });
+            requestAnimationFrame(loop);
+        }
+
+        // --- CHAT ---
+        const input = document.getElementById('msgInput'); const history = document.getElementById('chatHistory');
+        function enviarMensagem() {
+            const txt = input.value.trim(); if(!txt) return;
+            const div = document.createElement('div'); div.className = 'msg me'; div.innerHTML = `<strong>Eu</strong>${txt}`;
+            history.appendChild(div); history.scrollTop = history.scrollHeight;
+            if(myAvatar) myAvatar.falar(txt); input.value = "";
+        }
+        document.getElementById('btnSend').addEventListener('click', enviarMensagem);
+        if(input) input.addEventListener('keypress', (e) => { if(e.key === 'Enter') enviarMensagem(); });
+        document.getElementById('btnAddBot').addEventListener('click', () => {
+            const nomes = ["Visitante", "Gamer", "Noob", "Pro"]; const nome = nomes[Math.floor(Math.random() * nomes.length)] + Math.floor(Math.random()*100);
+            const bot = new Avatar(nome); const rect = container.getBoundingClientRect(); bot.y = rect.height - 90; bot.x = Math.random() * rect.width;
+            avatares.push(bot); document.getElementById('online-count').innerText = avatares.length;
+        });
+
+        start();
+    </script>
+</body>
+</html>
