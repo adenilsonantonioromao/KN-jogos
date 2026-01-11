@@ -21,9 +21,8 @@
             transition: all 0.3s ease;
         }
         
-        /* O CARD DO JOGO (FLEX 1 faz ele ocupar o espaço que sobra) */
         .canvas-card { 
-            flex: 1; 
+            flex: 1; /* Ocupa o espaço disponível */
             background: #81D4FA; border-radius: 30px; overflow: hidden; 
             box-shadow: var(--shadow); position: relative; border: 5px solid white; 
             min-height: 200px; /* Altura mínima de segurança */
@@ -43,45 +42,31 @@
         .action-btn label { font-size: 0.7rem; font-weight: bold; color: #777; }
 
         /* --- PAINEL DE INVENTÁRIO (MOCHILA) --- */
-        /* Ele começa com altura 0 e cresce, empurrando o canvas para cima */
         .inventory-panel {
             height: 0; 
             overflow: hidden;
             background: white;
             border-radius: 25px;
             box-shadow: var(--shadow);
-            transition: height 0.3s ease, padding 0.3s ease, margin 0.3s ease;
+            transition: height 0.3s ease, padding 0.3s ease;
             display: flex; flex-direction: column;
         }
         
         .inventory-panel.open {
-            height: 280px; /* Altura fixa quando aberto */
+            height: 280px; 
             padding: 15px;
-            margin-top: -5px; /* Gruda visualmente no dock */
+            margin-top: -5px;
         }
 
         .inv-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
         .close-btn { background: #eee; border: none; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; font-weight: bold; }
 
-        /* ABAS */
         .inv-tabs { display: flex; gap: 10px; margin-bottom: 10px; background: #f0f0f0; padding: 5px; border-radius: 15px; }
-        .inv-tab-btn {
-            flex: 1; padding: 8px; border: none; background: transparent; 
-            border-radius: 10px; cursor: pointer; font-weight: bold; color: #666;
-            transition: 0.2s;
-        }
+        .inv-tab-btn { flex: 1; padding: 8px; border: none; background: transparent; border-radius: 10px; cursor: pointer; font-weight: bold; color: #666; transition: 0.2s; }
         .inv-tab-btn.active { background: white; color: var(--primary); box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
 
-        /* GRID */
-        .inventory-grid { 
-            display: grid; grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); 
-            gap: 10px; overflow-y: auto; padding-bottom: 10px; flex: 1;
-        }
-        .inv-item { 
-            background: #f9f9f9; border-radius: 10px; padding: 5px; cursor: pointer; 
-            border: 2px solid transparent; display: flex; flex-direction: column; align-items: center;
-            position: relative; transition: 0.2s;
-        }
+        .inventory-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); gap: 10px; overflow-y: auto; padding-bottom: 10px; flex: 1; }
+        .inv-item { background: #f9f9f9; border-radius: 10px; padding: 5px; cursor: pointer; border: 2px solid transparent; display: flex; flex-direction: column; align-items: center; position: relative; transition: 0.2s; }
         .inv-item:hover { background: #fff; border-color: #ddd; }
         .inv-item img { width: 100%; height: 50px; object-fit: contain; }
         .inv-item.equipped { border-color: var(--green); background: #E8F5E9; }
@@ -107,7 +92,6 @@
             .controls-dock { height: 80px; padding: 5px; }
             .action-btn { width: 60px; height: 60px; }
             .action-btn label { display: none; }
-            .inventory-panel.open { height: 50%; } /* No mobile ocupa metade da tela */
         }
     </style>
 </head>
@@ -115,44 +99,36 @@
 
     <div class="main-layout">
         <div class="game-column">
-            <!-- JOGO (Encolhe quando a mochila abre) -->
             <div class="canvas-card" id="canvasContainer">
                 <canvas id="arcadeCanvas"></canvas>
                 <div class="overlay-ui">
                     <a href="index.html" class="btn-back">⬅️ Voltar</a>
                     <div class="online-badge">🟢 <span id="online-count">1</span> Online</div>
                 </div>
+                
+                <div id="inventoryPanel" class="inventory-panel">
+                    <div class="inv-header">
+                        <h3 style="margin:0; color:var(--dark);">🎒 Mochila</h3>
+                        <button class="close-btn" onclick="toggleInventory()">×</button>
+                    </div>
+                    <div class="inv-tabs">
+                        <button class="inv-tab-btn active" onclick="mudarAbaInv('corpo')">👕 Corpo</button>
+                        <button class="inv-tab-btn" onclick="mudarAbaInv('acessorios')">👓 Acessórios</button>
+                    </div>
+                    <div id="inventoryList" class="inventory-grid">
+                        <p style="color:#999; width:100%; text-align:center;">Carregando...</p>
+                    </div>
+                </div>
             </div>
 
-            <!-- CONTROLES -->
             <div class="controls-dock">
                 <button class="action-btn" onclick="alert('Loja em breve!')"><span>🏪</span><label>Loja</label></button>
                 <button class="action-btn" onclick="toggleInventory()"><span>🎒</span><label>Mochila</label></button>
                 <button class="action-btn" id="btnAddBot" style="background: #E3F2FD;"><span>➕</span><label>Bot</label></button>
                 <button class="action-btn" onclick="alert('Cores em breve!')"><span>🎨</span><label>Cor</label></button>
             </div>
-
-            <!-- MOCHILA (PAINEL EXPANSÍVEL) -->
-            <div id="inventoryPanel" class="inventory-panel">
-                <div class="inv-header">
-                    <h3 style="margin:0; color:var(--dark);">🎒 Mochila</h3>
-                    <button class="close-btn" onclick="toggleInventory()">×</button>
-                </div>
-                
-                <!-- ABAS -->
-                <div class="inv-tabs">
-                    <button class="inv-tab-btn active" onclick="mudarAbaInv('corpo')">👕 Corpo</button>
-                    <button class="inv-tab-btn" onclick="mudarAbaInv('acessorios')">👓 Acessórios</button>
-                </div>
-
-                <!-- LISTA DE ITENS -->
-                <div id="inventoryList" class="inventory-grid">
-                    <p style="color:#999; width:100%; text-align:center;">Carregando...</p>
-                </div>
-            </div>
         </div>
 
-        <!-- CHAT -->
         <div class="chat-column">
             <div class="chat-header">💬 Chat da Galera</div>
             <div class="chat-history" id="chatHistory">
@@ -191,24 +167,10 @@
         let myOutfit = {}; 
         let currentInvTab = 'corpo'; 
         
-        // CONFIGURAÇÃO DO AVATAR (COM SEUS VALORES CORRETOS HARDCODED)
+        // CONFIGURAÇÃO INICIAL (ZERADA - SERÁ PREENCHIDA PELO BANCO)
         let AVATAR_CONFIG = {
             scale: 0.22,
-            offsets: { 
-                headY: -230,    
-                armY: -150,     
-                legY: 50, 
-                spreadX: -47,   
-                legSpread: -24  
-            },
-            parts: {
-                'tronco': { x: 0, y: 0, pivX: 0.5, pivY: 0.75 },
-                'cabeca': { x: 0, y: -230, pivX: 0.5, pivY: 0.89 },
-                'braco_frente': { x: 47, y: -150, pivX: 0.26, pivY: 0.12 },
-                'braco_tras': { x: -37, y: -150, pivX: 0.76, pivY: 0.11 },
-                'perna_frente': { x: 24, y: 50, pivX: 0.29, pivY: 0.13 },
-                'perna_tras': { x: -24, y: 50, pivX: 0.67, pivY: 0.11 }
-            }
+            parts: {} 
         };
 
         const LAYER_ORDER = [
@@ -217,7 +179,6 @@
             'arma_frente', 'braco_frente', 'escudo_frente'
         ];
 
-        // CATEGORIAS
         const CATEGORIA_CORPO = ['tronco', 'cabeca', 'rosto', 'braco_frente', 'braco_tras', 'perna_frente', 'perna_tras'];
         const CATEGORIA_ACESSORIOS = ['capa', 'cabelo', 'mascara', 'arma_frente', 'escudo_frente', 'escudo_tras', 'cintura'];
 
@@ -242,16 +203,23 @@
 
         // --- INICIALIZAÇÃO ---
         async function start() {
-            // 1. Tenta baixar config do Firebase (mas já temos o padrão bom)
+            console.log("Iniciando...");
+            
+            // 1. BUSCA CONFIGURAÇÃO NO BANCO (CRÍTICO)
             try {
                 const snap = await getDoc(doc(db, "config", "avatar_base"));
                 if(snap.exists()) {
                     const data = snap.data();
                     if(data.scale) AVATAR_CONFIG.scale = data.scale;
-                    if(data.parts) AVATAR_CONFIG.parts = { ...AVATAR_CONFIG.parts, ...data.parts };
-                    console.log("Config baixada do banco.");
+                    if(data.parts) AVATAR_CONFIG.parts = data.parts;
+                    console.log("✅ Configuração carregada do Firebase!");
+                } else {
+                    console.warn("⚠️ Config não encontrada no banco. Usando padrão.");
                 }
-            } catch(e) {}
+            } catch(e) { console.error("Erro ao baixar config:", e); }
+
+            // 2. Carrega Imagens (Só depois de ter a config, idealmente, mas carregamos paralelo)
+            // A renderização vai esperar as imagens de qualquer forma
         }
 
         // --- AUTH & INVENTÁRIO ---
@@ -269,17 +237,12 @@
         async function garantirInventario(uid) {
             const userRef = doc(db, "users", uid);
             const snap = await getDoc(userRef);
-            
             if (snap.exists()) {
                 const data = snap.data();
-                if (data.avatar_equipado) {
-                    myOutfit = data.avatar_equipado;
-                } else {
+                if (data.avatar_equipado) myOutfit = data.avatar_equipado;
+                else {
                     myOutfit = { ...STARTER_KIT };
-                    await updateDoc(userRef, { 
-                        avatar_equipado: myOutfit,
-                        inventario: Object.values(STARTER_KIT) 
-                    });
+                    await updateDoc(userRef, { avatar_equipado: myOutfit, inventario: Object.values(STARTER_KIT) });
                 }
             }
         }
@@ -305,14 +268,8 @@
         window.toggleInventory = function() {
             const panel = document.getElementById('inventoryPanel');
             panel.classList.toggle('open');
-            
-            // Força o resize do canvas para ele encolher/crescer
-            setTimeout(resize, 50); 
-            setTimeout(resize, 300);
-
-            if (panel.classList.contains('open') && currentUser) {
-                renderizarInventario();
-            }
+            setTimeout(resize, 50); setTimeout(resize, 300);
+            if (panel.classList.contains('open') && currentUser) renderizarInventario();
         }
 
         window.mudarAbaInv = function(aba) {
@@ -326,78 +283,54 @@
         async function renderizarInventario() {
             const list = document.getElementById('inventoryList');
             list.innerHTML = '<p style="color:#999; width:100%; text-align:center;">Carregando...</p>';
-            
             const snap = await getDoc(doc(db, "users", currentUser.uid));
             const inv = snap.data().inventario || [];
-            
             list.innerHTML = '';
             
             const itensFiltrados = inv.filter(itemFile => {
                 let categoria = null;
                 for (const layer of LAYER_ORDER) {
-                    if (itemFile.includes(layer) || STARTER_KIT[layer] === itemFile) {
-                        categoria = layer; break;
-                    }
+                    if (itemFile.includes(layer) || STARTER_KIT[layer] === itemFile) { categoria = layer; break; }
                 }
                 if(itemFile.includes('Espada')) categoria = 'arma_frente';
                 if(itemFile.includes('bainha')) categoria = 'cintura';
-
                 if (!categoria) return false;
-
                 if (currentInvTab === 'corpo') return CATEGORIA_CORPO.includes(categoria);
                 if (currentInvTab === 'acessorios') return CATEGORIA_ACESSORIOS.includes(categoria);
                 return false;
             });
 
             if (itensFiltrados.length === 0) {
-                list.innerHTML = '<p style="color:#999; width:100%; text-align:center;">Nenhum item nesta categoria.</p>';
+                list.innerHTML = '<p style="color:#999; width:100%; text-align:center;">Vazio.</p>';
                 return;
             }
 
             itensFiltrados.forEach(itemFile => {
                 let categoria = null;
                 for (const layer of LAYER_ORDER) {
-                    if (itemFile.includes(layer) || STARTER_KIT[layer] === itemFile) {
-                        categoria = layer; break;
-                    }
+                    if (itemFile.includes(layer) || STARTER_KIT[layer] === itemFile) { categoria = layer; break; }
                 }
                 if(itemFile.includes('Espada')) categoria = 'arma_frente';
                 if(itemFile.includes('bainha')) categoria = 'cintura';
 
                 const isEquipped = myOutfit[categoria] === itemFile;
-                
                 const div = document.createElement('div');
                 div.className = `inv-item ${isEquipped ? 'equipped' : ''}`;
                 div.onclick = () => equiparItem(categoria, itemFile);
-                
                 let nomeAmigavel = itemFile.replace('.png', '').replace('_padrao', '').replace('_simples', '');
-                
-                div.innerHTML = `
-                    <img src="${BASE_ASSETS_URL}${categoria}/${itemFile}">
-                    <span>${nomeAmigavel}</span>
-                    <div class="check-icon">✔</div>
-                `;
+                div.innerHTML = `<img src="${BASE_ASSETS_URL}${categoria}/${itemFile}"><span>${nomeAmigavel}</span><div class="check-icon">✔</div>`;
                 list.appendChild(div);
             });
         }
 
         window.equiparItem = async function(categoria, itemFile) {
             if (!currentUser) return alert("Faça login!");
-
             const isAcessorio = CATEGORIA_ACESSORIOS.includes(categoria);
-            
-            if (myOutfit[categoria] === itemFile && isAcessorio) {
-                myOutfit[categoria] = null; // Desequipa
-            } else {
-                myOutfit[categoria] = itemFile; // Equipa
-            }
-
+            if (myOutfit[categoria] === itemFile && isAcessorio) myOutfit[categoria] = null;
+            else myOutfit[categoria] = itemFile;
             carregarAssetsDoUsuario();
             renderizarInventario(); 
-
-            await updateDoc(doc(db, "users", currentUser.uid), {
-                avatar_equipado: myOutfit
-            });
+            await updateDoc(doc(db, "users", currentUser.uid), { avatar_equipado: myOutfit });
         }
 
         // --- CLASSE AVATAR ---
@@ -419,10 +352,11 @@
                 LAYER_ORDER.forEach(partName => {
                     const itemFile = this.isMe ? myOutfit[partName] : STARTER_KIT[partName];
                     if(!itemFile) return; 
+                    // USA A CONFIG DO BANCO
                     const cfg = AVATAR_CONFIG.parts[partName] || { x:0, y:0, pivX:0.5, pivY:0.5 };
                     let animX = 0, animY = 0, animRot = 0;
                     
-                    // LÓGICA DE PARENTING (ANEXAR)
+                    // LÓGICA DE PARENTING
                     if (partName === 'arma_frente' || partName === 'escudo_frente') {
                         const parent = AVATAR_CONFIG.parts['braco_frente'] || {x:0, y:0};
                         const pRot = (this.state === 'walk') ? -walk * 0.6 : 0;
@@ -438,28 +372,12 @@
                         this.drawPartRaw(ctx, partName, ((parent.x * s) + rotX), ((parent.y * s) - (bob*s) + rotY), pRot); return;
                     }
 
-                    // ANIMAÇÃO PADRÃO COM OFFSETS
-                    if (partName.includes('perna')) { 
-                        const isFrente = partName.includes('frente'); 
-                        animY = -bob; 
-                        animRot = (isFrente ? walk : -walk) * 0.5; 
-                        // Aplica o offset de afastamento (legSpread)
-                        animX = isFrente ? -AVATAR_CONFIG.offsets.legSpread : AVATAR_CONFIG.offsets.legSpread;
-                    } 
-                    else if (partName.includes('braco')) { 
-                        const isFrente = partName.includes('frente'); 
-                        animY = -bob; 
-                        animRot = (isFrente ? -walk : walk) * 0.6; 
-                        // Aplica o offset de afastamento (spreadX)
-                        animX = isFrente ? -AVATAR_CONFIG.offsets.spreadX : (AVATAR_CONFIG.offsets.spreadX * 0.8);
-                    } 
-                    else if (['cabeca', 'rosto', 'mascara', 'cabelo'].includes(partName)) { 
-                        animY = -bob + (breathe * 5); 
-                        animRot = breathe * 0.2; 
-                    } 
+                    if (partName.includes('perna')) { const isFrente = partName.includes('frente'); animY = -bob; animRot = (isFrente ? walk : -walk) * 0.5; } 
+                    else if (partName.includes('braco')) { const isFrente = partName.includes('frente'); animY = -bob; animRot = (isFrente ? -walk : walk) * 0.6; } 
+                    else if (['cabeca', 'rosto', 'mascara', 'cabelo'].includes(partName)) { animY = -bob + (breathe * 5); animRot = breathe * 0.2; } 
                     else { animY = -bob; }
-
-                    // Soma a posição da peça (cfg.x) + a animação (animX)
+                    
+                    // Desenha usando a posição do banco (cfg.x) + animação
                     this.drawPartRaw(ctx, partName, (cfg.x * s) + (animX * s), (cfg.y * s) + (animY * s), animRot);
                 });
                 ctx.restore();
@@ -522,9 +440,6 @@
         }
         document.getElementById('btnSend').addEventListener('click', enviarMensagem);
         if(input) input.addEventListener('keypress', (e) => { if(e.key === 'Enter') enviarMensagem(); });
-        document.getElementById('btnLoja').addEventListener('click', () => alert('Loja em breve!'));
-        document.getElementById('btnItens').addEventListener('click', () => alert('Inventário em breve!'));
-        document.getElementById('btnCor').addEventListener('click', () => alert('Tintura em breve!'));
         document.getElementById('btnAddBot').addEventListener('click', () => {
             const nomes = ["Visitante", "Gamer", "Noob", "Pro"]; const nome = nomes[Math.floor(Math.random() * nomes.length)] + Math.floor(Math.random()*100);
             const bot = new Avatar(nome); const rect = container.getBoundingClientRect(); bot.y = rect.height - 90; bot.x = Math.random() * rect.width;
