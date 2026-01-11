@@ -13,6 +13,8 @@
         }
         * { box-sizing: border-box; }
         body { margin: 0; height: 100vh; background-color: var(--bg); font-family: 'Nunito', sans-serif; overflow: hidden; display: flex; flex-direction: column; color: var(--dark); }
+        
+        /* LAYOUT PRINCIPAL */
         .main-layout { display: flex; flex: 1; height: 100%; padding: 15px; gap: 15px; overflow: hidden; }
         
         /* --- COLUNA ESQUERDA (JOGO) --- */
@@ -23,7 +25,7 @@
         .canvas-card { 
             flex: 1; background: #81D4FA; border-radius: 30px; overflow: hidden; 
             box-shadow: var(--shadow); position: relative; border: 5px solid white; 
-            display: flex; /* Garante tamanho */
+            display: flex; 
         }
         canvas { display: block; width: 100%; height: 100%; background: linear-gradient(to bottom, #81D4FA, #B2EBF2); }
         
@@ -48,7 +50,7 @@
             overflow: hidden; border: 5px solid white; position: relative;
         }
 
-        /* SISTEMA DE PAINÉIS (Abas internas da direita) */
+        /* SISTEMA DE ABAS (VIEWS) */
         .panel-view { 
             display: none; flex-direction: column; height: 100%; width: 100%; 
             animation: fadeIn 0.3s;
@@ -62,7 +64,6 @@
             font-family: 'Fredoka One'; text-align: center; font-size: 1.2rem; flex-shrink: 0;
             display: flex; justify-content: space-between; align-items: center;
         }
-        /* Botão X para voltar ao chat */
         .close-panel-btn { background: rgba(255,255,255,0.2); border: none; color: white; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; font-weight: bold; }
 
         /* ESTILOS COMUNS (LOJA/MOCHILA) */
@@ -71,15 +72,11 @@
         .inv-tab-btn.active { background: white; color: var(--primary); box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         
         .items-scroll-area { flex: 1; overflow-y: auto; padding: 10px; display: flex; flex-direction: column; gap: 15px; }
-        
-        /* LINHAS DA LOJA */
-        .store-row-title { font-size: 0.8rem; font-weight: bold; color: #555; text-transform: uppercase; margin-left: 5px; margin-bottom: 5px; }
-        .store-row-scroll { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 5px; }
-        
-        /* GRID DA MOCHILA */
         .inventory-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); gap: 10px; padding: 10px; overflow-y: auto; }
 
-        /* CARD DE ITEM */
+        .store-row-title { font-size: 0.8rem; font-weight: bold; color: #555; text-transform: uppercase; margin-left: 5px; margin-bottom: 5px; }
+        .store-row-scroll { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 5px; }
+
         .item-card { 
             min-width: 80px; width: 80px; background: #f9f9f9; border-radius: 12px; padding: 5px; cursor: pointer; 
             border: 2px solid transparent; display: flex; flex-direction: column; align-items: center;
@@ -118,7 +115,7 @@
 <body>
 
     <div class="main-layout">
-        <!-- ESQUERDA: JOGO E DOCK -->
+        <!-- ESQUERDA: JOGO -->
         <div class="game-column">
             <div class="canvas-card" id="canvasContainer">
                 <canvas id="arcadeCanvas"></canvas>
@@ -131,7 +128,6 @@
                 </div>
             </div>
 
-            <!-- CONTROLES QUE ALTERNAM A DIREITA -->
             <div class="controls-dock">
                 <button class="action-btn active" id="btnChat" onclick="switchPanel('chat')"><span>💬</span><label>Chat</label></button>
                 <button class="action-btn" id="btnLoja" onclick="switchPanel('store')"><span>🏪</span><label>Loja</label></button>
@@ -183,7 +179,7 @@
                     <button class="inv-tab-btn active" onclick="mudarAba('inventory', 'corpo')">👕 Corpo</button>
                     <button class="inv-tab-btn" onclick="mudarAba('inventory', 'acessorios')">👓 Acessórios</button>
                 </div>
-                <div id="inventoryList" class="inventory-grid">
+                <div id="inventoryList" class="inventory-grid" style="padding:15px;">
                     <p style="color:#999; text-align:center;">Carregando...</p>
                 </div>
             </div>
@@ -217,10 +213,10 @@
         let currentTab = 'corpo'; 
         let storeItemsCache = []; 
 
-        // CONFIGURAÇÃO INICIAL (ZERADA - Força leitura do banco)
+        // CONFIGURAÇÃO DO AVATAR (Inicialmente vazia, será preenchida pelo banco)
         let AVATAR_CONFIG = {
             scale: 0.22,
-            parts: {} 
+            parts: {} // VAZIO: Força o uso do banco
         };
 
         const LAYER_ORDER = [
@@ -229,7 +225,6 @@
             'arma_frente', 'braco_frente', 'escudo_frente'
         ];
 
-        // CATEGORIAS
         const CATEGORY_NAMES = {
             'cabeca': 'Cabeça', 'tronco': 'Tronco', 'perna_frente': 'Pernas', 
             'braco_frente': 'Braços', 'cabelo': 'Cabelo', 'arma_frente': 'Mão (Arma)',
@@ -255,35 +250,32 @@
         // --- INICIALIZAÇÃO ---
         async function start() {
             try {
-                // LEITURA DO BANCO PARA MONTAR O AVATAR
                 const snap = await getDoc(doc(db, "config", "avatar_base"));
                 if(snap.exists()) {
                     const data = snap.data();
                     if(data.scale) AVATAR_CONFIG.scale = data.scale;
-                    if(data.parts) AVATAR_CONFIG.parts = data.parts; 
-                    console.log("Config do Avatar carregada.");
-                } else {
-                    console.warn("Avatar Base não configurado no banco!");
+                    if(data.parts) AVATAR_CONFIG.parts = { ...AVATAR_CONFIG.parts, ...data.parts };
                 }
-            } catch(e) { console.error("Erro config:", e); }
-            
-            // Depois que configurou, carrega as imagens (importante ser depois)
-            // mas como é async, as imagens carregam e esperam o config.
+            } catch(e) {}
         }
 
         // --- SISTEMA DE PAINÉIS (SWITCHER) ---
         window.switchPanel = function(panelId) {
+            // Atualiza botões
             document.querySelectorAll('.action-btn').forEach(b => b.classList.remove('active'));
             if(panelId === 'chat') document.getElementById('btnChat').classList.add('active');
             if(panelId === 'store') document.getElementById('btnLoja').classList.add('active');
             if(panelId === 'inventory') document.getElementById('btnInv').classList.add('active');
 
+            // Troca visualização
             document.querySelectorAll('.panel-view').forEach(p => p.classList.remove('active'));
             document.getElementById('view-' + panelId).classList.add('active');
 
+            // Carrega dados se necessário
             if(panelId === 'store' && currentUser) renderizarLoja();
             if(panelId === 'inventory' && currentUser) renderizarInventario();
 
+            // Resize canvas (só pra garantir)
             setTimeout(resize, 100);
         }
 
@@ -341,14 +333,13 @@
 
             categoriasParaMostrar.forEach(cat => {
                 const itensDb = storeItemsCache.filter(i => i.categoria === cat);
-                // Mostra se tiver item OU se for categoria padrão com slot grátis
                 if (itensDb.length === 0 && !STARTER_KIT[cat]) return;
 
                 const row = document.createElement('div'); row.className = 'store-row';
                 row.innerHTML = `<div class="store-row-title">${CATEGORY_NAMES[cat] || cat}</div>`;
                 const scrollBox = document.createElement('div'); scrollBox.className = 'store-row-scroll';
 
-                // Slot 0
+                // Slot 0 (Padrão)
                 if (STARTER_KIT[cat]) {
                     const padraoId = STARTER_KIT[cat];
                     const isEquipped = myOutfit[cat] === padraoId;
@@ -394,7 +385,7 @@
                 return CATEGORIA_ACESSORIOS.includes(cat);
             });
 
-            if (itensFiltrados.length === 0) { list.innerHTML = '<p style="width:100%;text-align:center;color:#999;">Vazio.</p>'; return; }
+            if (itensFiltrados.length === 0) list.innerHTML = '<p style="width:100%;text-align:center;color:#999;">Vazio</p>';
 
             itensFiltrados.forEach(file => {
                 let cat = null;
@@ -490,29 +481,19 @@
             falar(texto) { this.msg = texto; this.msgTimer = 300; this.timer = 0; }
             escolherNovoAlvo() { const canvasEl = document.getElementById('arcadeCanvas'); if(!canvasEl) return; const width = canvasEl.clientWidth; const margem = 50; this.targetX = Math.random() * (width - margem*2) + margem; this.dir = this.targetX > this.x ? 1 : -1; this.state = 'walk'; setTimeout(() => { this.state = 'idle'; setTimeout(() => this.escolherNovoAlvo(), Math.random() * 2000 + 1000); }, Math.random() * 4000 + 2000); }
             update(dt) { this.timer += dt * 5; if(this.msgTimer > 0) this.msgTimer--; else this.msg = ""; if (this.state === 'walk') { this.x += this.dir * this.speed; if (Math.abs(this.x - this.targetX) < 10) this.state = 'idle'; } }
-            
             draw(ctx) {
-                // AQUI ESTÁ A MÁGICA: Lê scale diretamente da config do banco
-                const s = AVATAR_CONFIG.scale || 0.22;
-                
+                const s = AVATAR_CONFIG.scale;
                 let walk = 0, bob = 0, breathe = Math.sin(this.timer * 0.5) * 0.05;
                 if (this.state === 'walk') { walk = Math.sin(this.timer); bob = Math.abs(Math.sin(this.timer)) * 10; }
                 ctx.save(); ctx.translate(this.x, this.y);
                 ctx.fillStyle = this.isMe ? '#FFC107' : 'white'; ctx.font = 'bold 12px Nunito'; ctx.textAlign = 'center'; ctx.shadowColor = 'rgba(0,0,0,0.8)'; ctx.shadowBlur = 3; ctx.fillText(this.nome, 0, -160 * s); ctx.shadowBlur = 0;
                 if (this.msg) this.drawBalloon(ctx, s);
                 ctx.scale(-this.dir, 1); 
-                
                 LAYER_ORDER.forEach(partName => {
                     const itemFile = this.isMe ? myOutfit[partName] : STARTER_KIT[partName];
                     if(!itemFile) return; 
-                    
-                    // BUSCA CONFIGURAÇÃO DO BANCO (sem hardcoding)
-                    // Se a peça não tiver config no banco, usa 0,0, mas como o banco carregou, vai usar.
                     const cfg = AVATAR_CONFIG.parts[partName] || { x:0, y:0, pivX:0.5, pivY:0.5 };
-                    
                     let animX = 0, animY = 0, animRot = 0;
-                    
-                    // Parenting Lógica
                     if (partName === 'arma_frente' || partName === 'escudo_frente') {
                         const parent = AVATAR_CONFIG.parts['braco_frente'] || {x:0, y:0};
                         const pRot = (this.state === 'walk') ? -walk * 0.6 : 0;
@@ -527,34 +508,24 @@
                         const rotX = relX * Math.cos(pRot) - relY * Math.sin(pRot); const rotY = relX * Math.sin(pRot) + relY * Math.cos(pRot);
                         this.drawPartRaw(ctx, partName, ((parent.x * s) + rotX), ((parent.y * s) - (bob*s) + rotY), pRot); return;
                     }
-
                     if (partName.includes('perna')) { const isFrente = partName.includes('frente'); animY = -bob; animRot = (isFrente ? walk : -walk) * 0.5; } 
                     else if (partName.includes('braco')) { const isFrente = partName.includes('frente'); animY = -bob; animRot = (isFrente ? -walk : walk) * 0.6; } 
                     else if (['cabeca', 'rosto', 'mascara', 'cabelo'].includes(partName)) { animY = -bob + (breathe * 5); animRot = breathe * 0.2; } 
                     else { animY = -bob; }
-                    
-                    // Desenha usando X/Y do banco * scale + animação
                     this.drawPartRaw(ctx, partName, (cfg.x * s) + (animX * s), (cfg.y * s) + (animY * s), animRot);
                 });
                 ctx.restore();
             }
-            
             drawPartRaw(ctx, name, finalX, finalY, rot) {
                 const img = avatarImages[name];
                 if (!img || !img.complete || img.isBroken || img.naturalWidth === 0) return;
-                
-                // Config do PIVÔ do banco
                 const cfg = AVATAR_CONFIG.parts[name] || { x:0, y:0, pivX:0.5, pivY:0.5 };
-                const s = AVATAR_CONFIG.scale || 0.22;
-                
+                const s = AVATAR_CONFIG.scale;
                 ctx.save(); ctx.translate(finalX, finalY); ctx.rotate(rot);
                 if (name.includes('tras') || name === 'capa') ctx.filter = "brightness(0.85)";
-                
-                // Desenha a imagem usando o pivô do banco
                 ctx.drawImage(img, -img.width * s * cfg.pivX, -img.height * s * cfg.pivY, img.width * s, img.height * s);
                 ctx.filter = "none"; ctx.restore();
             }
-
             drawBalloon(ctx, s) {
                 ctx.save(); ctx.translate(0, -190 * s); ctx.fillStyle = 'white'; ctx.shadowColor = 'rgba(0,0,0,0.2)'; ctx.shadowBlur = 5; ctx.shadowOffsetY = 3;
                 const w = ctx.measureText(this.msg).width + 30;
