@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Gerenciador de Loja</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #f4f4f9; padding: 20px; max-width: 900px; margin: 0 auto; }
+        
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        h1 { margin: 0; color: #333; }
+
+        .card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .full-width { grid-column: 1 / -1; }
+        
+        label { display: block; font-weight: bold; margin-bottom: 5px; color: #555; }
+        input, select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; }
+        
+        .btn { padding: 12px 20px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; width: 100%; color: white; transition: 0.2s; }
+        .btn-add { background: #4CAF50; } .btn-add:hover { background: #388E3C; }
+        .btn-login { background: #2196F3; }
+        .btn-del { background: #F44336; padding: 5px 10px; width: auto; font-size: 0.8rem; }
+
+        .item-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; }
+        .item-card { background: white; border: 1px solid #ddd; padding: 10px; border-radius: 8px; text-align: center; position: relative; }
+        .item-img { width: 80px; height: 80px; object-fit: contain; margin-bottom: 10px; }
+        .price-tag { background: #FFC107; padding: 2px 8px; border-radius: 10px; font-size: 0.8rem; font-weight: bold; }
+        .cat-tag { font-size: 0.7rem; color: #999; text-transform: uppercase; }
+
+        #login-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 999; display: flex; justify-content: center; align-items: center; }
+    </style>
+</head>
+<body>
+
+    <div id="login-overlay">
+        <div style="text-align:center; color:white;">
+            <h1>🔒 Admin Loja</h1>
+            <button id="btnLogin" class="btn btn-login" style="margin-top:20px;">Entrar com Google</button>
+        </div>
+    </div>
+
+    <div class="header">
+        <h1>🏪 Gerenciador de Itens</h1>
+        <div id="status" style="font-weight:bold; color:#4CAF50;"></div>
+    </div>
+
+    <div class="card">
+        <h3>➕ Novo Item</h3>
+        <div class="form-grid">
+            <div>
+                <label>ID do Item (Nome do Arquivo)</label>
+                <input type="text" id="itemId" placeholder="Ex: camisa_azul.png">
+                <small style="color:#666; font-size:0.75rem;">Deve ser EXATAMENTE o nome do arquivo no GitHub.</small>
+            </div>
+            <div>
+                <label>Nome Visível</label>
+                <input type="text" id="itemName" placeholder="Ex: Camisa Azul Legal">
+            </div>
+            <div>
+                <label>Preço (Fichas)</label>
+                <input type="number" id="itemPrice" placeholder="0 = Grátis" value="100">
+            </div>
+            <div>
+                <label>Categoria (Slot)</label>
+                <select id="itemCat">
+                    <option value="tronco">Tronco (Camisa)</option>
+                    <option value="cabeca">Cabeça (Chapéu)</option>
+                    <option value="rosto">Rosto (Olhos)</option>
+                    <option value="mascara">Máscara / Óculos</option>
+                    <option value="cabelo">Cabelo</option>
+                    <option value="capa">Capa</option>
+                    <option value="arma_frente">Arma (Mão)</option>
+                    <option value="escudo_frente">Escudo (Frente)</option>
+                    <option value="escudo_tras">Escudo (Costas)</option>
+                    <option value="perna_frente">Perna</option>
+                    <option value="cintura">Cintura</option>
+                </select>
+            </div>
+            <div class="full-width">
+                <button class="btn btn-add" onclick="adicionarItem()">CADASTRAR ITEM</button>
+            </div>
+        </div>
+    </div>
+
+    <h3>📦 Itens Cadastrados</h3>
+    <div id="listaItens" class="item-list">Carregando...</div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getFirestore, collection, doc, setDoc, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app-check.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBIR7CqYYvMZVQxtO67JCQoJ3OLT1cvAx8",
+            authDomain: "kn-jogos.firebaseapp.com",
+            projectId: "kn-jogos",
+            storageBucket: "kn-jogos.firebasestorage.app",
+            messagingSenderId: "273132829744",
+            appId: "1:273132829744:web:a03e85b80ffabfa24101f5"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        try { const appCheck = initializeAppCheck(app, { provider: new ReCaptchaV3Provider('6Lc5vjgsAAAAANx2ia8s_Fh0_KS0_YNaAlSIYpJC'), isTokenAutoRefreshEnabled: true }); } catch(e) {}
+        
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const provider = new GoogleAuthProvider();
+        
+        // --- SEU ID ---
+        const ADMIN_ID = "0wCjH6RgGmgpYfRcRQunjmymy4O2";
+        const BASE_ASSETS_URL = 'assets/avatar/'; 
+
+        // --- FUNÇÕES ---
+
+        window.adicionarItem = async function() {
+            const id = document.getElementById('itemId').value.trim();
+            const nome = document.getElementById('itemName').value.trim();
+            const preco = parseInt(document.getElementById('itemPrice').value) || 0;
+            const categoria = document.getElementById('itemCat').value;
+
+            if(!id || !nome) return alert("Preencha ID e Nome!");
+
+            try {
+                // Salva na coleção "listaItens"
+                // O ID do documento é o nome do arquivo para garantir unicidade
+                await setDoc(doc(db, "listaItens", id), {
+                    id: id,
+                    nome: nome,
+                    preco: preco,
+                    categoria: categoria,
+                    criadoEm: new Date().toISOString()
+                });
+                
+                document.getElementById('status').innerText = `✅ ${nome} cadastrado!`;
+                limparForm();
+                carregarLista();
+            } catch(e) {
+                console.error(e);
+                alert("Erro ao salvar: " + e.message);
+            }
+        }
+
+        window.deletarItem = async function(id) {
+            if(!confirm("Tem certeza que quer apagar este item da loja?")) return;
+            try {
+                await deleteDoc(doc(db, "listaItens", id));
+                carregarLista();
+            } catch(e) { alert("Erro ao deletar."); }
+        }
+
+        async function carregarLista() {
+            const div = document.getElementById('listaItens');
+            div.innerHTML = 'Carregando...';
+            
+            const snap = await getDocs(collection(db, "listaItens"));
+            div.innerHTML = '';
+
+            snap.forEach(docSnap => {
+                const item = docSnap.data();
+                
+                // Monta o Card
+                const card = document.createElement('div');
+                card.className = 'item-card';
+                card.innerHTML = `
+                    <div style="position:absolute; top:5px; right:5px;">
+                        <button class="btn btn-del" onclick="deletarItem('${item.id}')">🗑️</button>
+                    </div>
+                    <img src="${BASE_ASSETS_URL}${item.categoria}/${item.id}" class="item-img" onerror="this.src='https://placehold.co/60x60?text=Error'">
+                    <div class="cat-tag">${item.categoria}</div>
+                    <strong>${item.nome}</strong><br>
+                    <span class="price-tag">🪙 ${item.preco}</span>
+                `;
+                div.appendChild(card);
+            });
+        }
+
+        function limparForm() {
+            document.getElementById('itemId').value = '';
+            document.getElementById('itemName').value = '';
+        }
+
+        // --- LOGIN ---
+        document.getElementById('btnLogin').addEventListener('click', () => {
+            signInWithPopup(auth, provider).catch(alert);
+        });
+
+        onAuthStateChanged(auth, (user) => {
+            if(user && user.uid === ADMIN_ID) {
+                document.getElementById('login-overlay').style.display = 'none';
+                carregarLista();
+            } else if(user) {
+                alert("Acesso Negado.");
+            }
+        });
+
+    </script>
+</body>
+</html>
