@@ -86,6 +86,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
+        // --- FIREBASE (Para ler a config do Admin) ---
         const firebaseConfig = {
             apiKey: "AIzaSyBIR7CqYYvMZVQxtO67JCQoJ3OLT1cvAx8",
             authDomain: "kn-jogos.firebaseapp.com",
@@ -97,36 +98,26 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // --- CONFIGURAÇÃO PADRÃO ---
+        // --- DADOS GLOBAIS ---
+        // Configuração Padrão (Será atualizada pelo Banco)
         let AVATAR_CONFIG = {
-            scale: 0.22, 
+            scale: 0.22,
             parts: {
-                'capa': { x: 0, y: 0, pivX: 0.5, pivY: 0.5 },
-                'perna_tras': { x: -24, y: 50, pivX: 0.67, pivY: 0.11 },
-                'perna_frente': { x: 24, y: 50, pivX: 0.29, pivY: 0.13 },
+                // Valores de segurança caso o banco falhe
+                'tronco': { x: 0, y: 0, pivX: 0.5, pivY: 0.75 },
+                'cabeca': { x: 0, y: -230, pivX: 0.5, pivY: 0.89 },
+                'braco_frente': { x: 47, y: -150, pivX: 0.26, pivY: 0.12 },
                 'braco_tras': { x: -37, y: -150, pivX: 0.76, pivY: 0.11 },
-                'tronco': { x: 0, y: 0, pivX: 0.47, pivY: 0.75 },
-                'cabeca': { x: 0, y: -230, pivX: 0.50, pivY: 0.89 },
-                'braco_frente': { x: 47, y: -150, pivX: 0.26, pivY: 0.12 }
+                'perna_frente': { x: 24, y: 50, pivX: 0.29, pivY: 0.13 },
+                'perna_tras': { x: -24, y: 50, pivX: 0.67, pivY: 0.11 }
             }
         };
 
-        // --- NOVA ORDEM DE 14 CAMADAS (CORRETA) ---
+        // A MESMA ORDEM DO ADMIN (Importante manter sincronizado)
         const LAYER_ORDER = [
-            'capa',             // 0
-            'escudo_tras',      // 1 (Segue braço trás)
-            'braco_tras',       // 2
-            'perna_tras',       // 3
-            'perna_frente',     // 4
-            'tronco',           // 5
-            'cintura',          // 6 (Novo - Segue tronco)
-            'cabeca',           // 7
-            'rosto',            // 8
-            'mascara',          // 9
-            'cabelo',           // 10
-            'arma_frente',      // 11 (Segue braço frente)
-            'braco_frente',     // 12
-            'escudo_frente'     // 13 (Segue braço frente)
+            'capa', 'escudo_tras', 'braco_tras', 'perna_tras', 'perna_frente',
+            'tronco', 'cintura', 'cabeca', 'rosto', 'mascara', 'cabelo',
+            'arma_frente', 'braco_frente', 'escudo_frente'
         ];
 
         const avatarImages = {};
@@ -134,15 +125,22 @@
 
         // --- INICIALIZAÇÃO ---
         async function start() {
+            console.log("Iniciando Comunidade...");
+            // 1. Tenta baixar config do Firebase
             try {
                 const snap = await getDoc(doc(db, "config", "avatar_base"));
                 if(snap.exists()) {
                     const data = snap.data();
-                    AVATAR_CONFIG.scale = data.scale;
-                    AVATAR_CONFIG.parts = { ...AVATAR_CONFIG.parts, ...data.parts };
-                    console.log("Config baixada.");
+                    if(data.scale) AVATAR_CONFIG.scale = data.scale;
+                    // Mescla as partes do banco com as locais
+                    if(data.parts) {
+                        AVATAR_CONFIG.parts = { ...AVATAR_CONFIG.parts, ...data.parts };
+                    }
+                    console.log("✅ Configuração do Avatar baixada do Banco!");
                 }
-            } catch(e) {}
+            } catch(e) { console.log("⚠️ Usando config local (Offline/Erro):", e); }
+
+            // 2. Carrega Imagens
             carregarAssets();
         }
 
@@ -153,29 +151,29 @@
                 img.src = `${BASE_URL}${name}.png`;
                 img.onload = () => {
                     assetsLoaded++;
-                    if(assetsLoaded >= 5) initArcade();
+                    if(assetsLoaded >= 5) initArcade(); // Inicia se tiver o básico
                 };
                 img.onerror = () => {
-                    // Silencioso para peças opcionais
                     img.isBroken = true; 
                     assetsLoaded++;
                     if(assetsLoaded >= 5) initArcade();
                 };
                 avatarImages[name] = img;
             });
+            // Timeout de segurança
             setTimeout(() => { if(!initCalled) initArcade(); }, 2000);
         }
 
         // --- CLASSE AVATAR ---
         class Avatar {
             constructor(nome, isMe = false) {
-                this.nome = nome; this.isMe = isMe; this.msg = ""; this.msgTimer = 0; 
+                this.nome = nome; this.isMe = isMe; this.msg = ""; this.msgTimer = 0;
                 this.x = 0; this.y = 0; 
-                this.dir = Math.random() > 0.5 ? 1 : -1; 
-                this.speed = Math.random() * 0.8 + 0.5; 
-                this.state = 'walk'; 
-                this.timer = Math.random() * 100; 
-                this.targetX = this.x; 
+                this.dir = Math.random() > 0.5 ? 1 : -1;
+                this.speed = Math.random() * 0.8 + 0.5;
+                this.state = 'walk';
+                this.timer = Math.random() * 100;
+                this.targetX = this.x;
                 setTimeout(() => this.escolherNovoAlvo(), 500);
             }
 
@@ -229,33 +227,28 @@
 
                 ctx.scale(-this.dir, 1); 
 
-                // --- DESENHO DAS 14 CAMADAS COM PARENTING ---
+                // --- DESENHO DAS 14 CAMADAS ---
                 LAYER_ORDER.forEach(partName => {
+                    // Pega config da peça (ou usa padrão 0,0 se não existir no banco)
+                    const cfg = AVATAR_CONFIG.parts[partName] || { x:0, y:0, pivX:0.5, pivY:0.5 };
+                    
                     let animX = 0, animY = 0, animRot = 0;
                     
-                    // 1. ARMAS E ESCUDOS DA FRENTE (Seguem Braço Frente)
+                    // LÓGICA DE PARENTING (ANEXAR) - Igual ao Admin
                     if (partName === 'arma_frente' || partName === 'escudo_frente') {
                         const parent = AVATAR_CONFIG.parts['braco_frente'] || {x:0, y:0};
-                        const cfg = AVATAR_CONFIG.parts[partName] || {x:0, y:0, pivX:0.5, pivY:0.5};
-                        // Rotação do braço pai
                         const pRot = (this.state === 'walk') ? -walk * 0.6 : 0;
-                        
-                        // Calcula posição relativa rotacionada
                         const relX = (cfg.x - parent.x) * s;
                         const relY = (cfg.y - parent.y) * s;
                         const rotX = relX * Math.cos(pRot) - relY * Math.sin(pRot);
                         const rotY = relX * Math.sin(pRot) + relY * Math.cos(pRot);
                         
                         this.drawPartRaw(ctx, partName, ((parent.x * s) + rotX), ((parent.y * s) - (bob*s) + rotY), pRot);
-                        return; // Já desenhou, pula o padrão
+                        return;
                     }
-
-                    // 2. ESCUDO DE TRÁS (Segue Braço Trás)
                     if (partName === 'escudo_tras') {
                         const parent = AVATAR_CONFIG.parts['braco_tras'] || {x:0, y:0};
-                        const cfg = AVATAR_CONFIG.parts[partName] || {x:0, y:0, pivX:0.5, pivY:0.5};
                         const pRot = (this.state === 'walk') ? walk * 0.6 : 0;
-                        
                         const relX = (cfg.x - parent.x) * s;
                         const relY = (cfg.y - parent.y) * s;
                         const rotX = relX * Math.cos(pRot) - relY * Math.sin(pRot);
@@ -265,7 +258,7 @@
                         return;
                     }
 
-                    // 3. PEÇAS PADRÃO
+                    // Animações Padrão
                     if (partName.includes('perna')) {
                         const isFrente = partName.includes('frente');
                         animY = -bob;
@@ -285,16 +278,11 @@
                         animY = -bob;
                     }
 
-                    this.drawPart(ctx, partName, animX * s, animY * s, animRot);
+                    // Aplica offset do banco + animação
+                    this.drawPartRaw(ctx, partName, (cfg.x * s) + (animX * s), (cfg.y * s) + (animY * s), animRot);
                 });
 
                 ctx.restore();
-            }
-
-            drawPart(ctx, name, x, y, rot) {
-                const cfg = AVATAR_CONFIG.parts[name] || { x:0, y:0, pivX:0.5, pivY:0.5 };
-                const s = AVATAR_CONFIG.scale;
-                this.drawPartRaw(ctx, name, (cfg.x * s) + x, (cfg.y * s) + y, rot);
             }
 
             drawPartRaw(ctx, name, finalX, finalY, rot) {
@@ -400,7 +388,7 @@
         }
 
         document.getElementById('btnSend').addEventListener('click', enviarMensagem);
-        if(input) input.addEventListener('keypress', (e) => { if(e.key === 'Enter') enviarMensagem(); });
+        input.addEventListener('keypress', (e) => { if(e.key === 'Enter') enviarMensagem(); });
 
         document.getElementById('btnLoja').addEventListener('click', () => alert('Loja em breve!'));
         document.getElementById('btnItens').addEventListener('click', () => alert('Inventário em breve!'));
