@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Baixar Dados Avatar</title>
+    <style>
+        body { font-family: monospace; background: #222; color: #0f0; padding: 20px; }
+        textarea { width: 100%; height: 500px; background: #111; color: #fff; border: 1px solid #444; padding: 20px; font-size: 14px; }
+        button { padding: 15px 30px; background: #2196F3; color: white; border: none; font-size: 1.2rem; cursor: pointer; margin-bottom: 20px; border-radius: 5px; }
+        h1 { margin-top: 0; color: white; }
+    </style>
+</head>
+<body>
+
+    <h1>📥 Extrator de Configuração</h1>
+    <p>Aguarde... conectando ao Firebase.</p>
+    <button onclick="copiar()">📋 COPIAR CÓDIGO</button>
+    <br>
+    <textarea id="output" readonly>Carregando dados do banco...</textarea>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        // SUAS CREDENCIAIS
+        const firebaseConfig = {
+            apiKey: "AIzaSyBIR7CqYYvMZVQxtO67JCQoJ3OLT1cvAx8",
+            authDomain: "kn-jogos.firebaseapp.com",
+            projectId: "kn-jogos",
+            storageBucket: "kn-jogos.firebasestorage.app",
+            messagingSenderId: "273132829744",
+            appId: "1:273132829744:web:a03e85b80ffabfa24101f5"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        async function baixar() {
+            try {
+                // Lê o documento que o Admin salvou
+                const docRef = doc(db, "config", "avatar_base");
+                const snap = await getDoc(docRef);
+
+                if (snap.exists()) {
+                    const data = snap.data();
+                    
+                    // Adiciona os offsets manuais para o pacote ficar completo
+                    // (O Admin só salva 'parts' e 'scale', precisamos dos 'offsets' pro jogo)
+                    const pacoteCompleto = {
+                        scale: data.scale,
+                        offsets: { 
+                            headY: -230, 
+                            armY: -150, 
+                            legY: 50, 
+                            spreadX: -47, 
+                            legSpread: -24 
+                        },
+                        parts: data.parts
+                    };
+
+                    const texto = JSON.stringify(pacoteCompleto, null, 4);
+                    
+                    document.getElementById('output').value = `let AVATAR_CONFIG = ${texto};`;
+                    document.querySelector('p').innerText = "✅ Dados baixados com sucesso! Copie abaixo.";
+                } else {
+                    document.getElementById('output').value = "❌ Erro: Documento 'config/avatar_base' não existe no banco.";
+                }
+            } catch (e) {
+                document.getElementById('output').value = "Erro de conexão: " + e.message;
+            }
+        }
+
+        window.copiar = function() {
+            const copyText = document.getElementById("output");
+            copyText.select();
+            document.execCommand("copy");
+            alert("Copiado para a área de transferência!");
+        }
+
+        baixar();
+    </script>
+</body>
+</html>
