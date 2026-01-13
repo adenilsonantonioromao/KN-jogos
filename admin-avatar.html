@@ -2,176 +2,115 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Admin - Avatar Studio (Layout Real)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Avatar Studio (Offline)</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;700&display=swap');
-        
-        :root { 
-            --primary: #FF5722; --bg: #222; --dark: #eee; --green: #4CAF50;
-            --shadow: 0 10px 25px rgba(0,0,0,0.5);
-        }
-        * { box-sizing: border-box; }
-        
         body { 
-            margin: 0; height: 100vh; background-color: var(--bg); 
-            font-family: 'Nunito', sans-serif; overflow: hidden; 
-            display: flex; flex-direction: column; color: var(--dark); 
+            background: #1e1e1e; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; 
+            margin: 0; height: 100vh; display: flex; flex-direction: column; 
             user-select: none;
         }
 
-        /* HEADER */
         header {
             background: #2d2d2d; padding: 10px 20px; border-bottom: 1px solid #444;
             display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;
         }
-        h2 { margin: 0; color: #FF5722; font-family: 'Fredoka One'; font-size: 1.2rem; }
+        h2 { margin: 0; color: #FF5722; font-size: 1.1rem; display: flex; align-items: center; gap: 10px; }
         
         .btn {
             border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-weight: bold;
             display: flex; align-items: center; gap: 5px; transition: 0.2s; font-size: 0.9rem;
         }
         .btn-save { background: #4CAF50; color: white; }
+        .btn-save:hover { background: #43A047; }
         .btn-load { background: #FF9800; color: white; }
+        
         .btn-anim { background: #673AB7; color: white; width: 100px; justify-content: center; }
         .btn-anim.playing { background: #F44336; }
 
-        /* LAYOUT PRINCIPAL (Igual Comunidade) */
-        .main-layout { display: flex; flex: 1; height: 100%; padding: 15px; gap: 15px; overflow: hidden; }
+        .workspace { display: flex; flex: 1; overflow: hidden; }
 
-        /* ESQUERDA: VISUALIZAÇÃO (Igual Jogo) */
-        .game-column { 
-            flex: 2; display: flex; flex-direction: column; gap: 15px; position: relative; min-width: 0; 
-        }
-        
-        .canvas-card { 
-            flex: 1; background: #81D4FA; border-radius: 30px; overflow: hidden; 
-            box-shadow: var(--shadow); position: relative; border: 5px solid #444; 
-            display: flex; min-height: 200px;
-        }
-        
-        canvas { 
-            display: block; width: 100%; height: 100%; 
-            background: linear-gradient(to bottom, #81D4FA, #B2EBF2); 
-        }
+        /* SIDEBAR */
+        .sidebar { width: 240px; background: #252526; border-right: 1px solid #444; overflow-y: auto; padding: 10px; }
+        .part-row { display: flex; align-items: center; gap: 5px; margin-bottom: 4px; }
+        .part-btn { flex: 1; padding: 8px; background: #333; border: 1px solid #444; color: #aaa; text-align: left; cursor: pointer; border-radius: 4px; font-size: 0.85rem; }
+        .part-btn.active { background: #007ACC; color: white; font-weight: bold; border-color: #007ACC; }
+        .eye-btn { width: 30px; height: 32px; background: #333; border: 1px solid #444; color: #aaa; cursor: pointer; border-radius: 4px; display: flex; align-items: center; justify-content: center; }
+        .eye-btn.hidden { color: #555; text-decoration: line-through; }
 
-        /* DIREITA: FERRAMENTAS */
-        .right-column {
-            flex: 1; min-width: 320px; background: #2d2d2d; border-radius: 30px;
-            box-shadow: var(--shadow); display: flex; flex-direction: column;
-            overflow: hidden; border: 5px solid #444; position: relative;
+        /* VIEWPORT (VISUAL DO JOGO) */
+        .viewport { flex: 1; background: #111; position: relative; display: flex; justify-content: center; align-items: center; overflow: hidden; }
+        #editorCanvas { 
+            background: linear-gradient(to bottom, #81D4FA, #B2EBF2); /* Céu */
+            border: 2px solid #fff; 
+            border-radius: 15px;
+            box-shadow: 0 0 30px rgba(0,0,0,0.5); 
         }
 
-        .tools-header {
-            background: var(--primary); color: white; padding: 15px;
-            font-family: 'Fredoka One'; text-align: center;
-        }
+        /* INSPECTOR */
+        .inspector { width: 320px; background: #252526; border-left: 1px solid #444; display: flex; flex-direction: column; padding: 15px; overflow-y: auto; }
+        .panel-box { background: #333; border-radius: 8px; padding: 10px; margin-bottom: 15px; border: 1px solid #444; }
+        .panel-title { font-size: 0.8rem; color: #888; margin-bottom: 8px; text-transform: uppercase; font-weight: bold; }
 
-        .tools-content {
-            flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 15px;
-        }
-
-        /* BOTOES DE PEÇAS */
-        .parts-grid {
-            display: grid; grid-template-columns: repeat(2, 1fr); gap: 5px;
-        }
-        .part-btn {
-            background: #444; border: 1px solid #555; color: #ccc; padding: 8px;
-            cursor: pointer; text-align: left; font-size: 0.8rem; border-radius: 5px;
-            display: flex; justify-content: space-between; align-items: center;
-        }
-        .part-btn:hover { background: #555; }
-        .part-btn.active { background: #2196F3; color: white; border-color: #64B5F6; }
-
-        .eye-icon { cursor: pointer; padding: 0 5px; font-size: 1rem; }
-        .eye-icon:hover { color: #fff; }
-
-        /* JOYSTICKS (PADS) */
-        .control-box { background: #333; padding: 10px; border-radius: 10px; border: 1px solid #444; }
-        .control-title { font-size: 0.75rem; color: #aaa; margin-bottom: 5px; text-transform: uppercase; font-weight: bold; }
-        
-        .xy-pad-container {
-            position: relative; width: 100%; padding-top: 100%; 
-            background: #222; border: 1px solid #555; border-radius: 4px;
-            cursor: crosshair; overflow: hidden;
-        }
-        .xy-grid {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background-image: linear-gradient(#333 1px, transparent 1px), linear-gradient(90deg, #333 1px, transparent 1px);
-            background-size: 20px 20px;
-        }
-        .xy-axis { position: absolute; top: 50%; left: 0; width: 100%; height: 1px; background: #444; } 
-        .xy-axis.vert { top: 0; left: 50%; width: 1px; height: 100%; }
-        .xy-handle { 
-            position: absolute; width: 12px; height: 12px; background: #2196F3; 
-            border: 2px solid white; border-radius: 50%; 
-            transform: translate(-50%, -50%); top: 50%; left: 50%; pointer-events: none; 
-        }
+        /* XY PADS */
+        .xy-pad-container { position: relative; width: 100%; padding-top: 100%; background: #222; border: 1px solid #555; border-radius: 4px; cursor: crosshair; overflow: hidden; }
+        .xy-grid { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-image: linear-gradient(#333 1px, transparent 1px), linear-gradient(90deg, #333 1px, transparent 1px); background-size: 20px 20px; background-position: center; }
+        .xy-axis { position: absolute; top: 50%; left: 0; width: 100%; height: 1px; background: #444; } .xy-axis.vert { top: 0; left: 50%; width: 1px; height: 100%; }
+        .xy-handle { position: absolute; width: 12px; height: 12px; background: #2196F3; border: 2px solid white; border-radius: 50%; transform: translate(-50%, -50%); top: 50%; left: 50%; pointer-events: none; }
+        .val-display { display: flex; justify-content: space-between; margin-top: 5px; font-family: monospace; font-size: 0.9rem; }
+        .val-box { background: #111; padding: 2px 5px; border-radius: 3px; color: #2196F3; }
 
         #fileInput { display: none; }
-
-        /* MOBILE */
-        @media (max-width: 850px) {
-            .main-layout { flex-direction: column; padding: 10px; gap: 10px; }
-            .game-column { flex: 1; height: 50%; }
-            .right-column { flex: 1; min-width: auto; border-radius: 25px; height: 50%; }
-        }
     </style>
 </head>
 <body>
 
     <header>
-        <h2>🛠️ Studio</h2>
-        <div style="display:flex; gap:10px;">
+        <h2>🛠️ Avatar Studio</h2>
+        
+        <div style="display:flex; gap:10px; align-items:center;">
             <button class="btn btn-anim" id="btnAnim" onclick="toggleAnimation()">▶ ANIMAR</button>
+            
+            <div style="width:20px;"></div> <!-- Separador -->
+
             <button class="btn btn-load" onclick="document.getElementById('fileInput').click()">📂 CARREGAR</button>
             <input type="file" id="fileInput" accept=".json" onchange="carregarArquivo(this)">
-            <button class="btn btn-save" onclick="salvarArquivo()">💾 SALVAR</button>
+            
+            <button class="btn btn-save" onclick="salvarArquivo()">💾 SALVAR DADOS</button>
         </div>
     </header>
 
-    <div class="main-layout">
-        <!-- ESQUERDA: PREVIEW IGUAL AO JOGO -->
-        <div class="game-column">
-            <div class="canvas-card" id="canvasContainer">
-                <canvas id="editorCanvas"></canvas>
+    <div class="workspace">
+        <!-- LISTA -->
+        <div class="sidebar" id="partsList"></div>
+        
+        <!-- CANVAS (Tamanho fixo simulando mobile) -->
+        <div class="viewport"><canvas id="editorCanvas" width="400" height="600"></canvas></div>
+
+        <!-- CONTROLES -->
+        <div class="inspector">
+            <h3 id="selectedPartName" style="margin-top:0; color:#2196F3; text-align:center;">TRONCO</h3>
+
+            <div class="panel-box">
+                <div class="panel-title">📍 Posição (Offset)</div>
+                <div class="xy-pad-container" id="padPos">
+                    <div class="xy-grid"></div><div class="xy-axis"></div><div class="xy-axis vert"></div><div class="xy-handle" id="handlePos"></div>
+                </div>
+                <div class="val-display">
+                    <span>X: <span id="valX" class="val-box">0</span></span>
+                    <span>Y: <span id="valY" class="val-box">0</span></span>
+                </div>
             </div>
-        </div>
 
-        <!-- DIREITA: FERRAMENTAS -->
-        <div class="right-column">
-            <div class="tools-header">⚙️ Configuração</div>
-            <div class="tools-content">
-                
-                <div class="control-box">
-                    <div class="control-title">Selecionar Peça</div>
-                    <div class="parts-grid" id="partsList"></div>
+            <div class="panel-box">
+                <div class="panel-title">🎯 Pivô (Rotação)</div>
+                <div class="xy-pad-container" id="padPiv">
+                    <div class="xy-grid" style="background-size:10px 10px; opacity:0.3;"></div><div class="xy-handle" id="handlePiv" style="background:#FF5722;"></div>
                 </div>
-
-                <!-- PAD POSIÇÃO -->
-                <div class="control-box">
-                    <div class="control-title" style="display:flex; justify-content:space-between;">
-                        <span>📍 Posição (Offset)</span>
-                        <span id="valPos" style="color:#2196F3">0, 0</span>
-                    </div>
-                    <div class="xy-pad-container" id="padPos">
-                        <div class="xy-grid"></div><div class="xy-axis"></div><div class="xy-axis vert"></div>
-                        <div class="xy-handle" id="handlePos"></div>
-                    </div>
+                <div class="val-display">
+                    <span>PX: <span id="valPivX" class="val-box">0.5</span></span>
+                    <span>PY: <span id="valPivY" class="val-box">0.5</span></span>
                 </div>
-
-                <!-- PAD PIVÔ -->
-                <div class="control-box">
-                    <div class="control-title" style="display:flex; justify-content:space-between;">
-                        <span>🎯 Pivô (Rotação)</span>
-                        <span id="valPiv" style="color:#2196F3">0.5, 0.5</span>
-                    </div>
-                    <div class="xy-pad-container" id="padPiv">
-                        <div class="xy-grid" style="background-size:10px 10px; opacity:0.3;"></div>
-                        <div class="xy-handle" id="handlePiv" style="background:#FF5722;"></div>
-                    </div>
-                </div>
-
             </div>
         </div>
     </div>
@@ -219,12 +158,10 @@
             createSidebar();
             loadImages();
             setupPads();
-            resizeCanvas();
-            window.addEventListener('resize', resizeCanvas);
-            requestAnimationFrame(loop);
+            loop();
         }
 
-        // --- GERENCIAMENTO DE ARQUIVOS ---
+        // --- GERENCIAMENTO DE ARQUIVOS (SALVAR/CARREGAR) ---
         window.salvarArquivo = function() {
             const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(avatarConfig, null, 4));
             const node = document.createElement('a');
@@ -238,6 +175,7 @@
         window.carregarArquivo = function(input) {
             const file = input.files[0];
             if(!file) return;
+
             const reader = new FileReader();
             reader.onload = function(e) {
                 try {
@@ -245,9 +183,13 @@
                     if(loaded.parts) {
                         avatarConfig = loaded;
                         alert("✅ Configuração carregada!");
-                        selectPart('tronco');
-                    } else alert("❌ Arquivo inválido.");
-                } catch(err) { alert("❌ Erro ao ler JSON."); }
+                        selectPart('tronco'); // Atualiza UI
+                    } else {
+                        alert("❌ Arquivo inválido. Falta 'parts'.");
+                    }
+                } catch(err) {
+                    alert("❌ Erro ao ler JSON: " + err.message);
+                }
             };
             reader.readAsText(file);
             input.value = ""; 
@@ -258,21 +200,36 @@
             const list = document.getElementById('partsList');
             list.innerHTML = '';
             LAYER_ORDER.forEach((key, index) => {
+                const row = document.createElement('div');
+                row.className = 'part-row';
+
                 const btn = document.createElement('div');
                 btn.className = 'part-btn';
                 btn.id = `btn-${key}`;
-                btn.innerHTML = `<span>${key}</span> <span class="eye-icon" onclick="event.stopPropagation(); toggleVis('${key}', this)">👁️</span>`;
+                btn.innerText = `${index}. ${key.toUpperCase().replace('_', ' ')}`;
                 btn.onclick = () => selectPart(key);
-                list.appendChild(btn);
+                
+                const eye = document.createElement('div');
+                eye.className = 'eye-btn';
+                eye.innerHTML = '👁️';
+                eye.onclick = () => toggleVisibility(key, eye);
+
+                row.appendChild(btn);
+                row.appendChild(eye);
+                list.appendChild(row);
             });
             selectPart('tronco');
         }
 
-        window.toggleVis = function(key, el) {
-            if(hiddenParts[key]) {
-                delete hiddenParts[key]; el.innerText = "👁️"; el.style.opacity = 1;
+        function toggleVisibility(key, btn) {
+            if (hiddenParts[key]) {
+                delete hiddenParts[key];
+                btn.innerHTML = '👁️';
+                btn.classList.remove('hidden');
             } else {
-                hiddenParts[key] = true; el.innerText = "❌"; el.style.opacity = 0.5;
+                hiddenParts[key] = true;
+                btn.innerHTML = '❌';
+                btn.classList.add('hidden');
             }
         }
 
@@ -290,20 +247,27 @@
             activePart = key;
             document.querySelectorAll('.part-btn').forEach(b => b.classList.remove('active'));
             document.getElementById(`btn-${key}`).classList.add('active');
+            document.getElementById('selectedPartName').innerText = key.toUpperCase().replace('_', ' ');
             updatePadsUI();
         }
 
+        // --- LÓGICA DOS PADS (JOYSTICKS) ---
         function setupPads() {
             setupDraggable('padPos', (rx, ry) => {
                 const x = Math.round((rx - 0.5) * 400); 
                 const y = Math.round((ry - 0.5) * 600);
                 avatarConfig.parts[activePart].x = x;
                 avatarConfig.parts[activePart].y = y;
+                document.getElementById('valX').innerText = x;
+                document.getElementById('valY').innerText = y;
                 updatePadsUI(true);
             });
+
             setupDraggable('padPiv', (rx, ry) => {
                 avatarConfig.parts[activePart].pivX = parseFloat(rx.toFixed(3));
                 avatarConfig.parts[activePart].pivY = parseFloat(ry.toFixed(3));
+                document.getElementById('valPivX').innerText = rx.toFixed(2);
+                document.getElementById('valPivY').innerText = ry.toFixed(2);
                 updatePadsUI(true);
             });
         }
@@ -315,7 +279,8 @@
                 const rect = el.getBoundingClientRect();
                 let x = (e.clientX - rect.left) / rect.width;
                 let y = (e.clientY - rect.top) / rect.height;
-                x = Math.max(0, Math.min(1, x)); y = Math.max(0, Math.min(1, y));
+                x = Math.max(0, Math.min(1, x));
+                y = Math.max(0, Math.min(1, y));
                 callback(x, y);
             };
             el.addEventListener('mousedown', (e) => { isDragging = true; update(e); });
@@ -326,10 +291,13 @@
         function updatePadsUI(skipLogic) {
             const cfg = avatarConfig.parts[activePart];
             if(!skipLogic) {
-                document.getElementById('valPos').innerText = `${cfg.x}, ${cfg.y}`;
-                document.getElementById('valPiv').innerText = `${cfg.pivX}, ${cfg.pivY}`;
+                document.getElementById('valX').innerText = cfg.x;
+                document.getElementById('valY').innerText = cfg.y;
+                document.getElementById('valPivX').innerText = cfg.pivX;
+                document.getElementById('valPivY').innerText = cfg.pivY;
             }
-            const rx = (cfg.x / 400) + 0.5; const ry = (cfg.y / 600) + 0.5;
+            const rx = (cfg.x / 400) + 0.5;
+            const ry = (cfg.y / 600) + 0.5;
             document.getElementById('handlePos').style.left = (rx * 100) + '%';
             document.getElementById('handlePos').style.top = (ry * 100) + '%';
             document.getElementById('handlePiv').style.left = (cfg.pivX * 100) + '%';
@@ -345,34 +313,25 @@
 
         // --- RENDERIZAÇÃO ---
         const canvas = document.getElementById('editorCanvas');
-        const container = document.getElementById('canvasContainer');
         const ctx = canvas.getContext('2d');
 
-        function resizeCanvas() {
-            const dpr = window.devicePixelRatio || 1;
-            const rect = container.getBoundingClientRect();
-            if(rect.width === 0) return;
-            canvas.width = rect.width * dpr;
-            canvas.height = rect.height * dpr;
-            ctx.setTransform(1, 0, 0, 1, 0, 0); // Reset
-            ctx.scale(dpr, dpr);
-        }
-
         function loop() {
-            const w = canvas.width / (window.devicePixelRatio||1);
-            const h = canvas.height / (window.devicePixelRatio||1);
+            const w = canvas.width; const h = canvas.height;
             ctx.clearRect(0, 0, w, h);
 
             // CENÁRIO IDENTICO AO JOGO
+            // Chão fixo 150px da borda inferior
             const groundY = h - 150;
             const centerX = w / 2;
 
             ctx.save();
+            // Fundo Grama
             ctx.fillStyle = '#81C784'; ctx.beginPath(); ctx.ellipse(centerX, groundY+60, w*0.9, 100, 0, 0, Math.PI*2); ctx.fill();
             ctx.strokeStyle = '#4CAF50'; ctx.lineWidth = 10; ctx.stroke();
 
             // POSICIONA BONECO
             ctx.translate(centerX, groundY);
+            // Aplica escala do jogo (0.22)
             const s = (avatarConfig.scale || 0.22);
             
             if (isAnimating) animTime += 0.1; else animTime = 0;
@@ -386,6 +345,7 @@
                 const cfg = avatarConfig.parts[key];
 
                 if (!img || img.isMissing) {
+                    // Placeholder apenas para partes críticas
                     if(['tronco','cabeca'].includes(key)) {
                         ctx.save(); ctx.translate(cfg.x*s, cfg.y*s); 
                         ctx.fillStyle='rgba(255,255,255,0.3)'; ctx.fillRect(-10,-10,20,20); 
@@ -429,9 +389,17 @@
                         ctx.restore();
                         return;
                     }
+
                     if (key.includes('perna')) { animY = -bob; animRot = (key.includes('frente') ? walk : -walk) * 0.5; }
                     else if (key.includes('braco')) { animY = -bob; animRot = (key.includes('frente') ? -walk : walk) * 0.6; }
                     else if (['cabeca', 'rosto', 'mascara', 'cabelo'].includes(key)) { animY = -bob + (breathe * 5); animRot = breathe * 0.2; }
+                    
+                    // --- AQUI ESTÁ A MUDANÇA DA CAPA ---
+                    else if (key === 'capa') {
+                        animY = -bob;
+                        animRot = walk * 0.3; // Balanço suave
+                    }
+                    
                     else { animY = -bob; }
                 }
 
