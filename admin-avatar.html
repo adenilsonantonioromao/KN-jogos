@@ -431,7 +431,7 @@
                     }
                     if (key.includes('perna')) { animY = -bob; animRot = (key.includes('frente') ? walk : -walk) * 0.5; }
                     else if (key.includes('braco')) { animY = -bob; animRot = (key.includes('frente') ? -walk : walk) * 0.6; }
-                    else if (key === 'capa') { animY = -bob; animRot = 0.1 + Math.sin(animTime * 0.6) * 0.05; }
+                    else if (key === 'capa') { animY = -bob; animRot = -0.1 + Math.sin(animTime * 0.6) * 0.05; }
                     else if (['cabeca', 'rosto', 'mascara', 'cabelo'].includes(key)) { animY = -bob + (breathe * 5); animRot = breathe * 0.2; }
                     else { animY = -bob; }
                 }
