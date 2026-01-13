@@ -11,10 +11,9 @@
             user-select: none;
         }
 
-        /* HEADER */
         header {
             background: #2d2d2d; padding: 10px 20px; border-bottom: 1px solid #444;
-            display: flex; justify-content: space-between; align-items: center;
+            display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;
         }
         h2 { margin: 0; color: #FF5722; font-size: 1.1rem; display: flex; align-items: center; gap: 10px; }
         
@@ -22,11 +21,11 @@
             border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-weight: bold;
             display: flex; align-items: center; gap: 5px; transition: 0.2s; font-size: 0.9rem;
         }
-        .btn-download { background: #4CAF50; color: white; }
-        .btn-download:hover { background: #43A047; }
-        
+        .btn-save { background: #4CAF50; color: white; }
+        .btn-save:hover { background: #43A047; }
         .btn-load { background: #FF9800; color: white; }
-        .btn-anim { background: #2196F3; color: white; width: 100px; justify-content: center; }
+        
+        .btn-anim { background: #673AB7; color: white; width: 100px; justify-content: center; }
         .btn-anim.playing { background: #F44336; }
 
         .workspace { display: flex; flex: 1; overflow: hidden; }
@@ -39,11 +38,10 @@
         .eye-btn { width: 30px; height: 32px; background: #333; border: 1px solid #444; color: #aaa; cursor: pointer; border-radius: 4px; display: flex; align-items: center; justify-content: center; }
         .eye-btn.hidden { color: #555; text-decoration: line-through; }
 
-        /* VIEWPORT */
+        /* VIEWPORT (VISUAL DO JOGO) */
         .viewport { flex: 1; background: #111; position: relative; display: flex; justify-content: center; align-items: center; overflow: hidden; }
         #editorCanvas { 
-            /* Fundo igual ao do jogo */
-            background: linear-gradient(to bottom, #81D4FA, #B2EBF2);
+            background: linear-gradient(to bottom, #81D4FA, #B2EBF2); /* Céu */
             border: 2px solid #fff; 
             border-radius: 15px;
             box-shadow: 0 0 30px rgba(0,0,0,0.5); 
@@ -63,32 +61,22 @@
         .val-box { background: #111; padding: 2px 5px; border-radius: 3px; color: #2196F3; }
 
         #fileInput { display: none; }
-        
-        /* LOGIN */
-        #login-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 999; display: flex; justify-content: center; align-items: center; }
     </style>
 </head>
 <body>
 
-    <div id="login-overlay">
-        <div style="text-align:center;">
-            <h1 style="color:white;">🔐 Avatar Studio</h1>
-            <button id="btnLogin" class="btn btn-anim" style="padding:15px 30px;">Entrar</button>
-        </div>
-    </div>
-
     <header>
-        <h2>🛠️ Editor</h2>
+        <h2>🛠️ Avatar Studio</h2>
         
         <div style="display:flex; gap:10px; align-items:center;">
             <button class="btn btn-anim" id="btnAnim" onclick="toggleAnimation()">▶ ANIMAR</button>
             
-            <div style="width:20px;"></div>
+            <div style="width:20px;"></div> <!-- Separador -->
 
-            <button class="btn btn-load" onclick="document.getElementById('fileInput').click()">📂 IMPORTAR</button>
+            <button class="btn btn-load" onclick="document.getElementById('fileInput').click()">📂 CARREGAR</button>
             <input type="file" id="fileInput" accept=".json" onchange="carregarArquivo(this)">
             
-            <button class="btn btn-download" onclick="baixarArquivo()">⬇ BAIXAR JSON</button>
+            <button class="btn btn-save" onclick="salvarArquivo()">💾 SALVAR DADOS</button>
         </div>
     </header>
 
@@ -96,7 +84,7 @@
         <!-- LISTA -->
         <div class="sidebar" id="partsList"></div>
         
-        <!-- CANVAS (Tamanho fixo simulando celular/jogo) -->
+        <!-- CANVAS (Tamanho fixo simulando mobile) -->
         <div class="viewport"><canvas id="editorCanvas" width="400" height="600"></canvas></div>
 
         <!-- CONTROLES -->
@@ -127,26 +115,8 @@
         </div>
     </div>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-
-        // Apenas Auth é necessário agora
-        const firebaseConfig = {
-            apiKey: "AIzaSyBIR7CqYYvMZVQxtO67JCQoJ3OLT1cvAx8",
-            authDomain: "kn-jogos.firebaseapp.com",
-            projectId: "kn-jogos",
-            storageBucket: "kn-jogos.firebasestorage.app",
-            messagingSenderId: "273132829744",
-            appId: "1:273132829744:web:a03e85b80ffabfa24101f5"
-        };
-
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const provider = new GoogleAuthProvider();
-        const ADMIN_ID = "0wCjH6RgGmgpYfRcRQunjmymy4O2";
-
-        // --- ESTADO ---
+    <script>
+        // --- DADOS ---
         let activePart = 'tronco';
         let isAnimating = false;
         let animTime = 0;
@@ -154,14 +124,14 @@
         const images = {};
         const BASE_URL = 'assets/avatar/base/';
 
-        // ORDEM DE CAMADAS
+        // --- ORDEM DE CAMADAS ---
         const LAYER_ORDER = [
             'capa', 'escudo_tras', 'braco_tras', 'perna_tras', 'perna_frente',
             'tronco', 'cintura', 'cabeca', 'rosto', 'mascara', 'cabelo',
             'arma_frente', 'braco_frente', 'escudo_frente'
         ];
 
-        // Mapeia nomes de arquivo
+        // --- MAPA DE ARQUIVOS ---
         const FILE_NAMES = {
             'capa': 'capa_simples.png',
             'escudo_tras': 'escudo_simples_tras.png',
@@ -179,7 +149,7 @@
             'escudo_frente': 'escudo_simples.png'
         };
 
-        // Config Inicial
+        // --- CONFIG INICIAL ---
         let avatarConfig = { scale: 0.22, parts: {} };
         LAYER_ORDER.forEach(k => { avatarConfig.parts[k] = { x: 0, y: 0, pivX: 0.5, pivY: 0.5 }; });
 
@@ -191,20 +161,21 @@
             loop();
         }
 
-        // --- ARQUIVOS (DOWNLOAD/UPLOAD) ---
-        window.baixarArquivo = function() {
+        // --- GERENCIAMENTO DE ARQUIVOS (SALVAR/CARREGAR) ---
+        window.salvarArquivo = function() {
             const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(avatarConfig, null, 4));
-            const node = document.createElement('a');
-            node.setAttribute("href", dataStr);
-            node.setAttribute("download", "avatar_config.json");
-            document.body.appendChild(node);
-            node.click();
-            node.remove();
+            const downloadAnchorNode = document.createElement('a');
+            downloadAnchorNode.setAttribute("href", dataStr);
+            downloadAnchorNode.setAttribute("download", "avatar_config.json");
+            document.body.appendChild(downloadAnchorNode);
+            downloadAnchorNode.click();
+            downloadAnchorNode.remove();
         }
 
         window.carregarArquivo = function(input) {
             const file = input.files[0];
             if(!file) return;
+
             const reader = new FileReader();
             reader.onload = function(e) {
                 try {
@@ -212,38 +183,54 @@
                     if(loaded.parts) {
                         avatarConfig = loaded;
                         alert("✅ Configuração carregada!");
-                        selectPart('tronco');
-                    } else alert("❌ JSON inválido");
-                } catch(err) { alert("❌ Erro ao ler arquivo"); }
+                        selectPart('tronco'); // Atualiza UI
+                    } else {
+                        alert("❌ Arquivo inválido. Falta 'parts'.");
+                    }
+                } catch(err) {
+                    alert("❌ Erro ao ler JSON: " + err.message);
+                }
             };
             reader.readAsText(file);
-            input.value = "";
+            input.value = ""; 
         }
 
-        // --- UI ---
+        // --- UI E PADS ---
         function createSidebar() {
             const list = document.getElementById('partsList');
             list.innerHTML = '';
             LAYER_ORDER.forEach((key, index) => {
                 const row = document.createElement('div');
                 row.className = 'part-row';
+
                 const btn = document.createElement('div');
                 btn.className = 'part-btn';
                 btn.id = `btn-${key}`;
                 btn.innerText = `${index}. ${key.toUpperCase().replace('_', ' ')}`;
                 btn.onclick = () => selectPart(key);
+                
                 const eye = document.createElement('div');
                 eye.className = 'eye-btn';
                 eye.innerHTML = '👁️';
                 eye.onclick = () => toggleVisibility(key, eye);
-                row.appendChild(btn); row.appendChild(eye); list.appendChild(row);
+
+                row.appendChild(btn);
+                row.appendChild(eye);
+                list.appendChild(row);
             });
             selectPart('tronco');
         }
 
         function toggleVisibility(key, btn) {
-            if (hiddenParts[key]) { delete hiddenParts[key]; btn.innerHTML = '👁️'; btn.classList.remove('hidden'); } 
-            else { hiddenParts[key] = true; btn.innerHTML = '❌'; btn.classList.add('hidden'); }
+            if (hiddenParts[key]) {
+                delete hiddenParts[key];
+                btn.innerHTML = '👁️';
+                btn.classList.remove('hidden');
+            } else {
+                hiddenParts[key] = true;
+                btn.innerHTML = '❌';
+                btn.classList.add('hidden');
+            }
         }
 
         function loadImages() {
@@ -264,18 +251,23 @@
             updatePadsUI();
         }
 
-        // --- PADS ---
+        // --- LÓGICA DOS PADS (JOYSTICKS) ---
         function setupPads() {
             setupDraggable('padPos', (rx, ry) => {
-                const x = Math.round((rx - 0.5) * 400); 
-                const y = Math.round((ry - 0.5) * 600);
+                const x = Math.round((rx - 0.5) * 400); // -200 a 200
+                const y = Math.round((ry - 0.5) * 600); // -300 a 300
                 avatarConfig.parts[activePart].x = x;
                 avatarConfig.parts[activePart].y = y;
+                document.getElementById('valX').innerText = x;
+                document.getElementById('valY').innerText = y;
                 updatePadsUI(true);
             });
+
             setupDraggable('padPiv', (rx, ry) => {
                 avatarConfig.parts[activePart].pivX = parseFloat(rx.toFixed(3));
                 avatarConfig.parts[activePart].pivY = parseFloat(ry.toFixed(3));
+                document.getElementById('valPivX').innerText = rx.toFixed(2);
+                document.getElementById('valPivY').innerText = ry.toFixed(2);
                 updatePadsUI(true);
             });
         }
@@ -287,7 +279,8 @@
                 const rect = el.getBoundingClientRect();
                 let x = (e.clientX - rect.left) / rect.width;
                 let y = (e.clientY - rect.top) / rect.height;
-                x = Math.max(0, Math.min(1, x)); y = Math.max(0, Math.min(1, y));
+                x = Math.max(0, Math.min(1, x));
+                y = Math.max(0, Math.min(1, y));
                 callback(x, y);
             };
             el.addEventListener('mousedown', (e) => { isDragging = true; update(e); });
@@ -303,7 +296,8 @@
                 document.getElementById('valPivX').innerText = cfg.pivX;
                 document.getElementById('valPivY').innerText = cfg.pivY;
             }
-            const rx = (cfg.x / 400) + 0.5; const ry = (cfg.y / 600) + 0.5;
+            const rx = (cfg.x / 400) + 0.5;
+            const ry = (cfg.y / 600) + 0.5;
             document.getElementById('handlePos').style.left = (rx * 100) + '%';
             document.getElementById('handlePos').style.top = (ry * 100) + '%';
             document.getElementById('handlePiv').style.left = (cfg.pivX * 100) + '%';
@@ -314,10 +308,10 @@
             isAnimating = !isAnimating;
             const btn = document.getElementById('btnAnim');
             if(isAnimating) { btn.innerText = "⏹ STOP"; btn.classList.add('playing'); } 
-            else { btn.innerText = "▶ PLAY"; btn.classList.remove('playing'); animTime = 0; }
+            else { btn.innerText = "▶ ANIMAR"; btn.classList.remove('playing'); animTime = 0; }
         }
 
-        // --- RENDER ---
+        // --- RENDERIZAÇÃO ---
         const canvas = document.getElementById('editorCanvas');
         const ctx = canvas.getContext('2d');
 
@@ -325,20 +319,21 @@
             const w = canvas.width; const h = canvas.height;
             ctx.clearRect(0, 0, w, h);
 
-            // CHÃO (Ajustado para 150px como pedido)
+            // CENÁRIO IDENTICO AO JOGO
+            // Chão fixo 150px da borda inferior (como você pediu)
             const groundY = h - 150;
             const centerX = w / 2;
 
             ctx.save();
+            // Fundo Grama
             ctx.fillStyle = '#81C784'; ctx.beginPath(); ctx.ellipse(centerX, groundY+60, w*0.9, 100, 0, 0, Math.PI*2); ctx.fill();
             ctx.strokeStyle = '#4CAF50'; ctx.lineWidth = 10; ctx.stroke();
-            ctx.restore();
 
-            // BONECO
-            ctx.save();
+            // POSICIONA BONECO
             ctx.translate(centerX, groundY);
-            const s = avatarConfig.scale || 0.22; // Escala fixa do jogo
-
+            // Aplica escala do jogo (0.22)
+            const s = (avatarConfig.scale || 0.22);
+            
             if (isAnimating) animTime += 0.1; else animTime = 0;
             const walk = Math.sin(animTime);
             const bob = Math.abs(Math.sin(animTime)) * 10;
@@ -350,6 +345,7 @@
                 const cfg = avatarConfig.parts[key];
 
                 if (!img || img.isMissing) {
+                    // Placeholder apenas para partes críticas
                     if(['tronco','cabeca'].includes(key)) {
                         ctx.save(); ctx.translate(cfg.x*s, cfg.y*s); 
                         ctx.fillStyle='rgba(255,255,255,0.3)'; ctx.fillRect(-10,-10,20,20); 
@@ -367,30 +363,36 @@
                         const relX = (cfg.x - parent.x)*s; const relY = (cfg.y - parent.y)*s;
                         const rotX = relX * Math.cos(pRot) - relY * Math.sin(pRot);
                         const rotY = relX * Math.sin(pRot) + relY * Math.cos(pRot);
-                        ctx.save(); ctx.translate((parent.x*s) + rotX, ((parent.y*s) - (bob*s) + rotY));
+                        
+                        ctx.save();
+                        ctx.translate((parent.x*s) + rotX, ((parent.y*s) - (bob*s) + rotY));
                         ctx.rotate(pRot);
                         ctx.drawImage(img, -img.width * s * cfg.pivX, -img.height * s * cfg.pivY, img.width*s, img.height*s);
                         if(key === activePart) desenhaGizmo(ctx, img, s, cfg);
-                        ctx.restore(); return;
+                        ctx.restore();
+                        return;
                     }
                     if (key === 'escudo_tras') {
                         const parent = avatarConfig.parts['braco_tras'];
                         const pRot = walk * 0.6;
-                        const shoulderX = parent.x; const shoulderY = parent.y - bob;
-                        const relX = cfg.x - parent.x; const relY = cfg.y - parent.y;
+                        const relX = (cfg.x - parent.x)*s; const relY = (cfg.y - parent.y)*s;
                         const rotX = relX * Math.cos(pRot) - relY * Math.sin(pRot);
                         const rotY = relX * Math.sin(pRot) + relY * Math.cos(pRot);
-                        ctx.save(); ctx.translate((parent.x*s) + rotX, ((parent.y*s) - (bob*s) + rotY));
+                        
+                        ctx.save();
+                        ctx.translate((parent.x*s) + rotX, ((parent.y*s) - (bob*s) + rotY));
                         ctx.rotate(pRot);
                         ctx.filter = "brightness(0.7)";
                         ctx.drawImage(img, -img.width * s * cfg.pivX, -img.height * s * cfg.pivY, img.width*s, img.height*s);
                         ctx.filter = "none";
-                        if (key === activePart) desenhaGizmo(ctx, img, s, cfg);
-                        ctx.restore(); return;
+                        if(key === activePart) desenhaGizmo(ctx, img, s, cfg);
+                        ctx.restore();
+                        return;
                     }
+
                     if (key.includes('perna')) { animY = -bob; animRot = (key.includes('frente') ? walk : -walk) * 0.5; }
                     else if (key.includes('braco')) { animY = -bob; animRot = (key.includes('frente') ? -walk : walk) * 0.6; }
-                    else if (['cabeca', 'rosto'].includes(key)) { animY = -bob + (breathe * 5); animRot = breathe * 0.2; }
+                    else if (['cabeca', 'rosto', 'mascara', 'cabelo'].includes(key)) { animY = -bob + (breathe * 5); animRot = breathe * 0.2; }
                     else { animY = -bob; }
                 }
 
@@ -414,14 +416,12 @@
         function desenhaGizmo(ctx, img, s, cfg) {
             const w = img.width * s;
             const h = img.height * s;
-            ctx.fillStyle = '#FF5722'; ctx.beginPath(); ctx.arc(0,0, 4, 0, Math.PI*2); ctx.fill(); 
+            ctx.fillStyle = '#FF5722'; ctx.beginPath(); ctx.arc(0,0, 4, 0, Math.PI*2); ctx.fill(); // Pivô
             ctx.strokeStyle = '#FFC107'; ctx.lineWidth = 2;
-            ctx.strokeRect(-w * cfg.pivX, -h * cfg.pivY, w, h); 
+            ctx.strokeRect(-w * cfg.pivX, -h * cfg.pivY, w, h); // Box
         }
 
-        document.getElementById('btnLogin').addEventListener('click', () => { signInWithPopup(auth, provider).catch(alert); });
-        onAuthStateChanged(auth, (user) => { if(user && user.uid === ADMIN_ID) { document.getElementById('login-overlay').style.display='none'; init(); } });
-
+        init();
     </script>
 </body>
 </html>
