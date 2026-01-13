@@ -24,6 +24,7 @@
         .btn-save { background: #4CAF50; color: white; }
         .btn-save:hover { background: #43A047; }
         .btn-load { background: #FF9800; color: white; }
+        .btn-copy { background: #2196F3; color: white; }
         
         .btn-anim { background: #673AB7; color: white; width: 100px; justify-content: center; }
         .btn-anim.playing { background: #F44336; }
@@ -71,12 +72,16 @@
         <div style="display:flex; gap:10px; align-items:center;">
             <button class="btn btn-anim" id="btnAnim" onclick="toggleAnimation()">▶ ANIMAR</button>
             
+            <span style="font-size:0.8rem; color:#aaa;">Zoom:</span>
+            <input type="range" min="0.5" max="3" step="0.1" value="1" oninput="updateZoom(this.value)">
+            
             <div style="width:20px;"></div> <!-- Separador -->
 
             <button class="btn btn-load" onclick="document.getElementById('fileInput').click()">📂 CARREGAR</button>
             <input type="file" id="fileInput" accept=".json" onchange="carregarArquivo(this)">
             
-            <button class="btn btn-save" onclick="salvarArquivo()">💾 SALVAR DADOS</button>
+            <button class="btn btn-copy" onclick="copiarJSON()">📋 COPIAR</button>
+            <button class="btn btn-save" onclick="salvarArquivo()">💾 SALVAR</button>
         </div>
     </header>
 
@@ -172,6 +177,12 @@
             node.remove();
         }
 
+        window.copiarJSON = function() {
+            navigator.clipboard.writeText(JSON.stringify(avatarConfig, null, 4)).then(() => {
+                alert("✅ JSON copiado! Cole no banco ou no código.");
+            });
+        }
+
         window.carregarArquivo = function(input) {
             const file = input.files[0];
             if(!file) return;
@@ -254,8 +265,8 @@
         // --- LÓGICA DOS PADS (JOYSTICKS) ---
         function setupPads() {
             setupDraggable('padPos', (rx, ry) => {
-                const x = Math.round((rx - 0.5) * 400); 
-                const y = Math.round((ry - 0.5) * 600);
+                const x = Math.round((rx - 0.5) * 400); // -200 a 200
+                const y = Math.round((ry - 0.5) * 600); // -300 a 300
                 avatarConfig.parts[activePart].x = x;
                 avatarConfig.parts[activePart].y = y;
                 document.getElementById('valX').innerText = x;
@@ -303,6 +314,11 @@
             document.getElementById('handlePiv').style.left = (cfg.pivX * 100) + '%';
             document.getElementById('handlePiv').style.top = (cfg.pivY * 100) + '%';
         }
+
+        window.updateZoom = function(val) { 
+            viewportZoom = parseFloat(val); 
+            document.getElementById('zoomDisplay').innerText = viewportZoom.toFixed(1) + "x";
+        }
         
         window.toggleAnimation = function() {
             isAnimating = !isAnimating;
@@ -332,7 +348,7 @@
             // POSICIONA BONECO
             ctx.translate(centerX, groundY);
             // Aplica escala do jogo (0.22)
-            const s = (avatarConfig.scale || 0.22);
+            const s = (avatarConfig.scale || 0.22) * viewportZoom;
             
             if (isAnimating) animTime += 0.1; else animTime = 0;
             const walk = Math.sin(animTime);
@@ -368,7 +384,6 @@
                         ctx.translate((parent.x*s) + rotX, ((parent.y*s) - (bob*s) + rotY));
                         ctx.rotate(pRot);
                         ctx.drawImage(img, -img.width * s * cfg.pivX, -img.height * s * cfg.pivY, img.width*s, img.height*s);
-                        if(key === activePart) desenhaGizmo(ctx, img, s, cfg);
                         ctx.restore();
                         return;
                     }
@@ -385,7 +400,6 @@
                         ctx.filter = "brightness(0.7)";
                         ctx.drawImage(img, -img.width * s * cfg.pivX, -img.height * s * cfg.pivY, img.width*s, img.height*s);
                         ctx.filter = "none";
-                        if(key === activePart) desenhaGizmo(ctx, img, s, cfg);
                         ctx.restore();
                         return;
                     }
@@ -394,10 +408,11 @@
                     else if (key.includes('braco')) { animY = -bob; animRot = (key.includes('frente') ? -walk : walk) * 0.6; }
                     else if (['cabeca', 'rosto', 'mascara', 'cabelo'].includes(key)) { animY = -bob + (breathe * 5); animRot = breathe * 0.2; }
                     
-                    // --- AQUI ESTÁ A MUDANÇA DA CAPA ---
+                    // --- CAPA (PÊNDULO ASSIMÉTRICO) ---
                     else if (key === 'capa') {
                         animY = -bob;
-                        animRot = walk * 0.3; // Balanço suave
+                        // 0.15 (viés direita) + seno * 0.3 (amplitude)
+                        animRot = 0.15 + Math.sin(animTime * 0.6) * 0.3;
                     }
                     
                     else { animY = -bob; }
@@ -411,21 +426,11 @@
                 ctx.drawImage(img, -img.width * s * cfg.pivX, -img.height * s * cfg.pivY, img.width * s, img.height * s);
                 ctx.filter = "none";
                 
-                if (key === activePart) desenhaGizmo(ctx, img, s, cfg);
-                
                 ctx.restore();
             });
 
             ctx.restore();
             requestAnimationFrame(loop);
-        }
-
-        function desenhaGizmo(ctx, img, s, cfg) {
-            const w = img.width * s;
-            const h = img.height * s;
-            ctx.fillStyle = '#FF5722'; ctx.beginPath(); ctx.arc(0,0, 4, 0, Math.PI*2); ctx.fill(); // Pivô
-            ctx.strokeStyle = '#FFC107'; ctx.lineWidth = 2;
-            ctx.strokeRect(-w * cfg.pivX, -h * cfg.pivY, w, h); // Box
         }
 
         init();
