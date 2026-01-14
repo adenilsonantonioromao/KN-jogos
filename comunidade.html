@@ -3,59 +3,39 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Comunidade KN - Ava-Arcade</title>
+    <title>Comunidade KN</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;700&display=swap');
         
         :root { 
-            --primary: #FF5722; --bg: #f0fdf4; --dark: #37474F; --green: #4CAF50; --blue: #2196F3;
+            --primary: #FF5722; --bg: #f0fdf4; --dark: #37474F; --green: #4CAF50;
             --shadow: 0 10px 25px rgba(0,0,0,0.1);
         }
         * { box-sizing: border-box; }
         body { margin: 0; height: 100vh; background-color: var(--bg); font-family: 'Nunito', sans-serif; overflow: hidden; display: flex; flex-direction: column; color: var(--dark); }
         .main-layout { display: flex; flex: 1; height: 100%; padding: 15px; gap: 15px; overflow: hidden; }
 
-        /* JOGO E AVATAR */
+        /* JOGO */
         .game-column { flex: 2; display: flex; flex-direction: column; gap: 15px; position: relative; min-width: 0; }
         .canvas-card { flex: 1; background: #81D4FA; border-radius: 30px; overflow: hidden; box-shadow: var(--shadow); position: relative; border: 5px solid white; display: flex; min-height: 200px; }
         canvas { display: block; width: 100%; height: 100%; background: linear-gradient(to bottom, #81D4FA, #B2EBF2); }
         
-        /* INTERFACE SOBRE O CANVAS */
         .overlay-ui { position: absolute; top: 15px; left: 15px; right: 15px; display: flex; justify-content: space-between; pointer-events: none; z-index: 20; }
         .btn-back { background: white; color: var(--primary); text-decoration: none; padding: 10px 20px; border-radius: 50px; font-weight: bold; pointer-events: auto; box-shadow: 0 4px 10px rgba(0,0,0,0.1); display: flex; align-items: center; gap: 5px; font-family:'Fredoka One'; }
         .online-badge { background: rgba(255,255,255,0.9); color: var(--green); padding: 8px 20px; border-radius: 50px; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
         .my-coins { background: #FFC107; color: #3E2723; padding: 8px 15px; border-radius: 20px; font-weight: bold; font-size: 0.9rem; margin-top: 5px; display:inline-block; box-shadow: 0 2px 5px rgba(0,0,0,0.2); pointer-events: auto; }
 
-        /* MODO PROVADOR UI */
-        #tryingLabel {
-            position: absolute; top: 50px; left: 15px; background: rgba(255, 87, 34, 0.9); 
-            color: white; padding: 5px 12px; border-radius: 10px; font-size: 0.8rem; font-weight: bold;
-            display: none; animation: pulse 2s infinite; pointer-events: none; z-index: 20;
-        }
-        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+        /* FLUTUANTE */
+        #btnSaveLook { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(100px); background: #4CAF50; color: white; border: none; padding: 10px 30px; border-radius: 30px; font-weight: bold; font-family: 'Fredoka One'; cursor: pointer; box-shadow: 0 4px 0 #2E7D32; transition: transform 0.3s; pointer-events: auto; z-index: 30; }
+        #btnSaveLook.show { transform: translateX(-50%) translateY(0); }
 
-        /* BOTÕES FLUTUANTES (SALVAR E COMPRAR) */
-        .floating-action-container {
-            position: absolute; bottom: 20px; left: 0; width: 100%; display: flex; justify-content: center; gap: 10px; z-index: 30; pointer-events: none;
-        }
-        
-        #btnSaveLook, #btnBuyCart {
-            border: none; padding: 12px 25px; border-radius: 30px; font-weight: bold; 
-            font-family: 'Fredoka One'; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
-            pointer-events: auto; transform: translateY(100px); display: none; /* Hidden by default */
-        }
-        
-        #btnSaveLook.show { display: block; transform: translateY(0); background: #2196F3; color: white; }
-        #btnBuyCart.show { display: block; transform: translateY(0); background: #4CAF50; color: white; border: 3px solid #fff; font-size: 1.1rem; }
-        
-        /* DOCK */
-        .controls-dock { background: white; height: 90px; border-radius: 25px; padding: 10px 20px; display: flex; align-items: center; justify-content: center; gap: 15px; box-shadow: var(--shadow); flex-shrink: 0; z-index: 10; }
+        /* CONTROLES */
+        .controls-dock { background: white; height: 90px; border-radius: 25px; padding: 10px; display: flex; align-items: center; justify-content: center; gap: 15px; box-shadow: var(--shadow); flex-shrink: 0; z-index: 10; }
         .action-btn { background: var(--bg); color: var(--dark); border: none; border-radius: 20px; width: 70px; height: 70px; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: all 0.2s; }
         .action-btn:active { transform: scale(0.95); }
         .action-btn span { font-size: 1.8rem; margin-bottom: 2px; }
         .action-btn label { font-size: 0.7rem; font-weight: bold; color: #777; }
-        .action-btn.active { background: var(--primary); color: white; transform: translateY(-5px); box-shadow: 0 5px 15px rgba(255, 87, 34, 0.4); }
+        .action-btn.active { background: var(--primary); color: white; transform: translateY(-5px); box-shadow: 0 4px 10px rgba(255, 87, 34, 0.4); }
         .action-btn.active label { color: white; }
 
         /* DIREITA */
@@ -64,50 +44,53 @@
         .panel-view.active { display: flex; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-        /* HEADERS E ABAS */
         .panel-header { background: var(--primary); color: white; padding: 20px; font-family: 'Fredoka One'; text-align: center; font-size: 1.2rem; flex-shrink: 0; display: flex; justify-content: space-between; align-items: center; }
         .close-panel-btn { background: rgba(255,255,255,0.2); border: none; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; font-weight: bold; }
+        
+        /* ABAS PRINCIPAIS (CORPO / ACESSÓRIOS) */
         .inv-tabs { display: flex; gap: 10px; margin: 10px; background: #f0f0f0; padding: 5px; border-radius: 15px; flex-shrink: 0; }
         .inv-tab-btn { flex: 1; padding: 8px; border: none; background: transparent; border-radius: 10px; cursor: pointer; font-weight: bold; color: #666; transition: 0.2s; }
         .inv-tab-btn.active { background: white; color: var(--primary); box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
 
-        /* LISTA UNIFICADA DE ITENS (LINHAS) */
-        .items-scroll-area { flex: 1; overflow-y: auto; padding: 10px; display: flex; flex-direction: column; gap: 15px; }
-        .store-row { display: flex; flex-direction: column; gap: 5px; }
-        .store-row-title { font-size: 0.8rem; font-weight: bold; color: #555; text-transform: uppercase; margin-left: 5px; }
-        .store-row-scroll { display: flex; gap: 10px; overflow-x: auto; padding: 5px; padding-bottom: 10px; }
-
-        /* ITEM CARD (COM PREVIEW E ESTADOS) */
-        .item-card { 
-            min-width: 80px; width: 80px; background: #f9f9f9; border-radius: 12px; padding: 5px; cursor: pointer; 
-            border: 2px solid transparent; display: flex; flex-direction: column; align-items: center;
-            position: relative; transition: 0.2s; flex-shrink: 0;
+        /* NOVO: SUB-ABAS (ICONES HORIZONTAIS) */
+        .sub-cat-scroll {
+            display: flex; gap: 8px; overflow-x: auto; padding: 0 10px 10px 10px; flex-shrink: 0;
+            border-bottom: 1px solid #eee; margin-bottom: 5px;
+            scrollbar-width: none; /* Hide scrollbar Firefox */
         }
-        .item-card:hover { background: #fff; border-color: #ddd; transform:translateY(-2px); box-shadow:0 4px 8px rgba(0,0,0,0.1); }
-        .item-card img { width: 100%; height: 50px; object-fit: contain; }
+        .sub-cat-scroll::-webkit-scrollbar { display: none; }
         
-        .item-card.equipped { border-color: var(--green); background: #E8F5E9; }
-        .item-card.previewing { border-color: #FF5722; background: #FFF3E0; border-style: dashed; }
-        
-        .item-name { font-size: 0.6rem; margin-top: 5px; text-align: center; color: #666; width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        
-        /* Preços */
-        .tag { font-size: 0.7rem; font-weight: bold; padding: 2px 8px; border-radius: 10px; margin-top: 2px; }
-        .tag-price { color: #FFC107; background: #333; }
-        .tag-owned { color: white; background: var(--blue); }
-        .tag-free { color: white; background: var(--green); }
+        .sub-cat-btn {
+            min-width: 50px; height: 50px; background: #f9f9f9; border: 2px solid transparent;
+            border-radius: 12px; cursor: pointer; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; color: #666; flex-shrink: 0;
+            transition: 0.2s;
+        }
+        .sub-cat-btn:hover { background: #eee; }
+        .sub-cat-btn.active { border-color: var(--primary); background: #FFF3E0; color: var(--primary); transform: scale(1.05); }
+        .sub-cat-icon { font-size: 1.5rem; }
 
+        /* GRID FINAL */
+        .items-scroll-area { flex: 1; overflow-y: auto; padding: 10px; display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 10px; align-content: start; }
+        
+        .item-card { min-width: 80px; background: #f9f9f9; border-radius: 12px; padding: 8px; cursor: pointer; border: 2px solid transparent; display: flex; flex-direction: column; align-items: center; position: relative; height: 90px; }
+        .item-card:hover { background: white; border-color: #ddd; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .item-card img { width: 100%; height: 40px; object-fit: contain; margin-bottom: 5px; }
+        .item-card.equipped { border-color: var(--green); background: #E8F5E9; }
+        .item-card.owned { border-color: #90CAF9; background: #E3F2FD; } 
+        .item-name { font-size: 0.6rem; text-align: center; color: #555; width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .item-price { font-size: 0.7rem; font-weight: bold; color: #FFC107; background: #333; padding: 2px 8px; border-radius: 10px; margin-top: 2px; }
         .check-icon { position: absolute; top: -5px; right: -5px; background: var(--green); color: white; width: 20px; height: 20px; border-radius: 50%; font-size: 0.8rem; display: none; align-items: center; justify-content: center; border: 2px solid white; }
         .item-card.equipped .check-icon { display: flex; }
 
         /* CHAT */
-        .chat-history { flex: 1; padding: 20px; overflow-y: auto; background: #f8f9fa; display: flex; flex-direction: column; gap: 12px; }
-        .msg { background: white; padding: 10px 15px; border-radius: 18px; border-bottom-left-radius: 4px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); font-size: 0.95rem; max-width: 85%; align-self: flex-start; }
-        .msg strong { color: var(--primary); display: block; font-size: 0.75rem; margin-bottom: 3px; }
-        .msg.me { align-self: flex-end; background: #FFF3E0; border-bottom-left-radius: 18px; border-bottom-right-radius: 4px; }
+        .chat-history { flex: 1; padding: 20px; overflow-y: auto; background: #f5f5f5; display: flex; flex-direction: column; gap: 10px; }
+        .msg { background: white; padding: 10px 15px; border-radius: 15px; border-bottom-left-radius: 2px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); font-size: 0.9rem; max-width: 85%; align-self: flex-start; }
+        .msg strong { display: block; color: var(--primary); font-size: 0.75rem; margin-bottom: 2px; }
+        .msg.me { align-self: flex-end; background: #E1F5FE; border-bottom-left-radius: 15px; border-bottom-right-radius: 2px; }
         .chat-input-area { padding: 15px; background: white; border-top: 1px solid #eee; display: flex; gap: 10px; align-items: center; flex-shrink: 0; }
-        .chat-input { flex: 1; padding: 12px 20px; border: 2px solid #eee; border-radius: 50px; outline: none; font-size: 1rem; background: #f9f9f9; }
-        .btn-send { background: var(--green); color: white; border: none; width: 45px; height: 45px; border-radius: 50%; cursor: pointer; font-size: 1.2rem; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(76, 175, 80, 0.3); }
+        .chat-input { flex: 1; padding: 10px 15px; border: 2px solid #eee; border-radius: 20px; outline: none; }
+        .btn-send { background: var(--green); color: white; border: none; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; }
 
         @media (max-width: 850px) {
             .main-layout { flex-direction: column; padding: 10px; gap: 10px; }
@@ -122,72 +105,74 @@
 <body>
 
     <div class="main-layout">
-        <!-- ESQUERDA: JOGO -->
+        <!-- ESQUERDA -->
         <div class="game-column">
             <div class="canvas-card" id="canvasContainer">
                 <canvas id="arcadeCanvas"></canvas>
+                
                 <div class="overlay-ui">
                     <a href="index.html" class="btn-back">⬅️ Voltar</a>
                     <div style="text-align: right;">
                         <div class="online-badge">🟢 <span id="online-count">1</span></div>
-                        <div id="coinDisplay" class="my-coins">🪙 ...</div>
+                        <div id="coinDisplay" class="coins-display">🪙 ...</div>
                     </div>
                 </div>
-
-                <!-- AVISO DE PROVADOR -->
-                <div id="tryingLabel">👕 MODO PROVADOR ATIVO</div>
-
-                <!-- BOTÕES FLUTUANTES -->
-                <div class="floating-action-container">
-                    <button id="btnSaveLook" onclick="salvarOutfitNoBanco()">💾 SALVAR LOOK</button>
-                    <button id="btnBuyCart" onclick="finalizarCompra()">🛒 COMPRAR (0)</button>
-                </div>
+                
+                <!-- Botão Flutuante SALVAR -->
+                <button id="btnSaveLook" onclick="salvarOutfitNoBanco()">💾 SALVAR LOOK</button>
             </div>
 
             <div class="controls-dock">
                 <button class="action-btn active" id="btnChat" onclick="switchPanel('chat')"><span>💬</span><label>Chat</label></button>
-                <!-- LOJA e MOCHILA agora abrem a mesma aba unificada -->
-                <button class="action-btn" id="btnCustomize" onclick="switchPanel('custom')"><span>👕</span><label>Vestir</label></button>
+                <button class="action-btn" id="btnLoja" onclick="switchPanel('store')"><span>🏪</span><label>Loja</label></button>
+                <button class="action-btn" id="btnInv" onclick="switchPanel('inventory')"><span>🎒</span><label>Mochila</label></button>
                 <button class="action-btn" onclick="spawnarAvatarTeste()"><span>➕</span><label>Bot</label></button>
-                <button class="action-btn" onclick="alert('Em breve!')"><span>💃</span><label>Emote</label></button>
             </div>
         </div>
 
-        <!-- DIREITA: PAINÉIS -->
+        <!-- DIREITA -->
         <div class="right-column">
             
-            <!-- 1. CHAT (Visível por padrão) -->
+            <!-- 1. CHAT -->
             <div id="view-chat" class="panel-view active">
                 <div class="panel-header">💬 Chat Global</div>
-                <div class="chat-history" id="chatHistory">
-                    <div class="msg" style="text-align:center; background:none; box-shadow:none; color:#999; font-size:0.8rem;">
-                        Bem-vindo! <br> Abra "Vestir" para customizar seu avatar.
-                    </div>
-                </div>
+                <div class="chat-history" id="chatHistory"><div class="msg" style="text-align:center;color:#999;">Bem-vindo!</div></div>
                 <div class="chat-input-area">
-                    <input type="text" id="msgInput" class="chat-input" placeholder="Digite algo..." maxlength="50">
+                    <input type="text" id="msgInput" class="chat-input" placeholder="Digite...">
                     <button class="btn-send" id="btnSend">➤</button>
                 </div>
             </div>
 
-            <!-- 2. CUSTOMIZAR (Loja + Mochila Fundidas) -->
-            <div id="view-custom" class="panel-view">
+            <!-- 2. LOJA -->
+            <div id="view-store" class="panel-view">
                 <div class="panel-header" style="background:#FFF3E0; color:#E65100;">
-                    <span>👕 Customizar</span>
-                    <button class="close-panel-btn" onclick="switchPanel('chat')" style="color:#E65100; background:rgba(0,0,0,0.1);">✕</button>
+                    <span>🏪 Loja</span> <button class="close-panel-btn" onclick="switchPanel('chat')" style="color:#E65100;background:rgba(0,0,0,0.1);">✕</button>
                 </div>
-                
+                <!-- Tabs Principal -->
                 <div class="inv-tabs">
-                    <button class="inv-tab-btn active" onclick="mudarAba('custom', 'corpo')">👕 Corpo</button>
-                    <button class="inv-tab-btn" onclick="mudarAba('custom', 'acessorios')">👓 Acessórios</button>
+                    <button class="inv-tab-btn active" onclick="mudarTabPrincipal('store', 'corpo')">👕 Corpo</button>
+                    <button class="inv-tab-btn" onclick="mudarTabPrincipal('store', 'acessorios')">👓 Acessórios</button>
                 </div>
-
-                <!-- Lista Unificada de Itens -->
-                <div id="customList" class="items-scroll-area">
-                    <p style="text-align:center; color:#999; margin-top:20px;">Carregando...</p>
-                </div>
+                <!-- Tabs Subcategorias (Icones) -->
+                <div id="store-subtabs" class="sub-cat-scroll"></div>
+                
+                <div id="storeList" class="items-scroll-area"><p style="text-align:center;">Carregando...</p></div>
             </div>
 
+            <!-- 3. MOCHILA -->
+            <div id="view-inventory" class="panel-view">
+                <div class="panel-header">
+                    <span>🎒 Mochila</span> <button class="close-panel-btn" onclick="switchPanel('chat')">✕</button>
+                </div>
+                <div class="inv-tabs">
+                    <button class="inv-tab-btn active" onclick="mudarTabPrincipal('inventory', 'corpo')">👕 Corpo</button>
+                    <button class="inv-tab-btn" onclick="mudarTabPrincipal('inventory', 'acessorios')">👓 Acessórios</button>
+                </div>
+                <!-- Tabs Subcategorias (Icones) -->
+                <div id="inv-subtabs" class="sub-cat-scroll"></div>
+                
+                <div id="inventoryList" class="items-scroll-area"><p style="text-align:center;">Carregando...</p></div>
+            </div>
         </div>
     </div>
 
@@ -203,58 +188,73 @@
         const db = getFirestore(app);
         const auth = getAuth(app);
 
-        // --- DADOS GLOBAIS ---
-        let AVATAR_CONFIG = { scale: 0.22, parts: {}, offsets: { headY: -230, armY: -150, legY: 50, spreadX: 0, legSpread: 0 } };
-
-        // DADOS ENVIADOS POR VOCÊ DO BANCO:
-        AVATAR_CONFIG.parts = {
-            "capa": { "x": 2, "y": -188, "pivX": 0.482, "pivY": 0.103 },
-            "escudo_tras": { "x": -129, "y": -52, "pivX": 0.5, "pivY": 0.5 },
-            "braco_tras": { "x": -55, "y": -188, "pivX": 0.85, "pivY": 0.094 },
-            "perna_tras": { "x": -36, "y": 53, "pivX": 0.665, "pivY": 0.089 },
-            "perna_frente": { "x": 47, "y": 54, "pivX": 0.604, "pivY": 0.072 },
-            "tronco": { "x": -5, "y": -37, "pivX": 0.454, "pivY": 0.646 },
-            "cintura": { "x": 46, "y": -33, "pivX": 0.386, "pivY": 0.336 },
-            "cabeca": { "x": 1, "y": -300, "pivX": 0.482, "pivY": 0.809 },
-            "rosto": { "x": -41, "y": -300, "pivX": 0.459, "pivY": 0.8 },
-            "mascara": { "x": -5, "y": -300, "pivX": 0.5, "pivY": 0.5 },
-            "cabelo": { "x": 1, "y": -300, "pivX": 0.482, "pivY": 0.699 },
-            "arma_frente": { "x": 137, "y": 43, "pivX": 0.854, "pivY": 0.247 },
-            "braco_frente": { "x": 95, "y": -192, "pivX": 0.117, "pivY": 0.024 },
-            "escudo_frente": { "x": 153, "y": -12, "pivX": 0.5, "pivY": 0.5 }
+        // --- CONSTANTES ---
+        // CORREÇÃO: OFFSETS DE AFASTAMENTO ZERADOS
+        let AVATAR_CONFIG = {
+            scale: 0.22,
+            offsets: { headY: -230, armY: -150, legY: 50, spreadX: 0, legSpread: 0 }, 
+            parts: {} // Preenchido pelo Banco ou fallback local
         };
 
         const LAYER_ORDER = ['capa', 'escudo_tras', 'braco_tras', 'perna_tras', 'perna_frente', 'tronco', 'cintura', 'cabeca', 'rosto', 'mascara', 'cabelo', 'arma_frente', 'braco_frente', 'escudo_frente'];
-        const CATEGORY_NAMES = { 'cabeca': 'Cabeça', 'tronco': 'Tronco', 'perna_frente': 'Pernas', 'braco_frente': 'Braços', 'cabelo': 'Cabelo', 'arma_frente': 'Mão (Arma)', 'escudo_frente': 'Mão (Escudo)', 'capa': 'Costas', 'mascara': 'Rosto', 'cintura': 'Cinto' };
-        const CATEGORIA_CORPO = ['cabeca', 'tronco', 'perna_frente', 'perna_tras', 'braco_frente', 'braco_tras', 'rosto'];
-        const CATEGORIA_ACESSORIOS = ['cabelo', 'capa', 'mascara', 'arma_frente', 'escudo_frente', 'escudo_tras', 'cintura'];
-        
+
+        // CATEGORIAS & ÍCONES (NOVOS!)
+        const MENU_CORPO = [
+            { id: 'cabeca', icon: '🤠', label: 'Cabeça' },
+            { id: 'rosto', icon: '😊', label: 'Rosto' },
+            { id: 'tronco', icon: '👕', label: 'Tronco' },
+            { id: 'braco_frente', icon: '💪', label: 'Braço Dir' },
+            { id: 'braco_tras', icon: '💪', label: 'Braço Esq' },
+            { id: 'perna_frente', icon: '🦵', label: 'Perna Dir' },
+            { id: 'perna_tras', icon: '🦵', label: 'Perna Esq' }
+        ];
+
+        const MENU_ACESSORIOS = [
+            { id: 'cabelo', icon: '💇', label: 'Cabelo' },
+            { id: 'mascara', icon: '🕶️', label: 'Face' },
+            { id: 'capa', icon: '🦸', label: 'Costas' },
+            { id: 'cintura', icon: '🥋', label: 'Cintura' },
+            { id: 'arma_frente', icon: '⚔️', label: 'Mão' },
+            { id: 'escudo_frente', icon: '🛡️', label: 'Escudo' },
+            { id: 'escudo_tras', icon: '🛡️', label: 'Costas' }
+        ];
+
+        // KIT INICIAL "LIMPO" (Apenas pele e roupa basica. Nada de pago!)
         const STARTER_KIT = {
-            'tronco': 'tronco_padrao.png', 'cabeca': 'cabeca_padrao.png', 'braco_frente': 'braco_frente_padrao.png', 'braco_tras': 'braco_tras_padrao.png', 'perna_frente': 'perna_frente_padrao.png', 'perna_tras': 'perna_tras_padrao.png', 'rosto': 'rosto_padrao.png',
-            'cabelo': 'cabelo_simples.png', 'capa': 'capa_simples.png', 'mascara': 'mascara_simples.png',
-            'arma_frente': 'Espada_simples.png', 'escudo_frente': 'escudo_simples.png', 'escudo_tras': 'escudo_simples_tras.png'
+            'tronco': 'tronco_padrao.png', 'cabeca': 'cabeca_padrao.png', 'rosto': 'rosto_padrao.png',
+            'braco_frente': 'braco_frente_padrao.png', 'braco_tras': 'braco_tras_padrao.png',
+            'perna_frente': 'perna_frente_padrao.png', 'perna_tras': 'perna_tras_padrao.png',
+            // Opcionais começam VAZIOS (null) para ninguém ganhar item pago
+            'cabelo': null, 'capa': null, 'mascara': null, 'arma_frente': null, 'escudo_frente': null, 'escudo_tras': null, 'cintura': null
         };
 
-        let currentUser = null, myData = { fichas: 0 }, myOutfit = { ...STARTER_KIT };
+        const avatarImages = {}; const BASE_ASSETS_URL = 'assets/avatar/';
         
-        // ESTADO DE CARRINHO (IMPORTANTE)
-        let previewOutfit = {}; // O que está sendo visualizado (Mix de myOutfit + ShoppingCart)
-        let shoppingCart = {}; // { 'categoria': itemObject } dos itens que quero comprar
-        let storeItemsCache = [];
-        let avatarImages = {};
-        const BASE_ASSETS_URL = 'assets/avatar/';
-        let currentTab = 'corpo';
+        // ESTADO
+        let currentUser = null, myData = { fichas: 0 }, myOutfit = { ...STARTER_KIT };
+        let storeItemsCache = [], avatares = [];
+        let activeMainTab = 'corpo'; 
+        let activeSubCategory = 'cabeca'; // Categoria inicial
 
         // --- SISTEMA ---
         async function bootSystem() {
-            carregarImagens(); 
-            // Inicia loop seguro de redimensionamento
+            carregarImagensDoOutfit();
+            try {
+                const snap = await getDoc(doc(db, "config", "avatar_base"));
+                if(snap.exists()) {
+                    const data = snap.data();
+                    if(data.scale) AVATAR_CONFIG.scale = data.scale;
+                    if(data.parts) AVATAR_CONFIG.parts = data.parts; 
+                }
+            } catch(e) {}
+            try {
+                const snapLoja = await getDocs(collection(db, "listaItens"));
+                storeItemsCache = []; snapLoja.forEach(d => storeItemsCache.push(d.data()));
+            } catch(e) {}
+            
+            // Loop segurança anti-voo
             let attempts = 0;
-            const interval = setInterval(() => {
-                resizeCanvas();
-                attempts++;
-                if(attempts > 6) clearInterval(interval);
-            }, 500);
+            const t = setInterval(()=>{ resizeCanvas(); attempts++; if(attempts>6) clearInterval(t); }, 500);
         }
 
         // --- AUTH ---
@@ -262,346 +262,300 @@
             if (user) {
                 currentUser = user;
                 await carregarDadosUsuario(user.uid);
-                carregarLojaDoBanco(); // Pega itens pagos do DB
-            } else {
-                myOutfit = { ...STARTER_KIT };
-                resetPreview(); // Atualiza preview inicial
-            }
+            } else myOutfit = { ...STARTER_KIT };
+            carregarImagensDoOutfit();
+            if(avatares.length>0) avatares[0].outfit = myOutfit;
         });
 
         async function carregarDadosUsuario(uid) {
-            const snap = await getDoc(doc(db, "users", uid));
+            const userRef = doc(db, "users", uid);
+            const snap = await getDoc(userRef);
             if (snap.exists()) {
                 myData = snap.data();
-                if (myData.avatar_equipado) myOutfit = myData.avatar_equipado;
-                else await garantirInventario(uid);
+                myOutfit = myData.avatar_equipado || { ...STARTER_KIT };
                 document.getElementById('coinDisplay').innerText = `🪙 ${myData.fichas || 0}`;
-                resetPreview(); // Aplica a roupa carregada
-            } else { await garantirInventario(uid); }
-        }
-
-        async function garantirInventario(uid) {
-            myOutfit = { ...STARTER_KIT };
-            await updateDoc(doc(db, "users", uid), { avatar_equipado: myOutfit, inventario: Object.values(STARTER_KIT) });
-            resetPreview();
-        }
-
-        async function carregarLojaDoBanco() {
-            try {
-                const snap = await getDocs(collection(db, "listaItens"));
-                storeItemsCache = [];
-                snap.forEach(d => storeItemsCache.push(d.data()));
-                // Se o painel estiver aberto, renderiza
-                if(document.getElementById('view-custom').classList.contains('active')) renderCustomScreen();
-            } catch(e) {}
-        }
-
-        // --- LÓGICA DE FUSÃO E PROVADOR ---
-        function resetPreview() {
-            previewOutfit = { ...myOutfit }; // Começa igual ao que tenho
-            shoppingCart = {}; // Carrinho vazio
-            updateUI(); // Atualiza Avatar e Botões
-        }
-
-        function updateUI() {
-            carregarImagens(); // Garante que novas imagens carreguem
-            
-            // Atualiza Avatar "Eu" com o Preview
-            if(avatares.length > 0) avatares[0].outfit = previewOutfit;
-            
-            // Botões de Ação
-            const btnSave = document.getElementById('btnSaveLook');
-            const btnBuy = document.getElementById('btnBuyCart');
-            const tryLabel = document.getElementById('tryingLabel');
-            
-            // Verifica Carrinho
-            let totalCost = 0;
-            const itemsInCart = Object.keys(shoppingCart).length;
-            for(let key in shoppingCart) totalCost += shoppingCart[key].preco;
-            
-            if(itemsInCart > 0) {
-                // Modo Compra
-                btnBuy.innerText = `🛒 COMPRAR (${totalCost} 🪙)`;
-                btnBuy.classList.add('show');
-                btnSave.classList.remove('show');
-                tryLabel.style.display = 'block';
             } else {
-                // Modo Salvar (Se mudou algo mas eu tenho o item)
-                const changed = JSON.stringify(previewOutfit) !== JSON.stringify(myOutfit);
-                if(changed) {
-                    btnSave.classList.add('show');
-                } else {
-                    btnSave.classList.remove('show');
-                }
-                btnBuy.classList.remove('show');
-                tryLabel.style.display = 'none';
+                myOutfit = { ...STARTER_KIT };
+                await updateDoc(userRef, { avatar_equipado: myOutfit, inventario: Object.values(STARTER_KIT).filter(v=>v) });
             }
         }
 
-        window.toggleItem = function(cat, itemObj, isOwned, isDefault) {
-            // Se já está vestindo, desequipa (apenas opcionais)
-            const isWearing = previewOutfit[cat] === itemObj.id;
-            const isOpcional = CATEGORIA_ACESSORIOS.includes(cat);
-
-            if (isWearing && isOpcional) {
-                previewOutfit[cat] = null;
-                // Se estava no carrinho, remove
-                if (shoppingCart[cat]) delete shoppingCart[cat];
-            } else {
-                // Equipa
-                previewOutfit[cat] = itemObj.id;
-                
-                if (isOwned || isDefault) {
-                    // Tenho o item, então remove do carrinho se estava lá (ex: troquei pago por gratis)
-                    if (shoppingCart[cat]) delete shoppingCart[cat];
-                } else {
-                    // Não tenho, põe no carrinho
-                    shoppingCart[cat] = itemObj;
+        function carregarImagensDoOutfit() {
+            LAYER_ORDER.forEach(l => {
+                const f = myOutfit[l] || STARTER_KIT[l]; // Se null, tenta starter (para corpo)
+                if(f) {
+                    const key = `${l}/${f}`;
+                    if(!avatarImages[key]) {
+                        const i = new Image(); i.src=`${BASE_ASSETS_URL}${key}`;
+                        i.onload=()=>{if(l==='tronco')initEngine()};
+                        i.onerror=()=>{i.isBroken=true;if(l==='tronco')initEngine()};
+                        avatarImages[key]=i;
+                    }
                 }
-            }
-            updateUI();
-            renderCustomScreen(); // Atualiza bordas dos cards
+            });
+            setTimeout(() => { if(!initCalled) initEngine(); }, 1000);
         }
 
-        // --- PAINÉIS UI ---
+        // --- UI NAVEGAÇÃO ---
         window.switchPanel = function(id) {
-            // Se sair da customização, Reseta Provador
-            if(document.getElementById('view-custom').classList.contains('active') && id !== 'custom') {
-                resetPreview(); 
-            }
-            
-            // Botões do Dock
             document.querySelectorAll('.action-btn').forEach(b => b.classList.remove('active'));
-            if(id === 'chat') document.getElementById('btnChat').classList.add('active');
-            // Ambos os botões abrem o custom
-            if(id === 'custom') document.getElementById('btnCustomize').classList.add('active'); 
+            if(id==='chat') document.getElementById('btnChat').classList.add('active');
+            if(id==='store') document.getElementById('btnLoja').classList.add('active');
+            if(id==='inventory') document.getElementById('btnInv').classList.add('active');
 
             document.querySelectorAll('.panel-view').forEach(p => p.classList.remove('active'));
-            document.getElementById('view-' + id).classList.add('active');
-
-            if(id === 'custom') renderCustomScreen();
+            document.getElementById('view-'+id).classList.add('active');
             
+            // Reseta sub-aba para a primeira
+            activeSubCategory = activeMainTab==='corpo'?'cabeca':'cabelo';
+            
+            if(id!=='chat') refreshPanel(id);
             setTimeout(resizeCanvas, 100);
         }
 
-        window.mudarAba = function(unused, tab) {
-            currentTab = tab;
-            renderCustomScreen();
+        window.mudarTabPrincipal = function(viewId, tab) {
+            activeMainTab = tab;
+            // Atualiza botões superiores
+            const root = document.getElementById('view-'+viewId);
+            root.querySelectorAll('.inv-tab-btn').forEach(b=>b.classList.remove('active'));
+            const idx = tab === 'corpo' ? 0 : 1;
+            root.querySelectorAll('.inv-tab-btn')[idx].classList.add('active');
+            
+            // Reseta subcategoria
+            activeSubCategory = (tab==='corpo' ? MENU_CORPO[0].id : MENU_ACESSORIOS[0].id);
+            refreshPanel(viewId);
         }
 
-        function renderCustomScreen() {
-            const container = document.getElementById('customList');
+        window.mudarSubTab = function(viewId, subId) {
+            activeSubCategory = subId;
+            refreshPanel(viewId);
+        }
+
+        function refreshPanel(viewId) {
+            renderSubTabs(viewId);
+            if(viewId === 'store') renderLojaGrid();
+            else renderInventarioGrid();
+        }
+
+        function renderSubTabs(viewId) {
+            const containerId = viewId==='store' ? 'store-subtabs' : 'inv-subtabs';
+            const container = document.getElementById(containerId);
             container.innerHTML = '';
             
-            // Atualiza tabs
-            document.querySelectorAll('.inv-tab-btn').forEach(b => b.classList.remove('active'));
-            const idx = currentTab === 'corpo' ? 0 : 1;
-            document.querySelectorAll('.inv-tab-btn')[idx].classList.add('active');
-
-            const categorias = currentTab === 'corpo' ? CATEGORIA_CORPO : CATEGORIA_ACESSORIOS;
+            const menu = activeMainTab==='corpo' ? MENU_CORPO : MENU_ACESSORIOS;
             
-            categorias.forEach(cat => {
-                // Lista de todos os itens desta categoria (Padrão + Meus + Loja)
-                let itemsToShow = [];
-                
-                // 1. Padrão
-                if(STARTER_KIT[cat]) itemsToShow.push({id: STARTER_KIT[cat], nome: "Padrão", preco: 0, isDefault: true});
-                
-                // 2. Meus Itens (Que não são o padrão) - Filtro rudimentar por nome
-                const myItems = (myData.inventario||[]).filter(i => i.includes(cat) && i !== STARTER_KIT[cat]);
-                myItems.forEach(i => itemsToShow.push({id: i, nome: i.slice(0,8), preco: 0, isOwned: true}));
-                
-                // 3. Itens da Loja (Que eu não tenho ainda)
-                const shopItems = storeItemsCache.filter(i => i.categoria === cat && !myItems.includes(i.id));
-                shopItems.forEach(i => itemsToShow.push(i));
-                
-                // Se vazio, pula linha
-                if(itemsToShow.length === 0) return;
-
-                const row = document.createElement('div'); row.className = 'store-row';
-                row.innerHTML = `<div class="store-row-title">${CATEGORY_NAMES[cat] || cat}</div>`;
-                const scroll = document.createElement('div'); scroll.className = 'store-row-scroll';
-                
-                itemsToShow.forEach(item => {
-                    // Estado visual
-                    const isWearing = previewOutfit[cat] === item.id;
-                    const inCart = shoppingCart[cat] && shoppingCart[cat].id === item.id;
-                    const owned = item.isDefault || item.isOwned; // Para fins visuais
-
-                    const card = document.createElement('div');
-                    card.className = `item-card ${isWearing ? (inCart ? 'previewing' : 'equipped') : (owned ? 'owned' : '')}`;
-                    
-                    let label = "";
-                    if(item.isDefault) label = `<span class="tag tag-free">GRÁTIS</span>`;
-                    else if(item.isOwned) label = `<span class="tag tag-owned">ITEM</span>`;
-                    else label = `<span class="tag tag-price">🪙 ${item.preco}</span>`;
-                    
-                    let nameClean = item.nome ? item.nome : item.id.replace('.png','').replace('_padrao','').replace(cat+'_','');
-
-                    card.innerHTML = `
-                        <img src="${BASE_ASSETS_URL}${cat}/${item.id}">
-                        <div class="item-name">${nameClean}</div>
-                        ${label}
-                        ${isWearing ? '<div class="check-icon">✔</div>' : ''}
-                    `;
-                    card.onclick = () => toggleItem(cat, item, owned, item.isDefault);
-                    scroll.appendChild(card);
-                });
-                row.appendChild(scroll); container.appendChild(row);
+            menu.forEach(cat => {
+                const div = document.createElement('div');
+                div.className = `sub-cat-btn ${activeSubCategory === cat.id ? 'active' : ''}`;
+                div.onclick = () => mudarSubTab(viewId, cat.id);
+                div.innerHTML = `<span class="sub-cat-icon">${cat.icon}</span><span style="font-size:0.6rem;">${cat.label}</span>`;
+                container.appendChild(div);
             });
         }
 
-        // --- TRANSAÇÕES (BATCH) ---
-        window.finalizarCompra = async function() {
-            if (!currentUser) return alert("Logue-se!");
-            
-            // Recalcula custo
-            let custo = 0;
-            let itensComprados = [];
-            for(let key in shoppingCart) {
-                custo += shoppingCart[key].preco;
-                itensComprados.push(shoppingCart[key].id);
-            }
-            
-            if (myData.fichas < custo) return alert("Fichas insuficientes!");
-            if (!confirm(`Confirmar compra de ${itensComprados.length} itens por ${custo} Fichas?`)) return;
+        // --- GRID LOGIC ---
+        function renderLojaGrid() {
+            const list = document.getElementById('storeList'); list.innerHTML = '';
+            const cat = activeSubCategory;
 
-            try {
-                const userRef = doc(db, "users", currentUser.uid);
-                
-                // Batch Update
-                await updateDoc(userRef, { 
-                    fichas: increment(-custo), 
-                    inventario: arrayUnion(...itensComprados),
-                    avatar_equipado: previewOutfit // Já salva equipado
-                });
-                
-                myData.fichas -= custo;
-                // Adiciona ao inventário local
-                if(!myData.inventario) myData.inventario = [];
-                myData.inventario.push(...itensComprados);
-                myOutfit = { ...previewOutfit }; // Torna oficial
-                
-                document.getElementById('coinDisplay').innerText = `🪙 ${myData.fichas}`;
-                resetPreview(); // Limpa carrinho (já comprou)
-                alert("Sucesso! Compra realizada.");
-                
-            } catch(e) { 
-                console.error(e); 
-                alert("Erro na compra. (Verifique saldo/internet)"); 
+            // ITEM PADRÃO / NENHUM (SLOT 0)
+            // Se for corpo, mostra o Padrão. Se for acessório, mostra "Remover".
+            const padrao = STARTER_KIT[cat];
+            if(padrao) {
+                // Item Grátis do Starter Kit
+                const isEq = myOutfit[cat] === padrao;
+                createCard(list, padrao, "Padrão", "GRÁTIS", '#4CAF50', isEq, true, cat);
+            } else {
+                // Slot "Vazio" (Desequipar)
+                const isEq = !myOutfit[cat];
+                const card = document.createElement('div');
+                card.className = `item-card ${isEq?'equipped':''}`;
+                card.onclick = () => equiparItem(cat, null);
+                card.innerHTML = `<div style="width:100%;height:40px;display:flex;align-items:center;justify-content:center;color:#999;font-size:2rem;">∅</div><div class="item-name">Vazio</div>${isEq?'<div class="check-icon">✔</div>':''}`;
+                list.appendChild(card);
             }
+
+            // ITENS DO BANCO
+            const itens = storeItemsCache.filter(i => i.categoria === cat);
+            itens.forEach(item => {
+                const have = (myData.inventario||[]).includes(item.id);
+                const isEq = myOutfit[cat] === item.id;
+                const div = document.createElement('div');
+                div.className = `item-card ${isEq ? 'equipped' : (have ? 'owned' : '')}`;
+                
+                // Formatação bonita
+                const nomeCurto = item.nome || item.id;
+                
+                if(have) {
+                    div.onclick = () => equiparItem(cat, item.id);
+                    div.innerHTML = `<img src="${BASE_ASSETS_URL}${cat}/${item.id}"><div class="item-name">${nomeCurto}</div><div class="item-price" style="background:#2196F3">TEM</div>${isEq?'<div class="check-icon">✔</div>':''}`;
+                } else {
+                    div.onclick = () => comprarItem(item);
+                    div.innerHTML = `<img src="${BASE_ASSETS_URL}${cat}/${item.id}"><div class="item-name">${nomeCurto}</div><div class="item-price">🪙 ${item.preco}</div>`;
+                }
+                list.appendChild(div);
+            });
+        }
+
+        function renderInventarioGrid() {
+            const list = document.getElementById('inventoryList'); list.innerHTML = '';
+            const cat = activeSubCategory;
+            const inv = myData.inventario || [];
+            
+            // Filtra o que eu tenho dessa categoria específica
+            // O filtro busca se o arquivo CONTÉM a categoria ou se está na lista STARTER_KIT
+            const meusDessaCat = inv.filter(file => {
+                 if(file === STARTER_KIT[cat]) return true;
+                 if(file.includes(cat)) return true;
+                 return false;
+            });
+
+            // Adiciona Slot Vazio/Padrão primeiro
+            if(STARTER_KIT[cat]) {
+                 createCard(list, STARTER_KIT[cat], "Padrão", null, null, myOutfit[cat]===STARTER_KIT[cat], true, cat);
+            } else {
+                 const isEq = !myOutfit[cat];
+                 const card = document.createElement('div');
+                 card.className = `item-card ${isEq?'equipped':''}`;
+                 card.onclick = () => equiparItem(cat, null);
+                 card.innerHTML = `<div style="font-size:2rem;height:40px;display:flex;align-items:center;justify-content:center;">∅</div><span>Vazio</span>${isEq?'<div class="check-icon">✔</div>':''}`;
+                 list.appendChild(card);
+            }
+
+            meusDessaCat.forEach(file => {
+                if(file === STARTER_KIT[cat]) return; // Já adicionei acima
+                createCard(list, file, file.replace('.png','').slice(0,8), null, null, myOutfit[cat]===file, true, cat);
+            });
+        }
+
+        function createCard(container, file, name, tagText, tagColor, isEq, isOwned, cat) {
+            const div = document.createElement('div');
+            div.className = `item-card ${isEq ? 'equipped' : (isOwned ? 'owned' : '')}`;
+            div.onclick = () => equiparItem(cat, file);
+            let tagHTML = tagText ? `<div class="item-price" style="background:${tagColor}">${tagText}</div>` : '';
+            div.innerHTML = `<img src="${BASE_ASSETS_URL}${cat}/${file}"><div class="item-name">${name}</div>${tagHTML}${isEq?'<div class="check-icon">✔</div>':''}`;
+            container.appendChild(div);
+        }
+
+        // --- TRANSAÇÕES ---
+        window.comprarItem = async function(item) {
+            if(!currentUser) return alert("Logue-se!");
+            if(myData.fichas < item.preco) return alert("Fichas insuficientes!");
+            if(!confirm(`Comprar ${item.nome}?`)) return;
+            try {
+                await updateDoc(doc(db, "users", currentUser.uid), { fichas: increment(-item.preco), inventario: arrayUnion(item.id) });
+                myData.fichas -= item.preco; 
+                if(!myData.inventario) myData.inventario=[]; myData.inventario.push(item.id);
+                document.getElementById('coinDisplay').innerText = `🪙 ${myData.fichas}`;
+                renderLojaGrid(); // Atualiza pra mostrar "TEM"
+            } catch(e) { alert("Erro."); }
+        }
+
+        window.equiparItem = function(cat, file) {
+            myOutfit[cat] = file; 
+            outfitChanged = true;
+            document.getElementById('btnSaveLook').classList.add('show');
+            carregarImagensDoOutfit();
+            if(avatares.length > 0) avatares[0].outfit = myOutfit;
+            refreshPanel(document.getElementById('view-store').classList.contains('active') ? 'store' : 'inventory');
         }
 
         window.salvarOutfitNoBanco = async function() {
             if(!currentUser) return;
-            try {
-                await updateDoc(doc(db, "users", currentUser.uid), { avatar_equipado: previewOutfit });
-                myOutfit = { ...previewOutfit };
-                resetPreview(); // Atualiza UI
-            } catch(e) {}
+            await updateDoc(doc(db, "users", currentUser.uid), { avatar_equipado: myOutfit });
+            document.getElementById('btnSaveLook').classList.remove('show');
+            outfitChanged = false;
         }
 
-        // --- ENGINE GRÁFICA & AVATAR (LÓGICA PADRÃO) ---
+        // --- ENGINE AVATAR ---
         const canvas = document.getElementById('arcadeCanvas');
         const container = document.getElementById('canvasContainer');
         const ctx = canvas.getContext('2d');
         let avatares = []; let lastTime = 0; let initCalled = false;
 
-        function carregarImagens() {
-            LAYER_ORDER.forEach(layer => {
-                const itemFile = previewOutfit[layer] || myOutfit[layer] || STARTER_KIT[layer]; // Prioriza o preview
-                if(itemFile) {
-                    const key = `${layer}/${itemFile}`;
-                    if(!avatarImages[key]) {
-                        const img = new Image(); img.src = `${BASE_ASSETS_URL}${key}`;
-                        img.onload = () => { if(layer==='tronco') initEngine(); };
-                        img.onerror = () => { img.isBroken = true; if(layer==='tronco') initEngine(); };
-                        avatarImages[key] = img;
-                    }
-                }
-            });
-            setTimeout(() => { if(!initCalled) initEngine(); }, 500);
-        }
-
         function initEngine() {
             if(initCalled) return; initCalled = true;
             resizeCanvas(); window.addEventListener('resize', resizeCanvas);
-            const me = new Avatar("Eu", true); 
-            me.outfit = previewOutfit; // Liga com o objeto dinâmico
-            avatares.push(me);
+            const me = new Avatar("Eu", true); avatares.push(me);
             requestAnimationFrame(gameLoop);
         }
+
         function resizeCanvas() {
             const dpr = window.devicePixelRatio || 1; const rect = container.getBoundingClientRect();
             if(rect.width === 0) return;
             canvas.width = rect.width * dpr; canvas.height = rect.height * dpr;
             ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.scale(dpr, dpr);
-            const chaoY = rect.height - 80; 
-            avatares.forEach(a => { a.y = chaoY; if(a.x === 0) a.x = rect.width/2; });
+            const chaoY = rect.height - 80;
+            avatares.forEach(a => a.y = chaoY);
         }
+
         function gameLoop(t) {
-            const dt = (t-lastTime)/1000; lastTime=t;
+            const dt = (t - lastTime)/1000; lastTime=t;
             const w = canvas.clientWidth; const h = canvas.clientHeight;
             ctx.clearRect(0,0,w,h);
             ctx.fillStyle = '#81C784'; ctx.beginPath(); ctx.ellipse(w/2, h+60, w*0.9, 100, 0, 0, Math.PI*2); ctx.fill();
             ctx.strokeStyle = '#4CAF50'; ctx.lineWidth = 10; ctx.stroke();
-            
-            // Atualiza Outfit visual do player para bater com o preview em tempo real
-            if(avatares.length > 0 && avatares[0].isMe) avatares[0].outfit = previewOutfit;
-
-            avatares.sort((a,b)=>a.y - b.y);
-            avatares.forEach(a => { a.update(dt); a.draw(ctx); });
+            avatares.sort((a,b)=>a.y - b.y); avatares.forEach(a => { a.update(dt); a.draw(ctx); });
             requestAnimationFrame(gameLoop);
         }
 
         class Avatar {
             constructor(nome, isMe=false) {
-                this.nome = nome; this.isMe = isMe; this.outfit = isMe ? previewOutfit : STARTER_KIT;
-                this.x = container.clientWidth/2; this.y = container.clientHeight-80; this.dir = 1; this.speed = 40; this.state='idle'; this.targetX = this.x; setTimeout(()=>this.iaLoop(), 1000);
+                this.nome = nome; this.isMe = isMe; this.outfit = isMe ? myOutfit : STARTER_KIT;
+                this.x = container.clientWidth/2; this.y = 300; this.dir = 1; this.speed = 40; 
+                this.state='idle'; this.targetX = this.x; setTimeout(()=>this.iaLoop(), 1000);
             }
             falar(txt) { this.msg = txt; this.msgTimer = 300; }
             iaLoop() {
-                const w = canvas.clientWidth;
-                this.targetX = Math.random() * (w - 60) + 30; this.dir = this.targetX > this.x ? 1 : -1; this.state='walk';
-                setTimeout(()=>{ this.state='idle'; setTimeout(()=>this.iaLoop(), 3000); }, 3000);
+                const w = canvas.clientWidth; this.targetX = Math.random()*(w-60)+30;
+                this.dir = this.targetX>this.x ? 1 : -1; this.state='walk';
+                setTimeout(()=>{ this.state='idle'; setTimeout(()=>this.iaLoop(), 2000+Math.random()*2000); }, 3000);
             }
             update(dt) {
-                if(this.x < 20) { this.x = 20; this.dir = 1; }
-                if(this.x > canvas.clientWidth-20) { this.x = canvas.clientWidth-20; this.dir = -1; }
-                this.timer = (this.timer||0) + dt*5; if(this.msgTimer>0) this.msgTimer--; else this.msg="";
-                if(this.state==='walk') { this.x += this.dir * (this.speed * dt); if(Math.abs(this.x - this.targetX) < 5) this.state='idle'; }
+                if(this.x<20)this.x=20; if(this.x>canvas.clientWidth-20)this.x=canvas.clientWidth-20;
+                this.timer=(this.timer||0)+dt*5; if(this.msgTimer>0)this.msgTimer--; else this.msg="";
+                if(this.state==='walk') { this.x += this.dir*(this.speed*dt); if(Math.abs(this.x-this.targetX)<5)this.state='idle'; }
             }
             draw(ctx) {
-                const s = AVATAR_CONFIG.scale; let walk=0, bob=0, br=Math.sin(this.timer*0.5)*0.05;
+                const s = AVATAR_CONFIG.scale||0.22;
+                let walk=0, bob=0, br=Math.sin(this.timer*0.5)*0.05;
                 if(this.state==='walk') { walk=Math.sin(this.timer); bob=Math.abs(walk)*10; }
+                
                 ctx.save(); ctx.translate(this.x, this.y);
-                ctx.fillStyle = this.isMe?'#FFC107':'white'; ctx.font="bold 12px Nunito"; ctx.textAlign="center"; 
+                ctx.fillStyle=this.isMe?'#FFC107':'white'; ctx.font="bold 12px Nunito"; ctx.textAlign="center"; 
                 ctx.shadowColor='rgba(0,0,0,0.5)'; ctx.shadowBlur=4; ctx.fillText(this.nome, 0, -160*s); ctx.shadowBlur=0;
                 if(this.msg) this.drawBubble(ctx, s);
                 ctx.scale(-this.dir, 1);
+                
                 LAYER_ORDER.forEach(cat => {
-                    const file = this.outfit[cat]; if(!file) return;
+                    const file = this.outfit[cat] || STARTER_KIT[cat];
+                    if(!file) return; // Se não tem nem item nem padrão (acessório), não desenha
                     const key = `${cat}/${file}`;
-                    const img = avatarImages[key]; if(!img || !img.complete || img.isBroken) return;
+                    const img = avatarImages[key];
+                    if(!img || !img.complete || img.isBroken) return;
+                    
                     const p = AVATAR_CONFIG.parts[cat] || {x:0,y:0,pivX:0.5,pivY:0.5};
                     let ax=0, ay=-bob, ar=0;
-
-                    // Parenting Lógica
+                    
                     if(cat.includes('arma') || cat.includes('escudo')) {
-                        const pName = cat.includes('frente') ? 'braco_frente' : 'braco_tras';
-                        const parent = AVATAR_CONFIG.parts[pName];
+                        const pName = cat.includes('frente')?'braco_frente':'braco_tras';
+                        const parent = AVATAR_CONFIG.parts[pName] || {x:0,y:0};
                         const armRot = (cat.includes('frente') ? -walk : walk) * 0.6;
-                        const dx = (p.x - parent.x)*s; const dy = (p.y - parent.y)*s;
-                        const rx = dx*Math.cos(armRot) - dy*Math.sin(armRot); const ry = dx*Math.sin(armRot) + dy*Math.cos(armRot);
-                        this.drawImg(ctx, img, (parent.x*s)+rx, (parent.y*s)-bob*s+ry, armRot, p, s, cat); return;
+                        const dx=(p.x-parent.x)*s; const dy=(p.y-parent.y)*s;
+                        const rx = dx*Math.cos(armRot) - dy*Math.sin(armRot);
+                        const ry = dx*Math.sin(armRot) + dy*Math.cos(armRot);
+                        this.drawImg(ctx, img, (parent.x*s)+rx, (parent.y*s)-bob*s+ry, armRot, p, s, cat);
+                        return;
                     }
                     if(cat.includes('perna')) {
                         const isF=cat.includes('frente'); ay=-bob; ar=(isF?walk:-walk)*0.5;
                         ax = isF ? -AVATAR_CONFIG.offsets.legSpread : AVATAR_CONFIG.offsets.legSpread;
-                    } else if(cat.includes('braco')) {
+                    }
+                    else if(cat.includes('braco')) {
                         const isF=cat.includes('frente'); ay=-bob; ar=(isF?-walk:walk)*0.6;
                         ax = isF ? -AVATAR_CONFIG.offsets.spreadX : AVATAR_CONFIG.offsets.spreadX;
-                    } else if(['cabeca','rosto','mascara','cabelo'].includes(cat)) { ay = -bob + (br*5); ar=br*0.2; }
+                    }
+                    else if(['cabeca','rosto','mascara','cabelo'].includes(cat)) { ay=-bob+(br*5); ar=br*0.2; }
                     
                     this.drawImg(ctx, img, (p.x*s)+(ax*s), (p.y*s)+(ay*s), ar, p, s, cat);
                 });
@@ -615,16 +569,13 @@
             }
             drawBubble(ctx, s) {
                 ctx.save(); ctx.translate(0, -190*s); 
-                const w = ctx.measureText(this.msg).width + 20;
-                ctx.fillStyle="white"; ctx.beginPath(); ctx.roundRect(-w/2, -25, w, 25, 10); ctx.fill();
-                ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(-5,5); ctx.lineTo(5,5); ctx.fill();
-                ctx.fillStyle="#333"; ctx.fillText(this.msg, 0, -8);
-                ctx.restore();
+                const w = ctx.measureText(this.msg).width+20;
+                ctx.fillStyle="white"; ctx.beginPath(); ctx.roundRect(-w/2, -25, w, 25, 5); ctx.fill();
+                ctx.fillStyle="#333"; ctx.fillText(this.msg, 0, -8); ctx.restore();
             }
         }
 
-        // --- CHAT ---
-        const btnSend = document.getElementById('btnSend');
+        // --- BOTOES E CHAT ---
         const ipt = document.getElementById('msgInput');
         function sendMsg() {
             if(!ipt.value.trim()) return;
@@ -634,11 +585,11 @@
             if(avatares.length>0) avatares[0].falar(ipt.value);
             ipt.value = "";
         }
-        btnSend.onclick = sendMsg; ipt.onkeypress = e => e.key==='Enter' && sendMsg();
-
+        document.getElementById('btnSend').onclick = sendMsg; 
+        ipt.onkeypress = e => e.key==='Enter' && sendMsg();
+        
         window.spawnarAvatarTeste = () => {
-            const bot = new Avatar("Bot " + Math.floor(Math.random()*100));
-            avatares.push(bot);
+            const bot = new Avatar("Bot"); avatares.push(bot);
             document.getElementById('online-count').innerText = avatares.length;
         };
 
