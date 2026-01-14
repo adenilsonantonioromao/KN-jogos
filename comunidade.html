@@ -31,7 +31,7 @@
         #btnSaveLook.show { transform: translateX(-50%) translateY(0); }
 
         /* CONTROLES */
-        .controls-dock { background: white; height: 90px; border-radius: 25px; padding: 10px; display: flex; align-items: center; justify-content: center; gap: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); flex-shrink: 0; }
+        .controls-dock { background: white; height: 90px; border-radius: 25px; padding: 10px; display: flex; align-items: center; justify-content: center; gap: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); flex-shrink: 0; z-index: 10; }
         .action-btn { background: var(--bg); color: var(--dark); border: none; border-radius: 20px; width: 70px; height: 70px; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: all 0.2s; }
         .action-btn:active { transform: scale(0.95); }
         .action-btn span { font-size: 1.8rem; margin-bottom: 2px; }
@@ -85,7 +85,7 @@
             .game-column { flex: 1; height: 50%; }
             .right-column { flex: 1; min-width: auto; border-radius: 25px; height: 50%; }
             .controls-dock { height: 75px; }
-            .action-btn { width: 60px; height: 60px; }
+            .action-btn { width: 55px; height: 55px; }
             .action-btn label { display: none; }
         }
     </style>
@@ -169,72 +169,67 @@
         import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, getDocs, arrayUnion, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
         import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app-check.js";
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyBIR7CqYYvMZVQxtO67JCQoJ3OLT1cvAx8",
-            authDomain: "kn-jogos.firebaseapp.com",
-            projectId: "kn-jogos",
-            storageBucket: "kn-jogos.firebasestorage.app",
-            messagingSenderId: "273132829744",
-            appId: "1:273132829744:web:a03e85b80ffabfa24101f5"
-        };
+        const firebaseConfig = { apiKey: "AIzaSyBIR7CqYYvMZVQxtO67JCQoJ3OLT1cvAx8", authDomain: "kn-jogos.firebaseapp.com", projectId: "kn-jogos", storageBucket: "kn-jogos.firebasestorage.app", messagingSenderId: "273132829744", appId: "1:273132829744:web:a03e85b80ffabfa24101f5" };
         const app = initializeApp(firebaseConfig);
         try { initializeAppCheck(app, { provider: new ReCaptchaV3Provider('6Lc5vjgsAAAAANx2ia8s_Fh0_KS0_YNaAlSIYpJC'), isTokenAutoRefreshEnabled: true }); } catch(e) {}
         const db = getFirestore(app);
         const auth = getAuth(app);
 
-        // --- CONSTANTES ---
-        let AVATAR_CONFIG = {
-            scale: 0.22,
-            offsets: { headY: -230, armY: -150, legY: 50, spreadX: -47, legSpread: -24 },
-            parts: {
-                'tronco': { x: 0, y: 0, pivX: 0.5, pivY: 0.75 },
-                'cabeca': { x: 0, y: -230, pivX: 0.5, pivY: 0.89 },
-                'braco_frente': { x: 47, y: -150, pivX: 0.26, pivY: 0.12 },
-                'braco_tras': { x: -37, y: -150, pivX: 0.76, pivY: 0.11 },
-                'perna_frente': { x: 24, y: 50, pivX: 0.29, pivY: 0.13 },
-                'perna_tras': { x: -24, y: 50, pivX: 0.67, pivY: 0.11 }
+        // --- DADOS DO AVATAR (SEU JSON FIXO) ---
+        const AVATAR_CONFIG = {
+            "scale": 0.22,
+            "offsets": {
+                "headY": -230,
+                "armY": -150,
+                "legY": 50,
+                "spreadX": -47,
+                "legSpread": -24
+            },
+            "parts": {
+                "capa": { "x": 2, "y": -188, "pivX": 0.482, "pivY": 0.103 },
+                "escudo_tras": { "x": -129, "y": -52, "pivX": 0.5, "pivY": 0.5 },
+                "braco_tras": { "x": -55, "y": -188, "pivX": 0.85, "pivY": 0.094 },
+                "perna_tras": { "x": -36, "y": 53, "pivX": 0.665, "pivY": 0.089 },
+                "perna_frente": { "x": 47, "y": 54, "pivX": 0.604, "pivY": 0.072 },
+                "tronco": { "x": -5, "y": -37, "pivX": 0.454, "pivY": 0.646 },
+                "cintura": { "x": 46, "y": -33, "pivX": 0.386, "pivY": 0.336 },
+                "cabeca": { "x": 1, "y": -300, "pivX": 0.482, "pivY": 0.809 },
+                "rosto": { "x": -41, "y": -300, "pivX": 0.459, "pivY": 0.8 },
+                "mascara": { "x": -5, "y": -300, "pivX": 0.5, "pivY": 0.5 },
+                "cabelo": { "x": 1, "y": -300, "pivX": 0.482, "pivY": 0.699 },
+                "arma_frente": { "x": 137, "y": 43, "pivX": 0.854, "pivY": 0.247 },
+                "braco_frente": { "x": 95, "y": -192, "pivX": 0.117, "pivY": 0.024 },
+                "escudo_frente": { "x": 153, "y": -12, "pivX": 0.5, "pivY": 0.5 }
             }
         };
 
         const LAYER_ORDER = ['capa', 'escudo_tras', 'braco_tras', 'perna_tras', 'perna_frente', 'tronco', 'cintura', 'cabeca', 'rosto', 'mascara', 'cabelo', 'arma_frente', 'braco_frente', 'escudo_frente'];
+        const CATEGORY_NAMES = { 'cabeca': 'Cabeça', 'tronco': 'Tronco', 'perna_frente': 'Pernas', 'braco_frente': 'Braços', 'cabelo': 'Cabelo', 'arma_frente': 'Mão (Arma)', 'escudo_frente': 'Mão (Escudo)', 'capa': 'Costas', 'mascara': 'Rosto', 'cintura': 'Cinto' };
         const CATEGORIA_CORPO = ['cabeca', 'tronco', 'perna_frente', 'perna_tras', 'braco_frente', 'braco_tras', 'rosto'];
         const CATEGORIA_ACESSORIOS = ['cabelo', 'capa', 'mascara', 'arma_frente', 'escudo_frente', 'escudo_tras', 'cintura'];
-        const CATEGORY_NAMES = { 'cabeca': 'Cabeça', 'tronco': 'Tronco', 'perna_frente': 'Pernas', 'braco_frente': 'Braços', 'cabelo': 'Cabelo', 'arma_frente': 'Mão (Arma)', 'escudo_frente': 'Mão (Escudo)', 'capa': 'Costas', 'mascara': 'Rosto', 'cintura': 'Cinto' };
         
         const STARTER_KIT = {
-            'tronco': 'tronco_padrao.png', 'cabeca': 'cabeca_padrao.png',
-            'braco_frente': 'braco_frente_padrao.png', 'braco_tras': 'braco_tras_padrao.png',
-            'perna_frente': 'perna_frente_padrao.png', 'perna_tras': 'perna_tras_padrao.png',
-            'rosto': 'rosto_padrao.png', 'cabelo': 'cabelo_simples.png', 
-            'capa': 'capa_simples.png', 'mascara': 'mascara_simples.png',
-            'arma_frente': 'Espada_simples.png', 'escudo_frente': 'escudo_simples.png', 'escudo_tras': 'escudo_simples_tras.png'
+            'tronco': 'tronco_padrao.png', 'cabeca': 'cabeca_padrao.png', 'braco_frente': 'braco_frente_padrao.png', 'braco_tras': 'braco_tras_padrao.png', 'perna_frente': 'perna_frente_padrao.png', 'perna_tras': 'perna_tras_padrao.png', 'rosto': 'rosto_padrao.png',
+            'cabelo': 'cabelo_simples.png', 'capa': 'capa_simples.png', 'mascara': 'mascara_simples.png', 'arma_frente': 'Espada_simples.png', 'escudo_frente': 'escudo_simples.png', 'escudo_tras': 'escudo_simples_tras.png'
         };
 
-        // --- ESTADO ---
-        let currentUser = null;
-        let myData = { fichas: 0 };
-        let myOutfit = { ...STARTER_KIT }; 
-        let storeItemsCache = [];
-        let avatarImages = {};
+        let currentUser = null, myData = { fichas: 0 }, myOutfit = { ...STARTER_KIT };
+        let currentTab = 'corpo', storeItemsCache = [], avatarImages = {};
         const BASE_ASSETS_URL = 'assets/avatar/';
-        let currentTab = 'corpo';
-        let outfitChanged = false; // Controle para exibir o botão salvar
+        let outfitChanged = false;
 
-        // --- INICIALIZAÇÃO ---
+        // --- BOOT SYSTEM ---
         async function bootSystem() {
-            carregarImagensDoOutfit(); // 1. Começa a baixar imagens (rápido)
-
+            carregarImagensDoOutfit(); 
+            
+            // Busca Loja (Background)
             try {
-                const snap = await getDoc(doc(db, "config", "avatar_base"));
-                if(snap.exists()) {
-                    const data = snap.data();
-                    if(data.scale) AVATAR_CONFIG.scale = data.scale;
-                    if(data.parts) AVATAR_CONFIG.parts = data.parts; 
-                }
-            } catch(e) {} // Silencioso
+                const snapLoja = await getDocs(collection(db, "listaItens"));
+                storeItemsCache = [];
+                snapLoja.forEach(d => storeItemsCache.push(d.data()));
+            } catch(e) {}
 
-            // 2. Loop de Segurança de Redimensionamento (Correção do Voo)
-            // Força o ajuste do chão a cada 500ms nos primeiros 3 segundos
+            // Loop de Segurança de Redimensionamento
             let attempts = 0;
             const resizeInterval = setInterval(() => {
                 resizeCanvas();
@@ -257,108 +252,52 @@
                     }
                 }
             });
-            setTimeout(initEngine, 500); // Garante inicio mesmo se der erro
+            setTimeout(initEngine, 500);
         }
 
         // --- AUTH ---
         onAuthStateChanged(auth, async (user) => {
             if (user) {
                 currentUser = user;
-                await carregarDadosUsuario(user.uid);
-                carregarLojaDoBanco();
-            } else {
-                myOutfit = { ...STARTER_KIT };
-            }
+                const snap = await getDoc(doc(db, "users", user.uid));
+                if(snap.exists()) {
+                    myData = snap.data();
+                    myOutfit = myData.avatar_equipado || { ...STARTER_KIT };
+                    document.getElementById('coinDisplay').innerText = `🪙 ${myData.fichas || 0}`;
+                } else await garantirInventario(user.uid);
+            } else myOutfit = { ...STARTER_KIT };
+            
             carregarImagensDoOutfit();
             if(avatares.length > 0) avatares[0].outfit = myOutfit;
         });
 
-        async function carregarDadosUsuario(uid) {
-            const userRef = doc(db, "users", uid);
-            const snap = await getDoc(userRef);
-            if (snap.exists()) {
-                myData = snap.data();
-                if (myData.avatar_equipado) myOutfit = myData.avatar_equipado;
-                else {
-                    myOutfit = { ...STARTER_KIT };
-                    await updateDoc(userRef, { avatar_equipado: myOutfit, inventario: Object.values(STARTER_KIT) });
-                }
-                document.getElementById('coinDisplay').innerText = `🪙 ${myData.fichas || 0}`;
-            }
+        async function garantirInventario(uid) {
+            myOutfit = { ...STARTER_KIT };
+            await updateDoc(doc(db, "users", uid), { avatar_equipado: myOutfit, inventario: Object.values(STARTER_KIT) });
         }
 
-        async function carregarLojaDoBanco() {
-            try {
-                const snap = await getDocs(collection(db, "listaItens"));
-                storeItemsCache = [];
-                snap.forEach(d => storeItemsCache.push(d.data()));
-            } catch(e) {}
-        }
-
-        // --- TRANSAÇÕES (MOCHILA & LOJA) ---
+        // --- INTERFACE (UI) ---
         window.switchPanel = function(id) {
             document.querySelectorAll('.action-btn').forEach(b => b.classList.remove('active'));
-            if(id==='chat') document.getElementById('btnChat').classList.add('active');
-            if(id==='store') document.getElementById('btnLoja').classList.add('active');
-            if(id==='inventory') document.getElementById('btnInv').classList.add('active');
-
+            if(id === 'chat') document.getElementById('btnChat').classList.add('active');
+            if(id === 'store') document.getElementById('btnLoja').classList.add('active');
+            if(id === 'inventory') document.getElementById('btnInv').classList.add('active');
             document.querySelectorAll('.panel-view').forEach(p => p.classList.remove('active'));
             document.getElementById('view-' + id).classList.add('active');
-            
-            if(id === 'store' && currentUser) renderLoja();
-            if(id === 'inventory' && currentUser) renderInventario();
+            if(id === 'store') renderLoja();
+            if(id === 'inventory') renderInventario();
             setTimeout(resizeCanvas, 100);
         }
 
         window.mudarAba = function(panel, tab) {
             currentTab = tab;
-            const root = document.getElementById('view-' + panel);
-            root.querySelectorAll('.inv-tab-btn').forEach(b => b.classList.remove('active'));
+            const container = document.getElementById('view-' + panel);
+            container.querySelectorAll('.inv-tab-btn').forEach(b => b.classList.remove('active'));
             const idx = tab === 'corpo' ? 0 : 1;
-            root.querySelectorAll('.inv-tab-btn')[idx].classList.add('active');
+            container.querySelectorAll('.inv-tab-btn')[idx].classList.add('active');
             if(panel === 'store') renderLoja(); else renderInventario();
         }
 
-        window.equiparItem = function(categoria, itemFile) {
-            const isAcessorio = CATEGORIA_ACESSORIOS.includes(categoria);
-            if (myOutfit[categoria] === itemFile && isAcessorio) myOutfit[categoria] = null;
-            else myOutfit[categoria] = itemFile;
-            
-            outfitChanged = true;
-            document.getElementById('btnSaveLook').classList.add('show');
-            
-            carregarImagensDoOutfit();
-            if(avatares.length > 0) avatares[0].outfit = myOutfit; // Atualiza visual local
-            
-            // Re-renderiza para mostrar o check ✔️
-            if(document.getElementById('view-store').classList.contains('active')) renderLoja();
-            else renderInventario();
-        }
-
-        // SALVA SÓ NO FINAL PARA ECONOMIZAR BANCO
-        window.salvarOutfitNoBanco = async function() {
-            if(!currentUser) return alert("Faça login.");
-            try {
-                await updateDoc(doc(db, "users", currentUser.uid), { avatar_equipado: myOutfit });
-                document.getElementById('btnSaveLook').classList.remove('show');
-                outfitChanged = false;
-            } catch(e) { alert("Erro ao salvar."); }
-        }
-
-        window.comprarItem = async function(item) {
-            if (!currentUser) return alert("Faça login!");
-            if (myData.fichas < item.preco) return alert("Sem fichas!");
-            if (!confirm(`Comprar ${item.nome}?`)) return;
-            try {
-                const userRef = doc(db, "users", currentUser.uid);
-                await updateDoc(userRef, { fichas: increment(-item.preco), inventario: arrayUnion(item.id) });
-                myData.fichas -= item.preco; myData.inventario.push(item.id);
-                document.getElementById('coinDisplay').innerText = `🪙 ${myData.fichas}`;
-                renderLoja();
-            } catch(e) { alert("Erro compra"); }
-        }
-
-        // RENDER LOJA
         function renderLoja() {
             const container = document.getElementById('storeList'); container.innerHTML = '';
             const cats = currentTab === 'corpo' ? CATEGORIA_CORPO : CATEGORIA_ACESSORIOS;
@@ -370,13 +309,12 @@
                 row.innerHTML = `<div class="store-row-title">${CATEGORY_NAMES[cat] || cat}</div>`;
                 const scroll = document.createElement('div'); scroll.className = 'store-row-scroll';
                 
-                // Item Grátis (Padrão)
                 if(STARTER_KIT[cat]) {
                     const f = STARTER_KIT[cat];
                     const div = document.createElement('div');
                     div.className = `item-card ${myOutfit[cat] === f ? 'equipped' : 'owned'}`;
                     div.onclick = () => equiparItem(cat, f);
-                    div.innerHTML = `<img src="${BASE_ASSETS_URL}${cat}/${f}"><div class="item-price" style="background:#4CAF50">GRÁTIS</div>${myOutfit[cat]===f ? '<div class="check-icon">✔</div>' : ''}`;
+                    div.innerHTML = `<img src="${BASE_ASSETS_URL}${cat}/${f}"><div class="item-name">Padrão</div><div class="item-price" style="background:#4CAF50;">GRÁTIS</div>${myOutfit[cat]===f ? '<div class="check-icon">✔</div>' : ''}`;
                     scroll.appendChild(div);
                 }
                 
@@ -386,10 +324,10 @@
                     div.className = `item-card ${myOutfit[cat] === item.id ? 'equipped' : (have ? 'owned' : '')}`;
                     if(have) {
                         div.onclick = () => equiparItem(cat, item.id);
-                        div.innerHTML = `<img src="${BASE_ASSETS_URL}${cat}/${item.id}"><div class="item-price" style="background:#2196F3">TEM</div>`;
+                        div.innerHTML = `<img src="${BASE_ASSETS_URL}${cat}/${item.id}"><div class="item-name">${item.nome}</div><div class="item-price" style="background:#2196F3">TEM</div>`;
                     } else {
                         div.onclick = () => comprarItem(item);
-                        div.innerHTML = `<img src="${BASE_ASSETS_URL}${cat}/${item.id}"><div class="item-price">🪙 ${item.preco}</div>`;
+                        div.innerHTML = `<img src="${BASE_ASSETS_URL}${cat}/${item.id}"><div class="item-name">${item.nome}</div><div class="item-price">🪙 ${item.preco}</div>`;
                     }
                     if(myOutfit[cat] === item.id) div.innerHTML += '<div class="check-icon">✔</div>';
                     scroll.appendChild(div);
@@ -398,11 +336,9 @@
             });
         }
 
-        // RENDER INVENTARIO
         function renderInventario() {
             const list = document.getElementById('inventoryList'); list.innerHTML = '';
             const inv = myData.inventario || [];
-            
             const itens = inv.filter(f => {
                 let cat = null;
                 for(let c in STARTER_KIT) if(STARTER_KIT[c]===f || f.includes(c)) cat = c;
@@ -411,20 +347,55 @@
                 if(currentTab === 'corpo') return CATEGORIA_CORPO.includes(cat);
                 return CATEGORIA_ACESSORIOS.includes(cat);
             });
-            
-            if(itens.length===0) list.innerHTML = '<p style="text-align:center;width:100%;color:#999">Vazio</p>';
-
+            if(itens.length===0) list.innerHTML = '<p style="text-align:center;color:#999;width:100%">Vazio</p>';
             itens.forEach(f => {
                 let cat = null;
                 for(let c in STARTER_KIT) if(STARTER_KIT[c]===f || f.includes(c)) cat = c;
                 if(f.includes('Espada')) cat = 'arma_frente'; if(f.includes('bainha')) cat = 'cintura';
                 const div = document.createElement('div');
-                div.className = `item-card ${myOutfit[cat]===f ? 'equipped' : ''}`;
+                div.className = `item-card ${myOutfit[cat]===f ? 'equipped' : 'owned'}`;
                 div.onclick = () => equiparItem(cat, f);
                 let name = f.replace('.png','').replace('_padrao','').replace('_simples','');
                 div.innerHTML = `<img src="${BASE_ASSETS_URL}${cat}/${f}"><div class="item-name">${name}</div>${myOutfit[cat]===f?'<div class="check-icon">✔</div>':''}`;
                 list.appendChild(div);
             });
+        }
+
+        window.comprarItem = async function(item) {
+            if (!currentUser) return alert("Faça login!");
+            if (myData.fichas < item.preco) return alert("Sem fichas!");
+            if (!confirm(`Comprar "${item.nome}?`)) return;
+            try {
+                const userRef = doc(db, "users", currentUser.uid);
+                await updateDoc(userRef, { fichas: increment(-item.preco), inventario: arrayUnion(item.id) });
+                myData.fichas -= item.preco; myData.inventario.push(item.id);
+                document.getElementById('coinDisplay').innerText = `🪙 ${myData.fichas}`;
+                renderLoja();
+            } catch(e) { alert("Erro compra"); }
+        }
+
+        window.equiparItem = function(categoria, itemFile) {
+            const isAcc = CATEGORIA_ACESSORIOS.includes(categoria);
+            if (myOutfit[categoria] === itemFile && isAcc) myOutfit[categoria] = null;
+            else myOutfit[categoria] = itemFile;
+            
+            outfitChanged = true;
+            document.getElementById('btnSaveLook').classList.add('show');
+            
+            carregarImagensDoOutfit();
+            if(avatares.length > 0) avatares[0].outfit = myOutfit;
+            
+            if(document.getElementById('view-store').classList.contains('active')) renderLoja();
+            else renderInventario();
+        }
+
+        window.salvarOutfitNoBanco = async function() {
+            if(!currentUser) return alert("Faça login.");
+            try {
+                await updateDoc(doc(db, "users", currentUser.uid), { avatar_equipado: myOutfit });
+                document.getElementById('btnSaveLook').classList.remove('show');
+                outfitChanged = false;
+            } catch(e) { alert("Erro ao salvar."); }
         }
 
         // --- ENGINE AVATAR ---
@@ -445,8 +416,6 @@
             if(rect.width === 0 || rect.height === 0) return;
             canvas.width = rect.width * dpr; canvas.height = rect.height * dpr;
             ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.scale(dpr, dpr);
-            
-            // --- CORREÇÃO DA ALTURA (CHÃO FIXO RELATIVO AO FINAL DO CANVAS) ---
             const chaoY = rect.height - 80;
             avatares.forEach(a => a.y = chaoY);
         }
@@ -454,9 +423,9 @@
         function gameLoop(t) {
             const dt = (t - lastTime)/1000; lastTime=t;
             const w = canvas.clientWidth; const h = canvas.clientHeight;
-            ctx.clearRect(0,0,w,h);
-            
+            ctx.clearRect(0, 0, w, h);
             ctx.fillStyle = '#81C784'; ctx.beginPath(); ctx.ellipse(w/2, h+60, w*0.9, 100, 0, 0, Math.PI*2); ctx.fill();
+            ctx.strokeStyle = '#4CAF50'; ctx.lineWidth = 10; ctx.stroke();
             avatares.sort((a,b)=>a.y - b.y);
             avatares.forEach(a => { a.update(dt); a.draw(ctx); });
             requestAnimationFrame(gameLoop);
@@ -465,24 +434,23 @@
         class Avatar {
             constructor(nome, isMe=false) {
                 this.nome = nome; this.isMe = isMe; this.outfit = isMe ? myOutfit : STARTER_KIT;
-                this.x = container.clientWidth/2; this.y = 300; 
+                this.x = container.clientWidth/2; this.y = container.clientHeight-80; 
                 this.dir = 1; this.speed = 40; this.state='idle'; this.targetX = this.x;
                 setTimeout(()=>this.iaLoop(), 1000);
             }
             falar(txt) { this.msg = txt; this.msgTimer = 300; }
             iaLoop() {
                 const w = canvas.clientWidth;
-                const tx = Math.random() * (w - 60) + 30;
-                this.dir = tx > this.x ? 1 : -1; this.state='walk'; this.targetX = tx;
+                this.targetX = Math.random() * (w - 60) + 30;
+                this.dir = this.targetX > this.x ? 1 : -1; this.state='walk';
                 setTimeout(()=>{ 
                     this.state='idle'; 
                     setTimeout(()=>this.iaLoop(), 2000 + Math.random()*2000); 
                 }, 3000 + Math.random()*2000);
             }
             update(dt) {
-                // LIMITE DE TELA (NÃO SAI MAIS)
-                if(this.x < 20) this.x = 20; 
-                if(this.x > canvas.clientWidth - 20) this.x = canvas.clientWidth - 20;
+                if(this.x < 20) { this.x = 20; this.dir = 1; }
+                if(this.x > canvas.clientWidth - 20) { this.x = canvas.clientWidth - 20; this.dir = -1; }
 
                 this.timer = (this.timer||0) + dt*5; if(this.msgTimer>0) this.msgTimer--; else this.msg="";
                 if(this.state==='walk') {
@@ -494,14 +462,14 @@
                 const s = AVATAR_CONFIG.scale;
                 let walk=0, bob=0, br=Math.sin(this.timer*0.5)*0.05;
                 if(this.state==='walk') { walk=Math.sin(this.timer); bob=Math.abs(walk)*10; }
-
+                
                 ctx.save(); ctx.translate(this.x, this.y);
                 ctx.fillStyle = this.isMe?'#FFC107':'white'; ctx.font="bold 12px Nunito"; ctx.textAlign="center"; 
                 ctx.shadowColor = 'rgba(0,0,0,0.5)'; ctx.shadowBlur = 4;
                 ctx.fillText(this.nome, 0, -160*s); ctx.shadowBlur = 0;
                 if(this.msg) this.drawBubble(ctx, s);
-                
                 ctx.scale(-this.dir, 1);
+                
                 LAYER_ORDER.forEach(cat => {
                     const file = this.outfit[cat];
                     if(!file) return;
@@ -529,7 +497,7 @@
                         const isF = cat.includes('frente'); ay=-bob; ar=(isF?-walk:walk)*0.6;
                         ax = isF ? -AVATAR_CONFIG.offsets.spreadX : AVATAR_CONFIG.offsets.spreadX;
                     } else if(['cabeca','rosto','mascara','cabelo'].includes(cat)) { ay = -bob + (br*5); ar=br*0.2; }
-
+                    
                     this.drawImg(ctx, img, (p.x*s)+(ax*s), (p.y*s)+(ay*s), ar, p, s, cat);
                 });
                 ctx.restore();
