@@ -280,6 +280,7 @@
         let currentSubTab = 'cabeca';
 
         let currentUser = null, myData = { fichas: 0 }, myOutfit = { ...STARTER_KIT };
+        let currentUserName = "Eu"; // Variável global para o nome
         let previewOutfit = {}; 
         let shoppingCart = {}; 
         let storeItemsCache = [];
@@ -310,16 +311,22 @@
         });
 
         async function carregarDadosUsuario(uid) {
-              const snap = await getDoc(doc(db, "users", uid));
+            const snap = await getDoc(doc(db, "users", uid));
             if (snap.exists()) {
                 myData = snap.data();
-                // ATUALIZAÇÃO DO NOME:
-                if(avatares.length > 0 && avatares[0].isMe) {
-                    avatares[0].nome = myData.apelido || (currentUser.displayName ? currentUser.displayName.split(' ')[0] : "Eu");
-                }
                 
-                if (myData.avatar_equipado) myOutfit = myData.avatar_equipado;
-                else await garantirInventario(uid);
+                // ATUALIZAÇÃO DO NOME (Global e Avatar)
+                currentUserName = myData.apelido || (currentUser.displayName ? currentUser.displayName.split(' ')[0] : "Eu");
+                if(avatares.length > 0 && avatares[0].isMe) {
+                    avatares[0].nome = currentUserName;
+                }
+
+                if (myData.avatar_equipado) {
+                    // Mescla com STARTER_KIT para garantir que não faltem peças obrigatórias
+                    myOutfit = { ...STARTER_KIT, ...myData.avatar_equipado };
+                } else {
+                    await garantirInventario(uid);
+                }
                 document.getElementById('coinDisplay').innerText = `🪙 ${myData.fichas || 0}`;
                 resetPreview(); 
             } else { await garantirInventario(uid); }
@@ -462,13 +469,20 @@
 
         window.toggleItem = function(cat, itemObj, isOwned, isDefault) {
             const isWearing = previewOutfit[cat] === itemObj.id;
-            const isBodyPart = MENU_STRUCTURE['corpo'].some(c => c.id === cat);
+            
+            // LISTA DE ITENS OBRIGATÓRIOS (Não podem ser removidos, apenas trocados)
+            const mandatoryParts = ['tronco', 'cabeca', 'braco_frente', 'braco_tras', 'perna_frente', 'perna_tras', 'rosto'];
+            const isMandatory = mandatoryParts.includes(cat);
 
             if (isWearing) {
-                if (isBodyPart) return; // Não pode ficar pelado
+                // SE FOR OBRIGATÓRIO, NÃO FAZ NADA (IMPEDE FICAR PELADO)
+                if (isMandatory) return; 
+
+                // Se for acessório, remove
                 previewOutfit[cat] = null;
                 if (shoppingCart[cat]) delete shoppingCart[cat];
             } else {
+                // EQUIPA O NOVO ITEM (Troca)
                 previewOutfit[cat] = itemObj.id;
                 if (isOwned || isDefault) {
                     if (shoppingCart[cat]) delete shoppingCart[cat];
@@ -563,7 +577,8 @@
         function initEngine() {
             if(initCalled) return; initCalled = true;
             resizeCanvas(); window.addEventListener('resize', resizeCanvas);
-            const me = new Avatar("Eu", true); 
+            // USA A VARIÁVEL GLOBAL currentUserName
+            const me = new Avatar(currentUserName, true); 
             me.outfit = previewOutfit; 
             avatares.push(me);
             requestAnimationFrame(gameLoop);
@@ -610,7 +625,8 @@
                 if(this.state==='walk') { walk=Math.sin(this.timer); bob=Math.abs(walk)*10; }
                 ctx.save(); ctx.translate(this.x, this.y);
                 ctx.fillStyle = this.isMe?'#FFC107':'white'; ctx.font="bold 12px Nunito"; ctx.textAlign="center"; 
-                ctx.shadowColor='rgba(0,0,0,0.5)'; ctx.shadowBlur=4; ctx.fillText(this.nome, 0, -360*s); ctx.shadowBlur=0;
+                // NOME POSICIONADO ACIMA DA CABEÇA (-380)
+                ctx.shadowColor='rgba(0,0,0,0.5)'; ctx.shadowBlur=4; ctx.fillText(this.nome, 0, -380*s); ctx.shadowBlur=0;
                 if(this.msg) this.drawBubble(ctx, s);
                 ctx.scale(-this.dir, 1);
                 LAYER_ORDER.forEach(cat => {
