@@ -310,9 +310,14 @@
         });
 
         async function carregarDadosUsuario(uid) {
-            const snap = await getDoc(doc(db, "users", uid));
+              const snap = await getDoc(doc(db, "users", uid));
             if (snap.exists()) {
                 myData = snap.data();
+                // ATUALIZAÇÃO DO NOME:
+                if(avatares.length > 0 && avatares[0].isMe) {
+                    avatares[0].nome = myData.apelido || (currentUser.displayName ? currentUser.displayName.split(' ')[0] : "Eu");
+                }
+                
                 if (myData.avatar_equipado) myOutfit = myData.avatar_equipado;
                 else await garantirInventario(uid);
                 document.getElementById('coinDisplay').innerText = `🪙 ${myData.fichas || 0}`;
@@ -605,7 +610,7 @@
                 if(this.state==='walk') { walk=Math.sin(this.timer); bob=Math.abs(walk)*10; }
                 ctx.save(); ctx.translate(this.x, this.y);
                 ctx.fillStyle = this.isMe?'#FFC107':'white'; ctx.font="bold 12px Nunito"; ctx.textAlign="center"; 
-                ctx.shadowColor='rgba(0,0,0,0.5)'; ctx.shadowBlur=4; ctx.fillText(this.nome, 0, -160*s); ctx.shadowBlur=0;
+                ctx.shadowColor='rgba(0,0,0,0.5)'; ctx.shadowBlur=4; ctx.fillText(this.nome, 0, -360*s); ctx.shadowBlur=0;
                 if(this.msg) this.drawBubble(ctx, s);
                 ctx.scale(-this.dir, 1);
                 LAYER_ORDER.forEach(cat => {
