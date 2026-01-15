@@ -20,6 +20,21 @@
         .canvas-card { flex: 1; background: #81D4FA; border-radius: 30px; overflow: hidden; box-shadow: var(--shadow); position: relative; border: 5px solid white; display: flex; min-height: 200px; }
         canvas { display: block; width: 100%; height: 100%; background: linear-gradient(to bottom, #81D4FA, #B2EBF2); }
         
+        /* LOADER DO JOGO */
+        .game-loader {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255,255,255,0.95); z-index: 50;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            transition: opacity 0.5s ease;
+        }
+        .spinner {
+            width: 40px; height: 40px; border: 5px solid #eee;
+            border-top: 5px solid var(--primary); border-radius: 50%;
+            animation: spin 1s linear infinite; margin-bottom: 15px;
+        }
+        .game-loader p { font-weight: bold; color: var(--primary); font-size: 0.9rem; text-align: center; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
         /* INTERFACE SOBRE O CANVAS */
         .overlay-ui { position: absolute; top: 15px; left: 15px; right: 15px; display: flex; justify-content: space-between; pointer-events: none; z-index: 20; }
         .btn-back { background: white; color: var(--primary); text-decoration: none; padding: 10px 20px; border-radius: 50px; font-weight: bold; pointer-events: auto; box-shadow: 0 4px 10px rgba(0,0,0,0.1); display: flex; align-items: center; gap: 5px; font-family:'Fredoka One'; }
@@ -135,6 +150,13 @@
         <!-- ESQUERDA: JOGO -->
         <div class="game-column">
             <div class="canvas-card" id="canvasContainer">
+                
+                <!-- LOADER -->
+                <div id="gameLoader" class="game-loader">
+                    <div class="spinner"></div>
+                    <p>Aguarde, os dados estão sendo carregados...</p>
+                </div>
+
                 <canvas id="arcadeCanvas"></canvas>
                 <div class="overlay-ui">
                     <a href="index.html" class="btn-back">⬅️ Voltar</a>
@@ -576,6 +598,11 @@
 
         function initEngine() {
             if(initCalled) return; initCalled = true;
+            
+            // ESCONDE O LOADER QUANDO A ENGINE INICIA
+            const loader = document.getElementById('gameLoader');
+            if(loader) loader.style.display = 'none';
+
             resizeCanvas(); window.addEventListener('resize', resizeCanvas);
             // USA A VARIÁVEL GLOBAL currentUserName
             const me = new Avatar(currentUserName, true); 
@@ -623,11 +650,12 @@
             draw(ctx) {
                 const s = AVATAR_CONFIG.scale; let walk=0, bob=0, br=Math.sin(this.timer*0.5)*0.05;
                 if(this.state==='walk') { walk=Math.sin(this.timer); bob=Math.abs(walk)*10; }
-                ctx.save(); ctx.translate(this.x, this.y);
-                ctx.fillStyle = this.isMe?'#FFC107':'white'; ctx.font="bold 12px Nunito"; ctx.textAlign="center"; 
-                // NOME POSICIONADO ACIMA DA CABEÇA (-380)
-                ctx.shadowColor='rgba(0,0,0,0.5)'; ctx.shadowBlur=4; ctx.fillText(this.nome, 0, -380*s); ctx.shadowBlur=0;
-                if(this.msg) this.drawBubble(ctx, s);
+                
+                ctx.save(); 
+                ctx.translate(this.x, this.y);
+
+                // 1. DESENHA O CORPO (ESPELHADO SE NECESSÁRIO)
+                ctx.save();
                 ctx.scale(-this.dir, 1);
                 LAYER_ORDER.forEach(cat => {
                     const file = this.outfit[cat]; if(!file) return;
@@ -652,6 +680,19 @@
                     } else if(['cabeca','rosto','mascara','cabelo'].includes(cat)) { ay = -bob + (br*5); ar=br*0.2; }
                     this.drawImg(ctx, img, (p.x*s)+(ax*s), (p.y*s)+(ay*s), ar, p, s, cat);
                 });
+                ctx.restore(); // Fim do desenho do corpo
+
+                // 2. DESENHA O NOME (NA FRENTE DE TUDO E MAIS ALTO)
+                ctx.fillStyle = this.isMe?'#FFC107':'white'; 
+                ctx.font="bold 14px Nunito"; 
+                ctx.textAlign="center"; 
+                ctx.shadowColor='rgba(0,0,0,0.8)'; ctx.shadowBlur=4; 
+                // Posição Y alterada para -420*s (Bem acima da cabeça)
+                ctx.fillText(this.nome, 0, -420*s); 
+                ctx.shadowBlur=0;
+
+                if(this.msg) this.drawBubble(ctx, s);
+                
                 ctx.restore();
             }
             drawImg(ctx, img, x, y, r, p, s, n) {
