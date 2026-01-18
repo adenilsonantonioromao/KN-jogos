@@ -643,8 +643,14 @@
 
             } catch(e) { console.error("Erro ao enviar:", e); }
         }
-        btnSend.onclick = sendMsg; ipt.onkeypress = e => e.key==='Enter' && sendMsg();
-
+        btnSend.onclick = sendMsg; 
+        
+        // CORREÇÃO: Usando addEventListener para não bloquear a digitação
+        ipt.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendMsg();
+            }
+        });
         // --- ENGINE ---
         const canvas = document.getElementById('arcadeCanvas');
         const container = document.getElementById('canvasContainer');
