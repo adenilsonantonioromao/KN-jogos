@@ -181,7 +181,6 @@
             <div class="controls-dock">
                 <button class="action-btn active" id="btnChat" onclick="switchPanel('chat')"><span>💬</span><label>Chat</label></button>
                 <button class="action-btn" id="btnCustomize" onclick="switchPanel('custom')"><span>👕</span><label>Vestir</label></button>
-                <!-- Botão Bot removido pois agora são controlados pelo chat -->
                 <button class="action-btn" onclick="alert('Em breve!')"><span>💃</span><label>Emote</label></button>
             </div>
         </div>
@@ -309,6 +308,9 @@
         let storeItemsCache = [];
         let avatarImages = {};
         const BASE_ASSETS_URL = 'assets/avatar/';
+        
+        // Cache para não buscar o mesmo usuário no banco repetidamente
+        const outfitCache = {}; 
 
         // --- SISTEMA ---
         async function bootSystem() {
@@ -327,7 +329,7 @@
                 currentUser = user;
                 await carregarDadosUsuario(user.uid);
                 carregarLojaDoBanco(); 
-                iniciarChatRealTime(); // INICIA O CHAT
+                iniciarChatRealTime(); 
             } else {
                 myOutfit = { ...STARTER_KIT };
                 resetPreview(); 
@@ -551,63 +553,70 @@
             const chatRef = collection(db, "globalChat");
             const q = query(chatRef, orderBy("timestamp", "asc"), limit(10));
 
-            onSnapshot(q, (snapshot) => {
+            onSnapshot(q, async (snapshot) => {
                 const chatHistory = document.getElementById('chatHistory');
                 chatHistory.innerHTML = "";
                 
-                // Lista de UIDs que estão no chat (para exibir avatares)
                 const activeUserIds = new Set();
-                activeUserIds.add(currentUser.uid); // Eu sempre estou
+                activeUserIds.add(currentUser.uid); 
 
-                snapshot.forEach((docSnap) => {
+                for (const docSnap of snapshot.docs) {
                     const msg = docSnap.data();
                     const isMe = msg.uid === currentUser.uid;
                     
-                    // Adiciona ao HTML do Chat
                     const div = document.createElement('div');
                     div.className = `msg ${isMe ? 'me' : ''}`;
                     div.innerHTML = `<strong>${msg.nome}</strong>${msg.msg}`;
                     chatHistory.appendChild(div);
 
-                    // Adiciona ID à lista de ativos
                     activeUserIds.add(msg.uid);
 
-                    // Atualiza ou Cria Avatar na Cena
                     if (!isMe) {
                         let avatar = avatares.find(a => a.uid === msg.uid);
+                        
                         if (!avatar) {
+                            if (!outfitCache[msg.uid]) {
+                                try {
+                                    const userSnap = await getDoc(doc(db, "users", msg.uid));
+                                    if (userSnap.exists()) {
+                                        const userData = userSnap.data();
+                                        outfitCache[msg.uid] = userData.avatar_equipado || STARTER_KIT;
+                                    } else {
+                                        outfitCache[msg.uid] = STARTER_KIT; 
+                                    }
+                                } catch (err) {
+                                    console.error("Erro ao baixar roupa:", err);
+                                    outfitCache[msg.uid] = STARTER_KIT;
+                                }
+                            }
+
                             avatar = new Avatar(msg.nome, false, msg.uid);
+                            avatar.outfit = outfitCache[msg.uid];
                             avatares.push(avatar);
+                            carregarImagensDeAvatar(avatar);
                         }
-                        // Atualiza roupa se vier na mensagem
-                        if (msg.outfit) avatar.outfit = msg.outfit;
-                        // Faz o avatar falar
-                        if (Date.now() - (msg.timestamp?.toMillis() || 0) < 10000) { // Só fala se for recente (< 10s)
+
+                        if (Date.now() - (msg.timestamp?.toMillis() || 0) < 10000) {
                             avatar.falar(msg.msg);
                         }
                     }
-                });
+                }
 
-                // Remove avatares que não estão mais nas últimas 10 mensagens (exceto eu)
                 avatares = avatares.filter(a => activeUserIds.has(a.uid));
-                
                 document.getElementById('online-count').innerText = avatares.length;
                 chatHistory.scrollTop = chatHistory.scrollHeight;
-                
-                // Carrega imagens dos novos avatares
-                avatares.forEach(a => {
-                    if(!a.isMe) {
-                        LAYER_ORDER.forEach(layer => {
-                            if(a.outfit[layer]) {
-                                const key = `${layer}/${a.outfit[layer]}`;
-                                if(!avatarImages[key]) {
-                                    const img = new Image(); img.src = `${BASE_ASSETS_URL}${key}`;
-                                    avatarImages[key] = img;
-                                }
-                            }
-                        });
+            });
+        }
+
+        function carregarImagensDeAvatar(avatar) {
+            LAYER_ORDER.forEach(layer => {
+                if(avatar.outfit[layer]) {
+                    const key = `${layer}/${avatar.outfit[layer]}`;
+                    if(!avatarImages[key]) {
+                        const img = new Image(); img.src = `${BASE_ASSETS_URL}${key}`;
+                        avatarImages[key] = img;
                     }
-                });
+                }
             });
         }
 
@@ -616,41 +625,38 @@
         
         async function sendMsg() {
             const text = ipt.value.trim();
-            if(!text || !currentUser) return;
-            ipt.value = "";
+            if(!text) return;
+            if(!currentUser) return alert("Logue-se!");
+            
+            ipt.value = ""; 
 
             try {
                 const chatRef = collection(db, "globalChat");
                 
-                // 1. Verifica se precisa apagar a mais antiga
-                const qSnapshot = await getDocs(query(chatRef, orderBy("timestamp", "asc")));
-                if (qSnapshot.size >= 10) {
-                    const oldestDoc = qSnapshot.docs[0];
-                    await deleteDoc(oldestDoc.ref);
-                }
+                try {
+                    const qSnapshot = await getDocs(query(chatRef, orderBy("timestamp", "asc")));
+                    if (qSnapshot.size >= 10) {
+                        await deleteDoc(qSnapshot.docs[0].ref);
+                    }
+                } catch(e) {}
 
-                // 2. Adiciona a nova
                 await addDoc(chatRef, {
                     uid: currentUser.uid,
                     nome: currentUserName,
                     msg: text,
-                    outfit: previewOutfit, // Salva a roupa atual para os outros verem
                     timestamp: serverTimestamp()
                 });
 
-                // Faz meu avatar falar localmente instantaneamente
                 if(avatares.length > 0 && avatares[0].isMe) avatares[0].falar(text);
 
-            } catch(e) { console.error("Erro ao enviar:", e); }
+            } catch(e) { console.error("Erro envio:", e); }
         }
-        btnSend.onclick = sendMsg; 
         
-        // CORREÇÃO: Usando addEventListener para não bloquear a digitação
+        btnSend.onclick = sendMsg; 
         ipt.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                sendMsg();
-            }
+            if (e.key === 'Enter') sendMsg();
         });
+
         // --- ENGINE ---
         const canvas = document.getElementById('arcadeCanvas');
         const container = document.getElementById('canvasContainer');
@@ -679,7 +685,6 @@
             if(loader) loader.style.display = 'none';
             resizeCanvas(); window.addEventListener('resize', resizeCanvas);
             
-            // Cria "Eu"
             const me = new Avatar(currentUserName, true, currentUser ? currentUser.uid : "local"); 
             me.outfit = previewOutfit; 
             avatares.push(me);
