@@ -632,8 +632,14 @@
 
             try {
                 const chatRef = collection(db, "globalChat");
+                
+                try {
+                    const qSnapshot = await getDocs(query(chatRef, orderBy("timestamp", "asc")));
+                    if (qSnapshot.size >= 10) {
+                        await deleteDoc(qSnapshot.docs[0].ref);
+                    }
+                } catch(e) {}
 
-                // 1. PRIMEIRO: Envia a mensagem (Prioridade)
                 await addDoc(chatRef, {
                     uid: currentUser.uid,
                     nome: currentUserName,
@@ -641,27 +647,9 @@
                     timestamp: serverTimestamp()
                 });
 
-                // 2. Faz o avatar falar localmente (Feedback imediato)
                 if(avatares.length > 0 && avatares[0].isMe) avatares[0].falar(text);
 
-                // 3. DEPOIS: Tenta limpar mensagens antigas
-                try {
-                    const qSnapshot = await getDocs(query(chatRef, orderBy("timestamp", "asc")));
-                    // Se tiver mais de 10, apaga as excedentes
-                    if (qSnapshot.size > 10) {
-                        const deleteCount = qSnapshot.size - 10;
-                        for (let i = 0; i < deleteCount; i++) {
-                            await deleteDoc(qSnapshot.docs[i].ref);
-                        }
-                    }
-                } catch(err) {
-                    console.warn("Manutenção do chat falhou (falta de índice ou permissão):", err);
-                }
-
-            } catch(e) { 
-                console.error("Erro envio:", e); 
-                alert("Erro ao enviar: " + e.message);
-            }
+            } catch(e) { console.error("Erro envio:", e); }
         }
         
         btnSend.onclick = sendMsg; 
