@@ -41,17 +41,21 @@
         .online-badge { background: rgba(255,255,255,0.9); color: var(--green); padding: 8px 20px; border-radius: 50px; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
         .my-coins { background: #FFC107; color: #3E2723; padding: 8px 15px; border-radius: 20px; font-weight: bold; font-size: 0.9rem; margin-top: 5px; display:inline-block; box-shadow: 0 2px 5px rgba(0,0,0,0.2); pointer-events: auto; }
 
-        /* MODO PROVADOR UI */
+        /* MODO PROVADOR UI (CANTO INFERIOR ESQUERDO) */
         #tryingLabel {
-            position: absolute; top: 50px; left: 15px; background: rgba(255, 87, 34, 0.9); 
-            color: white; padding: 5px 12px; border-radius: 10px; font-size: 0.8rem; font-weight: bold;
+            position: absolute; bottom: 20px; left: 20px; 
+            background: rgba(255, 87, 34, 0.9); 
+            color: white; padding: 8px 15px; border-radius: 15px; font-size: 0.8rem; font-weight: bold;
             display: none; animation: pulse 2s infinite; pointer-events: none; z-index: 20;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
         }
         @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
 
-        /* BOTÕES FLUTUANTES */
+        /* BOTÕES FLUTUANTES (CANTO INFERIOR DIREITO) */
         .floating-action-container {
-            position: absolute; bottom: 20px; left: 0; width: 100%; display: flex; justify-content: center; gap: 10px; z-index: 30; pointer-events: none;
+            position: absolute; bottom: 20px; right: 20px; 
+            display: flex; flex-direction: column; align-items: flex-end; gap: 10px; 
+            z-index: 30; pointer-events: none;
         }
         #btnSaveLook, #btnBuyCart {
             border: none; padding: 12px 25px; border-radius: 30px; font-weight: bold; 
@@ -619,7 +623,11 @@
             avatares.forEach(a => { a.y = chaoY; if(a.x === 0) a.x = rect.width/2; });
         }
         function gameLoop(t) {
-            const dt = (t-lastTime)/1000; lastTime=t;
+            // CORREÇÃO DO CÁLCULO DE TEMPO PARA EVITAR SALTOS NA ANIMAÇÃO
+            if (!lastTime) lastTime = t;
+            const dt = (t-lastTime)/1000; 
+            lastTime = t;
+
             const w = canvas.clientWidth; const h = canvas.clientHeight;
             ctx.clearRect(0,0,w,h);
             ctx.fillStyle = '#81C784'; ctx.beginPath(); ctx.ellipse(w/2, h+60, w*0.9, 100, 0, 0, Math.PI*2); ctx.fill();
@@ -633,7 +641,9 @@
         class Avatar {
             constructor(nome, isMe=false) {
                 this.nome = nome; this.isMe = isMe; this.outfit = isMe ? previewOutfit : { ...STARTER_KIT };
-                this.x = container.clientWidth/2; this.y = container.clientHeight-80; this.dir = 1; this.speed = 40; this.state='idle'; this.targetX = this.x; if(!isMe) setTimeout(()=>this.iaLoop(), 1000);
+                this.x = container.clientWidth/2; this.y = container.clientHeight-80; this.dir = 1; this.speed = 40; this.state='idle'; this.targetX = this.x; 
+                this.timer = 0; // INICIALIZA O TIMER
+                if(!isMe) setTimeout(()=>this.iaLoop(), 1000);
             }
             falar(txt) { this.msg = txt; this.msgTimer = 300; }
             iaLoop() {
@@ -687,8 +697,8 @@
                 ctx.font="bold 14px Nunito"; 
                 ctx.textAlign="center"; 
                 ctx.shadowColor='rgba(0,0,0,0.8)'; ctx.shadowBlur=4; 
-                // Posição Y alterada para -420*s (Bem acima da cabeça)
-                ctx.fillText(this.nome, 0, -420*s); 
+                // Posição Y alterada para -500*s (Bem acima da cabeça)
+                ctx.fillText(this.nome, 0, -500*s); 
                 ctx.shadowBlur=0;
 
                 if(this.msg) this.drawBubble(ctx, s);
