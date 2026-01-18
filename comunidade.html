@@ -643,7 +643,9 @@
                 this.nome = nome; this.isMe = isMe; this.outfit = isMe ? previewOutfit : { ...STARTER_KIT };
                 this.x = container.clientWidth/2; this.y = container.clientHeight-80; this.dir = 1; this.speed = 40; this.state='idle'; this.targetX = this.x; 
                 this.timer = 0; // INICIALIZA O TIMER
-                if(!isMe) setTimeout(()=>this.iaLoop(), 1000);
+                
+                // --- ALTERAÇÃO: TODOS OS AVATARES (INCLUSIVE "EU") ANDAM SOZINHOS ---
+                setTimeout(()=>this.iaLoop(), 1000);
             }
             falar(txt) { this.msg = txt; this.msgTimer = 300; }
             iaLoop() {
@@ -697,8 +699,8 @@
                 ctx.font="bold 14px Nunito"; 
                 ctx.textAlign="center"; 
                 ctx.shadowColor='rgba(0,0,0,0.8)'; ctx.shadowBlur=4; 
-                // Posição Y alterada para -500*s (Bem acima da cabeça)
-                ctx.fillText(this.nome, 0, -500*s); 
+                // --- ALTERAÇÃO: NOME MAIS ALTO (-650) ---
+                ctx.fillText(this.nome, 0, -650*s); 
                 ctx.shadowBlur=0;
 
                 if(this.msg) this.drawBubble(ctx, s);
