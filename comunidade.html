@@ -558,8 +558,7 @@
                 chatHistory.innerHTML = "";
                 
                 const activeUserIds = new Set();
-                activeUserIds.add(currentUser.uid); 
-
+                
                 for (const docSnap of snapshot.docs) {
                     const msg = docSnap.data();
                     const isMe = msg.uid === currentUser.uid;
@@ -602,7 +601,9 @@
                     }
                 }
 
-                avatares = avatares.filter(a => activeUserIds.has(a.uid));
+                // CORREÇÃO AQUI: Não deleta se for 'Me', independente de estar na lista
+                avatares = avatares.filter(a => a.isMe || activeUserIds.has(a.uid));
+                
                 document.getElementById('online-count').innerText = avatares.length;
                 chatHistory.scrollTop = chatHistory.scrollHeight;
             });
@@ -632,13 +633,6 @@
 
             try {
                 const chatRef = collection(db, "globalChat");
-                
-                try {
-                    const qSnapshot = await getDocs(query(chatRef, orderBy("timestamp", "asc")));
-                    if (qSnapshot.size >= 10) {
-                        await deleteDoc(qSnapshot.docs[0].ref);
-                    }
-                } catch(e) {}
 
                 await addDoc(chatRef, {
                     uid: currentUser.uid,
@@ -649,7 +643,22 @@
 
                 if(avatares.length > 0 && avatares[0].isMe) avatares[0].falar(text);
 
-            } catch(e) { console.error("Erro envio:", e); }
+                try {
+                    const qSnapshot = await getDocs(query(chatRef, orderBy("timestamp", "asc")));
+                    if (qSnapshot.size > 10) {
+                        const deleteCount = qSnapshot.size - 10;
+                        for (let i = 0; i < deleteCount; i++) {
+                            await deleteDoc(qSnapshot.docs[i].ref);
+                        }
+                    }
+                } catch(err) {
+                    console.warn("Manutenção do chat falhou (falta de índice ou permissão):", err);
+                }
+
+            } catch(e) { 
+                console.error("Erro envio:", e); 
+                alert("Erro ao enviar: " + e.message);
+            }
         }
         
         btnSend.onclick = sendMsg; 
